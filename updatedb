@@ -1,0 +1,51 @@
+#!/bin/sh
+set -e
+
+cd /tmp/
+
+if [ -f update.zip ]; then
+	rm update.zip
+fi
+
+if [ -f update.sql ]; then
+        rm update.sql
+fi
+
+if [ -f version.txt ]; then
+	rm version.txt
+fi
+
+wget -T 5 -q http://docker.xiaoya.pro/update.zip
+
+if [ ! -f update.zip ]; then
+        echo "Failed to download updated files, the upgrade process has aborted"
+else
+        unzip -o -q update.zip
+	remote=$(head -n1 version.txt)
+	if [ ! -f /opt/alist/version.txt ]; then
+		echo 0.0.0 > /opt/alist/version.txt
+	fi
+	local=$(head -n1 /opt/alist/version.txt)
+ 	latest=$(printf "$remote\n$local\n" |sort -r |head -n1)	
+	if [ $remote = $local ]; then
+		echo `date` "current version is updated, no need to upgrade"
+		exit
+	elif [ $remote = $latest ]; then
+		entries=$(expr `cat update.sql|wc -l` - 4)
+		echo `date` "total" $entries "records"
+        	sqlite3 /opt/alist/data/data.db <<EOF
+drop table x_storages;
+.read update.sql
+EOF
+		echo `date` "update database succesfully, your new version is" $remote
+		echo $remote > /opt/alist/version.txt
+	else
+		echo `date` "current version is updated, no need to downgrade"
+		echo $remote > /opt/alist/version.txt
+	fi
+	rm update.*
+	rm version.txt
+fi
+
+exec "$@"
+

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#OIFS="$IFS"
+#IFS="${IFS}&"
+#set $QUERY_STRING
+#Args="$*"
+#IFS="$OIFS"
+
+URL=${QUERY_STRING#*url=}
+URL=${URL%%&*}
+URL=${URL//+/ }
+BOX=${QUERY_STRING#*box=}
+BOX=${BOX%%&*}
+BOX=${BOX//+/ }
+TYPE=${QUERY_STRING#*type=}
+TYPE=${TYPE%%&*}
+TYPE=${TYPE//+/ }
+
+function urldecode() { : "${*//+/ }"; echo -e "${_//%/\\x}"; }
+
+box=$(urldecode $BOX)
+box=${box// /\.\*}
+
+FILE=/index.txt
+[ -f "/index.$TYPE.txt" ] && FILE=/index.$TYPE.txt
+
+echo "Content-type: application/json;charset=UTF-8"
+echo ''
+
+echo '{'
+echo '"code":200,'
+echo '"message":"success",'
+echo '"data":['
+
+echo -e `/bin/grep -i $box $FILE|sed 's/^\.\///g'|awk -v host=$host 'NR>1{printf ","}{printf "\""$0"\""}'`
+
+echo ']'
+echo '}'

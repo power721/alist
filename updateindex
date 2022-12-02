@@ -1,0 +1,54 @@
+#!/bin/sh
+set -e
+
+cd /tmp/
+
+if [ -f index.zip ]; then
+	rm index.zip
+fi
+
+if [ -f index.txt ]; then
+        rm index.txt 
+fi
+
+if [ -f index.version ]; then
+	rm index.version
+fi
+
+wget -T 5 -q http://docker.xiaoya.pro/index.version
+
+if [ ! -f index.version ]; then
+        echo "Failed to download index version file, the index file upgrade process has aborted"
+else	
+	remote=$(head -n1 index.version)
+        if [ ! -f /index.version ]; then
+                echo 0.0.0 > /index.version
+        fi
+        local=$(head -n1 /index.version)
+        latest=$(printf "$remote\n$local\n" |sort -r |head -n1)
+        if [ $remote = $local ]; then
+                echo `date` "current index file version is updated, no need to upgrade"
+                exit
+        elif [ $remote = $latest ]; then
+		wget -T 5 -q http://docker.xiaoya.pro/index.zip
+		if [ ! -f index.zip ]; then
+			echo "Failed to download index compressed file, the index file upgrade process has aborted"
+			exit
+		else
+			unzip -o -q index.zip
+			for index in index*.txt; do
+				sort -u "${index}" > "${index}.bak" && mv "${index}.bak" "${index}"
+			done
+			mv index*.txt /
+			echo `date` "update index succesfully, your new index version is" $remote
+			echo $remote > /index.version
+		fi
+	else
+		echo `date` "your current index version is updated, no need to downgrade"
+		echo $remote > /index.version
+	fi
+	rm index.*
+fi
+
+exec "$@"
+
