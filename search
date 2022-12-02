@@ -27,7 +27,7 @@ box=$(urldecode $BOX)
 box=${box// /\.\*} 
 
 #echo -e `/bin/grep -i -E $box /index.txt|sed 's/ /%20/g' |sed 's/^\.\///g'| sed "s/\(.*\)/<li><a href=$host\/&>&<\/a><br><\/li>/g"`
-echo -e `/bin/grep -i $box /index.txt|sed 's/^\.\///g'|awk -v host=$host '{after=$0;before=$0;gsub(/ /,"%20",$after);print "<a href=/"$after">"before"</a><br></li><hr>"}'`
+echo -e `/bin/grep -i $box /opt/alist/data/index.txt|sed 's/^\.\///g'|awk -v host=$host '{after=$0;before=$0;gsub(/ /,"%20",$after);print "<a href=/"$after">"before"</a><br></li><hr>"}'`
 
 echo "</ul>"
 echo "</div">

@@ -3,34 +3,28 @@ set -e
 
 cd /tmp/
 
-if [ -f index.zip ]; then
-	rm index.zip
-fi
+rm -f index.zip index.txt index.version
 
-if [ -f index.txt ]; then
-        rm index.txt 
-fi
+[ -n "$UPDATE_URL" ] || UPDATE_URL=http://docker.xiaoya.pro
 
-if [ -f index.version ]; then
-	rm index.version
-fi
-
-wget -T 5 -q http://docker.xiaoya.pro/index.version
+echo "Download $UPDATE_URL/index.version"
+wget -T 5 -q $UPDATE_URL/index.version
 
 if [ ! -f index.version ]; then
         echo "Failed to download index version file, the index file upgrade process has aborted"
-else	
+else
 	remote=$(head -n1 index.version)
-        if [ ! -f /index.version ]; then
-                echo 0.0.0 > /index.version
+        if [ ! -f /opt/alist/data/index.version ]; then
+            echo 0.0.0 > /opt/alist/data/index.version
         fi
-        local=$(head -n1 /index.version)
+        local=$(head -n1 /opt/alist/data/index.version)
         latest=$(printf "$remote\n$local\n" |sort -r |head -n1)
         if [ $remote = $local ]; then
                 echo `date` "current index file version is updated, no need to upgrade"
                 exit
         elif [ $remote = $latest ]; then
-		wget -T 5 -q http://docker.xiaoya.pro/index.zip
+        	echo "Download $UPDATE_URL/index.zip"
+		wget -T 5 -q $UPDATE_URL/index.zip
 		if [ ! -f index.zip ]; then
 			echo "Failed to download index compressed file, the index file upgrade process has aborted"
 			exit
@@ -39,16 +33,15 @@ else
 			for index in index*.txt; do
 				sort -u "${index}" > "${index}.bak" && mv "${index}.bak" "${index}"
 			done
-			mv index*.txt /
+			mv index*.txt /opt/alist/data
 			echo `date` "update index succesfully, your new index version is" $remote
-			echo $remote > /index.version
+			echo $remote > /opt/alist/data/index.version
 		fi
 	else
 		echo `date` "your current index version is updated, no need to downgrade"
-		echo $remote > /index.version
+		echo $remote > /opt/alist/data/index.version
 	fi
 	rm index.*
 fi
 
 exec "$@"
-

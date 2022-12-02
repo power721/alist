@@ -21,8 +21,8 @@ function urldecode() { : "${*//+/ }"; echo -e "${_//%/\\x}"; }
 box=$(urldecode $BOX)
 box=${box// /\.\*}
 
-FILE=/index.txt
-[ -f "/index.$TYPE.txt" ] && FILE=/index.$TYPE.txt
+FILE=/opt/alist/data/index.txt
+[ -f "/opt/alist/data/index.$TYPE.txt" ] && FILE=/opt/alist/data/index.$TYPE.txt
 
 echo "Content-type: application/json;charset=UTF-8"
 echo ''
