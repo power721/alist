@@ -132,6 +132,7 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*model.Link, error) {
 	// 1. 转存资源
 	// 2. 获取链接
+	// 3. 删除文件
 	data := base.Json{
 		"requests": []base.Json{
 			{
@@ -170,7 +171,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		FileId: fileId,
 		Name:   "livp",
 	}
-	return d.getOpenLink(ctx, newFile)
+	return d.getOpenLink(ctx, newFile) // TODO: 删除文件
 }
 
 func (d *AliyundriveShare2Open) getOpenLink(ctx context.Context, file model.Obj) (*model.Link, error) {

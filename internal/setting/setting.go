@@ -1,6 +1,7 @@
 package setting
 
 import (
+	"github.com/alist-org/alist/v3/internal/model"
 	"strconv"
 
 	"github.com/alist-org/alist/v3/internal/op"
@@ -25,6 +26,18 @@ func GetInt(key string, defaultVal int) int {
 	return i
 }
 
+func GetInt64(key string, defaultVal int64) int64 {
+	i, err := strconv.ParseInt(GetStr(key), 10, 0)
+	if err != nil {
+		return defaultVal
+	}
+	return i
+}
+
 func GetBool(key string) bool {
 	return GetStr(key) == "true" || GetStr(key) == "1"
+}
+
+func SaveSetting(item *model.SettingItem) (err error) {
+	return op.SaveSettingItem(item)
 }

@@ -3,18 +3,17 @@ package aliyundrive_share
 import (
 	"errors"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/op"
 	log "github.com/sirupsen/logrus"
 )
-
-var AccessToken = ""
-var RefreshToken = ""
-var AccessTokenOpen = ""
-var RefreshTokenOpen = ""
 
 const (
 	// CanaryHeaderKey CanaryHeaderValue for lifting rate limit restrictions
@@ -23,12 +22,21 @@ const (
 )
 
 func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
-	if !force && AccessTokenOpen != "" {
-		d.RefreshTokenOpen, d.AccessTokenOpen = RefreshTokenOpen, AccessTokenOpen
-		utils.Log.Println("RefreshTokenOpen已经存在")
-		return nil
+	accessTokenOpen := setting.GetStr("AccessTokenOpen")
+	if !force && accessTokenOpen != "" {
+		timestamp := setting.GetInt64("AccessTokenOpenTime", 0)
+		t := time.Unix(timestamp, 0)
+		now := time.Now()
+		diff := now.Sub(t)
+		if diff < 7200 {
+			refreshTokenOpen := setting.GetStr("RefreshTokenOpen")
+			d.RefreshTokenOpen, d.AccessTokenOpen = refreshTokenOpen, accessTokenOpen
+			utils.Log.Println("RefreshTokenOpen已经存在")
+			return nil
+		}
 	}
 
+	timestamp := time.Now().Unix()
 	url := d.base + "/oauth/access_token"
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
@@ -59,19 +67,67 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 		return errors.New("failed to refresh token: refresh token is empty")
 	}
 	d.RefreshTokenOpen, d.AccessTokenOpen = refresh, access
-	RefreshTokenOpen = d.RefreshTokenOpen
-	AccessTokenOpen = d.AccessTokenOpen
+
+	d.SaveOpenToken(timestamp)
+
 	op.MustSaveDriverStorage(d)
 	return nil
 }
 
-func (d *AliyundriveShare2Open) refreshToken(force bool) error {
-	if !force && RefreshToken != "" {
-		d.RefreshToken, d.AccessToken = RefreshToken, AccessToken
-		utils.Log.Debugf("RefreshToken已经存在")
-		return nil
+func (d *AliyundriveShare2Open) SaveOpenToken(timestamp int64) {
+	item := &model.SettingItem{
+		Key:   "AccessTokenOpenTime",
+		Value: strconv.FormatInt(timestamp, 10),
+		Type:  "number",
+		Flag:  1,
 	}
 
+	err := setting.SaveSetting(item)
+	if err != nil {
+		utils.Log.Printf("save AccessTokenOpenTime failed: %v", err)
+	}
+
+	item = &model.SettingItem{
+		Key:   "AccessTokenOpen",
+		Value: d.AccessTokenOpen,
+		Type:  "string",
+		Flag:  1,
+	}
+
+	err = setting.SaveSetting(item)
+	if err != nil {
+		utils.Log.Printf("save AccessTokenOpen failed: %v", err)
+	}
+
+	item = &model.SettingItem{
+		Key:   "RefreshTokenOpen",
+		Value: d.RefreshTokenOpen,
+		Type:  "string",
+		Flag:  1,
+	}
+
+	err = setting.SaveSetting(item)
+	if err != nil {
+		utils.Log.Printf("save RefreshTokenOpen failed: %v", err)
+	}
+}
+
+func (d *AliyundriveShare2Open) refreshToken(force bool) error {
+	accessToken := setting.GetStr("AccessToken")
+	if !force && accessToken != "" {
+		timestamp := setting.GetInt64("AccessTokenTime", 0)
+		t := time.Unix(timestamp, 0)
+		now := time.Now()
+		diff := now.Sub(t)
+		if diff < 7200 {
+			refreshToken := setting.GetStr("RefreshToken")
+			d.RefreshToken, d.AccessToken = refreshToken, accessToken
+			utils.Log.Println("RefreshToken已经存在")
+			return nil
+		}
+	}
+
+	timestamp := time.Now().Unix()
 	url := "https://auth.aliyundrive.com/v2/account/token"
 	var resp base.TokenResp
 	var e ErrorResp
@@ -87,10 +143,48 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 		return fmt.Errorf("failed to refresh token: %s", e.Message)
 	}
 	d.RefreshToken, d.AccessToken = resp.RefreshToken, resp.AccessToken
-	RefreshToken = d.RefreshToken
-	AccessToken = d.AccessToken
+
+	d.SaveToken(timestamp)
+
 	op.MustSaveDriverStorage(d)
 	return nil
+}
+
+func (d *AliyundriveShare2Open) SaveToken(timestamp int64) {
+	item := &model.SettingItem{
+		Key:   "AccessTokenTime",
+		Value: strconv.FormatInt(timestamp, 10),
+		Type:  "number",
+		Flag:  1,
+	}
+
+	err := setting.SaveSetting(item)
+	if err != nil {
+		utils.Log.Printf("save AccessTokenTime failed: %v", err)
+	}
+
+	item = &model.SettingItem{
+		Key:   "AccessToken",
+		Value: d.AccessToken,
+		Type:  "string",
+		Flag:  1,
+	}
+	err = setting.SaveSetting(item)
+	if err != nil {
+		utils.Log.Printf("save AccessToken failed: %v", err)
+	}
+
+	item = &model.SettingItem{
+		Key:   "RefreshToken",
+		Value: d.RefreshToken,
+		Type:  "string",
+		Flag:  1,
+	}
+
+	err = setting.SaveSetting(item)
+	if err != nil {
+		utils.Log.Printf("save RefreshToken failed: %v", err)
+	}
 }
 
 // do others that not defined in Driver interface
