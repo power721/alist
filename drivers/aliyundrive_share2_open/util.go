@@ -22,8 +22,8 @@ const (
 	CanaryHeaderValue = "client=web,app=share,version=v2.3.1"
 )
 
-func (d *AliyundriveShare2Open) refreshOpenToken() error {
-	if AccessTokenOpen != "" {
+func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
+	if !force && AccessTokenOpen != "" {
 		d.RefreshTokenOpen, d.AccessTokenOpen = RefreshTokenOpen, AccessTokenOpen
 		utils.Log.Println("RefreshTokenOpen已经存在")
 		return nil
@@ -229,7 +229,7 @@ func (d *AliyundriveShare2Open) requestReturnErrResp(uri, method string, callbac
 	isRetry := len(retry) > 0 && retry[0]
 	if e.Code != "" {
 		if !isRetry && (utils.SliceContains([]string{"AccessTokenInvalid", "AccessTokenExpired", "I400JD"}, e.Code) || d.AccessTokenOpen == "") {
-			err = d.refreshOpenToken()
+			err = d.refreshOpenToken(false)
 			if err != nil {
 				return nil, err, nil
 			}

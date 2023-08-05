@@ -58,6 +58,10 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 		if err != nil {
 			log.Errorf("%+v", err)
 		}
+		err = d.refreshOpenToken(true)
+		if err != nil {
+			log.Errorf("%+v", err)
+		}
 	})
 
 	if d.OauthTokenURL == "" {
@@ -65,7 +69,7 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 	}
 
 	d.DriveType = "resource"
-	err = d.refreshOpenToken()
+	err = d.refreshOpenToken(false)
 	if err != nil {
 		return err
 	}
