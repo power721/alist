@@ -193,11 +193,44 @@ func (d *AliyundriveShare2Open) getOpenLink(ctx context.Context, file model.Obj)
 		}
 		url = utils.Json.Get(res, "streamsUrl", "mov").ToString()
 	}
+
+	err = d.delete(ctx, file)
+	if err != nil {
+		utils.Log.Printf("删除文件失败: %v", err)
+	}
+
 	exp := time.Hour
 	return &model.Link{
 		URL:        url,
 		Expiration: &exp,
 	}, nil
+}
+
+func (d *AliyundriveShare2Open) delete(ctx context.Context, file model.Obj) error {
+	data := base.Json{
+		"requests": []base.Json{
+			{
+				"body": base.Json{
+					"id":       file.GetID(),
+					"file_id":  file.GetID(),
+					"drive_id": d.DriveId,
+				},
+				"headers": base.Json{
+					"Content-Type": "application/json",
+				},
+				"id":     "0",
+				"method": "POST",
+				"url":    "/file/delete",
+			},
+		},
+		"resource": "file",
+	}
+
+	_, err := d.request("https://api.aliyundrive.com/v3/batch", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(data)
+	})
+
+	return err
 }
 
 func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
