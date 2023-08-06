@@ -21,7 +21,7 @@ import (
 // do others that not defined in Driver interface
 
 func (d *AliyundriveOpen) refreshToken() error {
-	accountId := strconv.Itoa(d.AccountId)
+	accountId := setting.GetStr("ali_account_id", "")
 	accessTokenOpen := token.GetToken("AccessTokenOpen-" + accountId)
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-" + accountId)
 	utils.Log.Debugf("accountID %v accessTokenOpen %v refreshTokenOpen: %v", accountId, accessTokenOpen, refreshTokenOpen)

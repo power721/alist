@@ -8,7 +8,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
@@ -23,7 +22,7 @@ const (
 )
 
 func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
-	accountId := strconv.Itoa(d.AccountId)
+	accountId := setting.GetStr("ali_account_id", "")
 	accessTokenOpen := token.GetToken("AccessTokenOpen-" + accountId)
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-" + accountId)
 	utils.Log.Debugf("force %v accountID %v accessTokenOpen %v refreshTokenOpen: %v", force, accountId, accessTokenOpen, refreshTokenOpen)
@@ -72,8 +71,9 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 }
 
 func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
+	accountId := setting.GetStr("ali_account_id", "")
 	item := &model.Token{
-		Key:      "AccessTokenOpen-" + strconv.Itoa(d.AccountId),
+		Key:      "AccessTokenOpen-" + accountId,
 		Value:    d.AccessTokenOpen,
 		Modified: t,
 	}
@@ -84,7 +84,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 	}
 
 	item = &model.Token{
-		Key:      "RefreshTokenOpen-" + strconv.Itoa(d.AccountId),
+		Key:      "RefreshTokenOpen-" + accountId,
 		Value:    d.RefreshTokenOpen,
 		Modified: t,
 	}
@@ -96,8 +96,9 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 }
 
 func (d *AliyundriveShare2Open) refreshToken(force bool) error {
-	accessToken := token.GetToken("AccessToken-" + strconv.Itoa(d.AccountId))
-	refreshToken := token.GetToken("RefreshToken-" + strconv.Itoa(d.AccountId))
+	accountId := setting.GetStr("ali_account_id", "")
+	accessToken := token.GetToken("AccessToken-" + accountId)
+	refreshToken := token.GetToken("RefreshToken-" + accessToken)
 	if !force && accessToken != "" && refreshToken != "" {
 		d.RefreshToken, d.AccessToken = refreshToken, accessToken
 		utils.Log.Println("RefreshToken已经存在")
@@ -128,8 +129,9 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 }
 
 func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
+	accountId := setting.GetStr("ali_account_id", "")
 	item := &model.Token{
-		Key:      "AccessToken-" + strconv.Itoa(d.AccountId),
+		Key:      "AccessToken-" + accountId,
 		Value:    d.AccessToken,
 		Modified: t,
 	}
@@ -140,7 +142,7 @@ func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
 	}
 
 	item = &model.Token{
-		Key:      "RefreshToken-" + strconv.Itoa(d.AccountId),
+		Key:      "RefreshToken-" + accountId,
 		Value:    d.RefreshToken,
 		Modified: t,
 	}
