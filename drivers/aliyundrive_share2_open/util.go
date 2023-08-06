@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"net/http"
@@ -31,7 +32,7 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	}
 
 	t := time.Now()
-	url := d.base + "/oauth/access_token"
+	url := setting.GetStr("OauthTokenURL", d.base+"/oauth/access_token")
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
 	}
