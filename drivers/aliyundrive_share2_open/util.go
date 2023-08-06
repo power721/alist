@@ -76,7 +76,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 
 	err := token.SaveToken(item)
 	if err != nil {
-		utils.Log.Printf("save AccessTokenOpenTime failed: %v", err)
+		utils.Log.Printf("save AccessTokenOpen failed: %v", err)
 	}
 
 	item = &model.Token{
@@ -87,7 +87,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 
 	err = token.SaveToken(item)
 	if err != nil {
-		utils.Log.Printf("save AccessTokenOpenTime failed: %v", err)
+		utils.Log.Printf("save RefreshTokenOpen failed: %v", err)
 	}
 }
 
@@ -125,25 +125,25 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 
 func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
 	item := &model.Token{
-		Key:      "AccessTokenOpen",
-		Value:    d.AccessTokenOpen,
+		Key:      "AccessToken",
+		Value:    d.AccessToken,
 		Modified: t,
 	}
 
 	err := token.SaveToken(item)
 	if err != nil {
-		utils.Log.Printf("save AccessTokenOpenTime failed: %v", err)
+		utils.Log.Printf("save AccessToken failed: %v", err)
 	}
 
 	item = &model.Token{
-		Key:      "RefreshTokenOpen",
-		Value:    d.AccessTokenOpen,
+		Key:      "RefreshToken",
+		Value:    d.AccessToken,
 		Modified: t,
 	}
 
 	err = token.SaveToken(item)
 	if err != nil {
-		utils.Log.Printf("save AccessTokenOpenTime failed: %v", err)
+		utils.Log.Printf("save RefreshToken failed: %v", err)
 	}
 }
 
