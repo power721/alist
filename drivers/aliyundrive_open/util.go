@@ -23,7 +23,7 @@ import (
 func (d *AliyundriveOpen) refreshToken() error {
 	accessTokenOpen := token.GetToken("AccessTokenOpen-" + strconv.Itoa(d.AccountId))
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-" + strconv.Itoa(d.AccountId))
-	utils.Log.Debugf("accessTokenOpen %v refreshTokenOpen: %v", accessTokenOpen, refreshTokenOpen)
+	utils.Log.Debugf("accountID %v accessTokenOpen %v refreshTokenOpen: %v", d.AccountId, accessTokenOpen, refreshTokenOpen)
 	if accessTokenOpen != "" && refreshTokenOpen != "" {
 		d.RefreshToken, d.AccessToken = refreshTokenOpen, accessTokenOpen
 		utils.Log.Println("RefreshTokenOpen已经存在")

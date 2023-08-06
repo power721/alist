@@ -25,7 +25,7 @@ const (
 func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	accessTokenOpen := token.GetToken("AccessTokenOpen-" + strconv.Itoa(d.AccountId))
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-" + strconv.Itoa(d.AccountId))
-	utils.Log.Debugf("force %v accessTokenOpen %v refreshTokenOpen: %v", force, accessTokenOpen, refreshTokenOpen)
+	utils.Log.Debugf("force %v accountID %v accessTokenOpen %v refreshTokenOpen: %v", force, d.AccountId, accessTokenOpen, refreshTokenOpen)
 	if !force && accessTokenOpen != "" && refreshTokenOpen != "" {
 		d.RefreshTokenOpen, d.AccessTokenOpen = refreshTokenOpen, accessTokenOpen
 		utils.Log.Println("RefreshTokenOpen已经存在")
