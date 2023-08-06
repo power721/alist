@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/token"
 	"net/http"
+	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/op"
@@ -16,6 +19,18 @@ import (
 // do others that not defined in Driver interface
 
 func (d *AliyundriveOpen) refreshToken() error {
+	if d.Master {
+		accessTokenOpen := token.GetToken("AccessTokenOpen")
+		refreshTokenOpen := token.GetToken("RefreshTokenOpen")
+		utils.Log.Debugf("accessTokenOpen %v refreshTokenOpen: %v", accessTokenOpen, refreshTokenOpen)
+		if accessTokenOpen != "" && refreshTokenOpen != "" {
+			d.RefreshToken, d.AccessToken = refreshTokenOpen, accessTokenOpen
+			utils.Log.Println("RefreshTokenOpen已经存在")
+			return nil
+		}
+	}
+
+	t := time.Now()
 	url := d.base + "/oauth/access_token"
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
@@ -45,8 +60,37 @@ func (d *AliyundriveOpen) refreshToken() error {
 		return errors.New("failed to refresh token: refresh token is empty")
 	}
 	d.RefreshToken, d.AccessToken = refresh, access
+
+	if d.Master {
+		d.SaveOpenToken(t)
+	}
+
 	op.MustSaveDriverStorage(d)
 	return nil
+}
+
+func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
+	item := &model.Token{
+		Key:      "AccessTokenOpen",
+		Value:    d.AccessToken,
+		Modified: t,
+	}
+
+	err := token.SaveToken(item)
+	if err != nil {
+		utils.Log.Printf("save AccessTokenOpen failed: %v", err)
+	}
+
+	item = &model.Token{
+		Key:      "RefreshTokenOpen",
+		Value:    d.RefreshToken,
+		Modified: t,
+	}
+
+	err = token.SaveToken(item)
+	if err != nil {
+		utils.Log.Printf("save RefreshTokenOpen failed: %v", err)
+	}
 }
 
 func (d *AliyundriveOpen) request(uri, method string, callback base.ReqCallback, retry ...bool) ([]byte, error) {
