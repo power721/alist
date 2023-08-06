@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/internal/token"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
@@ -19,22 +21,21 @@ import (
 // do others that not defined in Driver interface
 
 func (d *AliyundriveOpen) refreshToken() error {
-	if d.Master {
-		accessTokenOpen := token.GetToken("AccessTokenOpen")
-		refreshTokenOpen := token.GetToken("RefreshTokenOpen")
-		utils.Log.Debugf("accessTokenOpen %v refreshTokenOpen: %v", accessTokenOpen, refreshTokenOpen)
-		if accessTokenOpen != "" && refreshTokenOpen != "" {
-			d.RefreshToken, d.AccessToken = refreshTokenOpen, accessTokenOpen
-			utils.Log.Println("RefreshTokenOpen已经存在")
-			return nil
-		}
+	accessTokenOpen := token.GetToken("AccessTokenOpen-" + strconv.Itoa(d.AccountId))
+	refreshTokenOpen := token.GetToken("RefreshTokenOpen-" + strconv.Itoa(d.AccountId))
+	utils.Log.Debugf("accessTokenOpen %v refreshTokenOpen: %v", accessTokenOpen, refreshTokenOpen)
+	if accessTokenOpen != "" && refreshTokenOpen != "" {
+		d.RefreshToken, d.AccessToken = refreshTokenOpen, accessTokenOpen
+		utils.Log.Println("RefreshTokenOpen已经存在")
+		return nil
 	}
 
 	t := time.Now()
-	url := d.base + "/oauth/access_token"
+	url := setting.GetStr("open_token_url", d.base+"/oauth/access_token")
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
 	}
+	utils.Log.Println("refreshOpenToken", url)
 	//var resp base.TokenResp
 	var e ErrResp
 	res, err := base.RestyClient.R().
@@ -61,9 +62,7 @@ func (d *AliyundriveOpen) refreshToken() error {
 	}
 	d.RefreshToken, d.AccessToken = refresh, access
 
-	if d.Master {
-		d.SaveOpenToken(t)
-	}
+	d.SaveOpenToken(t)
 
 	op.MustSaveDriverStorage(d)
 	return nil
@@ -71,7 +70,7 @@ func (d *AliyundriveOpen) refreshToken() error {
 
 func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
 	item := &model.Token{
-		Key:      "AccessTokenOpen",
+		Key:      "AccessTokenOpen-" + strconv.Itoa(d.AccountId),
 		Value:    d.AccessToken,
 		Modified: t,
 	}
@@ -82,7 +81,7 @@ func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
 	}
 
 	item = &model.Token{
-		Key:      "RefreshTokenOpen",
+		Key:      "RefreshTokenOpen-" + strconv.Itoa(d.AccountId),
 		Value:    d.RefreshToken,
 		Modified: t,
 	}

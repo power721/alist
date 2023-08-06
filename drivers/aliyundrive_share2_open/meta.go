@@ -18,6 +18,7 @@ type Addition struct {
 	DriveType      string `json:"drive_type" type:"select" options:"default,resource,backup" default:"resource"`
 	OrderBy        string `json:"order_by" type:"select" options:"name,size,updated_at,created_at"`
 	OrderDirection string `json:"order_direction" type:"select" options:"ASC,DESC"`
+	AccountId      int    `json:"account_id"`
 }
 
 var config = driver.Config{
