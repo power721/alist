@@ -21,9 +21,10 @@ import (
 // do others that not defined in Driver interface
 
 func (d *AliyundriveOpen) refreshToken() error {
-	accessTokenOpen := token.GetToken("AccessTokenOpen-" + strconv.Itoa(d.AccountId))
-	refreshTokenOpen := token.GetToken("RefreshTokenOpen-" + strconv.Itoa(d.AccountId))
-	utils.Log.Debugf("accountID %v accessTokenOpen %v refreshTokenOpen: %v", d.AccountId, accessTokenOpen, refreshTokenOpen)
+	accountId := strconv.Itoa(d.AccountId)
+	accessTokenOpen := token.GetToken("AccessTokenOpen-" + accountId)
+	refreshTokenOpen := token.GetToken("RefreshTokenOpen-" + accountId)
+	utils.Log.Debugf("accountID %v accessTokenOpen %v refreshTokenOpen: %v", accountId, accessTokenOpen, refreshTokenOpen)
 	if accessTokenOpen != "" && refreshTokenOpen != "" {
 		d.RefreshToken, d.AccessToken = refreshTokenOpen, accessTokenOpen
 		utils.Log.Println("RefreshTokenOpen已经存在")
