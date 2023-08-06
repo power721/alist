@@ -81,7 +81,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 
 	item = &model.Token{
 		Key:      "RefreshTokenOpen",
-		Value:    d.AccessTokenOpen,
+		Value:    d.RefreshTokenOpen,
 		Modified: t,
 	}
 
@@ -137,7 +137,7 @@ func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
 
 	item = &model.Token{
 		Key:      "RefreshToken",
-		Value:    d.AccessToken,
+		Value:    d.RefreshToken,
 		Modified: t,
 	}
 
