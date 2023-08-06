@@ -80,6 +80,9 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 			return err
 		}
 		d.DriveId = utils.Json.Get(res, d.DriveType+"_drive_id").ToString()
+		if d.DriveId == "" {
+			d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
+		}
 		DriveId = d.DriveId
 		utils.Log.Printf("资源盘ID： %v", d.DriveId)
 	} else {
