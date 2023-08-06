@@ -3,6 +3,7 @@ package token
 import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
+	"github.com/alist-org/alist/v3/pkg/utils"
 	"time"
 )
 
@@ -15,7 +16,8 @@ func GetToken(key string, defaultValue ...string) string {
 		return ""
 	}
 	diff := time.Now().Sub(val.Modified)
-	if diff >= 7200 {
+	utils.Log.Debugf("%v %v %v", key, val, diff)
+	if diff.Seconds() >= 7200 {
 		return ""
 	}
 	return val.Value

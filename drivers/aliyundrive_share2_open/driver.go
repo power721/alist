@@ -140,7 +140,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 					"file_id":           file.GetID(),
 					"share_id":          d.ShareId,
 					"auto_rename":       true,
-					"to_parent_file_id": d.TempTransferFolderID,
+					"to_parent_file_id": "root",
 					"to_drive_id":       d.DriveId,
 				},
 				"headers": base.Json{
@@ -171,7 +171,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		FileId: fileId,
 		Name:   "livp",
 	}
-	return d.getOpenLink(ctx, newFile) // TODO: 删除文件
+	return d.getOpenLink(ctx, newFile)
 }
 
 func (d *AliyundriveShare2Open) getOpenLink(ctx context.Context, file model.Obj) (*model.Link, error) {
@@ -194,10 +194,7 @@ func (d *AliyundriveShare2Open) getOpenLink(ctx context.Context, file model.Obj)
 		url = utils.Json.Get(res, "streamsUrl", "mov").ToString()
 	}
 
-	err = d.delete(ctx, file)
-	if err != nil {
-		utils.Log.Printf("删除文件失败: %v", err)
-	}
+	go d.deleteDelay(file)
 
 	exp := time.Hour
 	return &model.Link{
@@ -206,7 +203,12 @@ func (d *AliyundriveShare2Open) getOpenLink(ctx context.Context, file model.Obj)
 	}, nil
 }
 
-func (d *AliyundriveShare2Open) delete(ctx context.Context, file model.Obj) error {
+func (d *AliyundriveShare2Open) deleteDelay(file model.Obj) error {
+	time.Sleep(1 * time.Second)
+	return d.delete(file)
+}
+
+func (d *AliyundriveShare2Open) delete(file model.Obj) error {
 	data := base.Json{
 		"requests": []base.Json{
 			{
