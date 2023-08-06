@@ -1,4 +1,4 @@
-package aliyundrive_share
+package aliyundrive_share2_open
 
 import (
 	"github.com/alist-org/alist/v3/internal/driver"
