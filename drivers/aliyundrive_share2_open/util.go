@@ -32,13 +32,14 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 		utils.Log.Println("RefreshTokenOpen已经存在")
 		return nil
 	}
+	d.RefreshTokenOpen = refreshTokenOpen
 
 	t := time.Now()
 	url := setting.GetStr("open_token_url", d.base+"/oauth/access_token")
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
 	}
-	utils.Log.Println("refreshOpenToken", url)
+	utils.Log.Println("refreshOpenToken", accountId, url)
 	//var resp base.TokenResp
 	var e ErrorResp
 	res, err := base.RestyClient.R().
@@ -55,9 +56,9 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("[ali_open] refresh token response: %s", res.String())
+	log.Debugf("[ali_open] refresh open token response: %s", res.String())
 	if e.Code != "" {
-		return fmt.Errorf("failed to refresh token: %s", e.Message)
+		return fmt.Errorf("failed to refresh open token: %s", e.Message)
 	}
 	refresh, access := utils.Json.Get(res.Body(), "refresh_token").ToString(), utils.Json.Get(res.Body(), "access_token").ToString()
 	if refresh == "" {
@@ -101,15 +102,17 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 	accountId := setting.GetStr("ali_account_id", "")
 	accessToken := token.GetToken("AccessToken-" + accountId)
-	refreshToken := token.GetToken("RefreshToken-" + accessToken)
+	refreshToken := token.GetToken("RefreshToken-" + accountId)
 	if !force && accessToken != "" && refreshToken != "" {
 		d.RefreshToken, d.AccessToken = refreshToken, accessToken
 		utils.Log.Println("RefreshToken已经存在")
 		return nil
 	}
+	d.RefreshToken = refreshToken
 
 	t := time.Now()
 	url := "https://auth.aliyundrive.com/v2/account/token"
+	utils.Log.Println("refreshToken", accountId, url)
 	var resp base.TokenResp
 	var e ErrorResp
 	_, err := base.RestyClient.R().
