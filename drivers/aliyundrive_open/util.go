@@ -72,9 +72,10 @@ func (d *AliyundriveOpen) refreshToken() error {
 func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
 	accountId := strconv.Itoa(d.AccountId)
 	item := &model.Token{
-		Key:      "AccessTokenOpen-" + accountId,
-		Value:    d.AccessToken,
-		Modified: t,
+		Key:       "AccessTokenOpen-" + accountId,
+		Value:     d.AccessToken,
+		AccountId: d.AccountId,
+		Modified:  t,
 	}
 
 	err := token.SaveToken(item)
@@ -83,9 +84,10 @@ func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
 	}
 
 	item = &model.Token{
-		Key:      "RefreshTokenOpen-" + accountId,
-		Value:    d.RefreshToken,
-		Modified: t,
+		Key:       "RefreshTokenOpen-" + accountId,
+		Value:     d.RefreshToken,
+		AccountId: d.AccountId,
+		Modified:  t,
 	}
 
 	err = token.SaveToken(item)

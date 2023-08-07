@@ -20,6 +20,14 @@ func tokenCacheUpdate() {
 	tokenCache.Clear()
 }
 
+func GetTokens() ([]model.Token, error) {
+	items, err := db.GetTokens()
+	if err != nil {
+		return nil, err
+	}
+	return items, err
+}
+
 func GetTokenByKey(key string) (*model.Token, error) {
 	if item, ok := tokenCache.Get(key); ok {
 		return item, nil

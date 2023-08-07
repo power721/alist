@@ -178,7 +178,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 }
 
 func (d *AliyundriveShare2Open) getOpenLink(ctx context.Context, file model.Obj) (*model.Link, error) {
-	utils.Log.Printf("获取文件直链 %v", file.GetID())
+	utils.Log.Printf("获取文件直链 %v %v", d.DriveId, file.GetID())
 	res, err := d.requestOpen("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id":   d.DriveId,

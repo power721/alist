@@ -8,6 +8,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
@@ -71,11 +72,12 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 }
 
 func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
-	accountId := setting.GetStr("ali_account_id", "")
+	accountId := setting.GetInt("ali_account_id", 0)
 	item := &model.Token{
-		Key:      "AccessTokenOpen-" + accountId,
-		Value:    d.AccessTokenOpen,
-		Modified: t,
+		Key:       "AccessTokenOpen-" + strconv.Itoa(accountId),
+		Value:     d.AccessTokenOpen,
+		AccountId: accountId,
+		Modified:  t,
 	}
 
 	err := token.SaveToken(item)
@@ -84,9 +86,10 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 	}
 
 	item = &model.Token{
-		Key:      "RefreshTokenOpen-" + accountId,
-		Value:    d.RefreshTokenOpen,
-		Modified: t,
+		Key:       "RefreshTokenOpen-" + strconv.Itoa(accountId),
+		Value:     d.RefreshTokenOpen,
+		AccountId: accountId,
+		Modified:  t,
 	}
 
 	err = token.SaveToken(item)
@@ -129,11 +132,12 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 }
 
 func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
-	accountId := setting.GetStr("ali_account_id", "")
+	accountId := setting.GetInt("ali_account_id", 0)
 	item := &model.Token{
-		Key:      "AccessToken-" + accountId,
-		Value:    d.AccessToken,
-		Modified: t,
+		Key:       "AccessToken-" + strconv.Itoa(accountId),
+		Value:     d.AccessToken,
+		AccountId: accountId,
+		Modified:  t,
 	}
 
 	err := token.SaveToken(item)
@@ -142,9 +146,10 @@ func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
 	}
 
 	item = &model.Token{
-		Key:      "RefreshToken-" + accountId,
-		Value:    d.RefreshToken,
-		Modified: t,
+		Key:       "RefreshToken-" + strconv.Itoa(accountId),
+		Value:     d.RefreshToken,
+		AccountId: accountId,
+		Modified:  t,
 	}
 
 	err = token.SaveToken(item)

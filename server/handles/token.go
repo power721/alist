@@ -32,10 +32,19 @@ func DeleteToken(c *gin.Context) {
 
 func GetToken(c *gin.Context) {
 	key := c.Query("key")
-	meta, err := op.GetTokenByKey(key)
+	token, err := op.GetTokenByKey(key)
 	if err != nil {
 		common.ErrorResp(c, err, 500, true)
 		return
 	}
-	common.SuccessResp(c, meta)
+	common.SuccessResp(c, token)
+}
+
+func GetTokens(c *gin.Context) {
+	tokens, err := op.GetTokens()
+	if err != nil {
+		common.ErrorResp(c, err, 500, true)
+		return
+	}
+	common.SuccessResp(c, tokens)
 }

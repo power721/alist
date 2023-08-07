@@ -78,6 +78,7 @@ func admin(g *gin.RouterGroup) {
 	meta.POST("/delete", handles.DeleteMeta)
 
 	token := g.Group("/token")
+	token.GET("/list", handles.GetTokens)
 	token.GET("/get", handles.GetToken)
 	token.POST("/update", handles.UpdateToken)
 	token.POST("/delete", handles.DeleteToken)
