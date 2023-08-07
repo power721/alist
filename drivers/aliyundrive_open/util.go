@@ -21,7 +21,7 @@ import (
 // do others that not defined in Driver interface
 
 func (d *AliyundriveOpen) refreshToken() error {
-	accountId := setting.GetStr("ali_account_id", "")
+	accountId := strconv.Itoa(d.AccountId)
 	accessTokenOpen := token.GetToken("AccessTokenOpen-" + accountId)
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-" + accountId)
 	utils.Log.Debugf("accountID %v accessTokenOpen %v refreshTokenOpen: %v", accountId, accessTokenOpen, refreshTokenOpen)
@@ -70,8 +70,9 @@ func (d *AliyundriveOpen) refreshToken() error {
 }
 
 func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
+	accountId := strconv.Itoa(d.AccountId)
 	item := &model.Token{
-		Key:      "AccessTokenOpen-" + strconv.Itoa(d.AccountId),
+		Key:      "AccessTokenOpen-" + accountId,
 		Value:    d.AccessToken,
 		Modified: t,
 	}
@@ -82,7 +83,7 @@ func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
 	}
 
 	item = &model.Token{
-		Key:      "RefreshTokenOpen-" + strconv.Itoa(d.AccountId),
+		Key:      "RefreshTokenOpen-" + accountId,
 		Value:    d.RefreshToken,
 		Modified: t,
 	}
