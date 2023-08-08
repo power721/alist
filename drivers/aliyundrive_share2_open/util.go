@@ -153,6 +153,7 @@ func (d *AliyundriveShare2Open) getDriveId() error {
 	} else {
 		d.DriveId = DriveId
 	}
+	return nil
 }
 
 func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
