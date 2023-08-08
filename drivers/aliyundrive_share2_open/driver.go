@@ -62,6 +62,11 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 		d.OauthTokenURL = conf.Conf.OpenTokenAuthUrl
 	}
 
+	err = d.refreshOpenToken(false)
+	if err != nil {
+		return err
+	}
+
 	d.limitList = rateg.LimitFnCtx(d.list, rateg.LimitFnOption{
 		Limit:  4,
 		Bucket: 1,
@@ -147,7 +152,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		FileId: fileId,
 		Name:   "livp",
 	}
-	return d.getDownloadUrl(ctx, newFile)
+	return d.getOpenLink(ctx, newFile)
 }
 
 func (d *AliyundriveShare2Open) getDownloadUrl(ctx context.Context, file model.Obj) (*model.Link, error) {
