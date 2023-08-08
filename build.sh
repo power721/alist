@@ -53,7 +53,6 @@ BuildWinArm64() {
 }
 
 BuildDev() {
-  rm -rf .git/
   mkdir -p "dist"
   muslflags="--extldflags '-static -fpic' $ldflags"
   BASE="https://musl.nn.ci/"
@@ -89,7 +88,6 @@ BuildDocker() {
 }
 
 BuildRelease() {
-  rm -rf .git/
   mkdir -p "build"
   muslflags="--extldflags '-static -fpic' $ldflags"
   BASE="https://musl.nn.ci/"
@@ -122,7 +120,6 @@ BuildRelease() {
 }
 
 BuildReleaseLinuxMuslArm() {
-  rm -rf .git/
   mkdir -p "build"
   muslflags="--extldflags '-static -fpic' $ldflags"
   BASE="https://musl.nn.ci/"

@@ -19,8 +19,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var DriveId = ""
-
 type AliyundriveShare2Open struct {
 	base string
 	model.Storage
@@ -58,10 +56,6 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 		if err != nil {
 			log.Errorf("%+v", err)
 		}
-		err = d.refreshOpenToken(true)
-		if err != nil {
-			log.Errorf("%+v", err)
-		}
 	})
 
 	if d.OauthTokenURL == "" {
@@ -72,21 +66,6 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 	err = d.refreshOpenToken(false)
 	if err != nil {
 		return err
-	}
-
-	if DriveId == "" {
-		res, err := d.requestOpen("/adrive/v1.0/user/getDriveInfo", http.MethodPost, nil)
-		if err != nil {
-			return err
-		}
-		d.DriveId = utils.Json.Get(res, d.DriveType+"_drive_id").ToString()
-		if d.DriveId == "" {
-			d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
-		}
-		DriveId = d.DriveId
-		utils.Log.Printf("资源盘ID： %v", d.DriveId)
-	} else {
-		d.DriveId = DriveId
 	}
 
 	d.limitList = rateg.LimitFnCtx(d.list, rateg.LimitFnOption{
@@ -174,11 +153,33 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		FileId: fileId,
 		Name:   "livp",
 	}
-	return d.getOpenLink(ctx, newFile)
+	return d.getDownloadUrl(ctx, newFile)
+}
+
+func (d *AliyundriveShare2Open) getDownloadUrl(ctx context.Context, file model.Obj) (*model.Link, error) {
+    utils.Log.Printf("获取文件直链 %v %v", d.DriveId, file.GetID())
+	data := base.Json{
+		"drive_id":   d.DriveId,
+		"file_id":    file.GetID(),
+		"expire_sec": 14400,
+	}
+	res, err := d.request("https://api.aliyundrive.com/v2/file/get_download_url", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(data)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &model.Link{
+		Header: http.Header{
+			"Referer": []string{"https://www.aliyundrive.com/"},
+		},
+		URL: utils.Json.Get(res, "url").ToString(),
+	}, nil
 }
 
 func (d *AliyundriveShare2Open) getOpenLink(ctx context.Context, file model.Obj) (*model.Link, error) {
 	utils.Log.Printf("获取文件直链 %v %v", d.DriveId, file.GetID())
+	// TODO: use access token
 	res, err := d.requestOpen("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id":   d.DriveId,

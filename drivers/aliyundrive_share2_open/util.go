@@ -22,6 +22,8 @@ const (
 	CanaryHeaderValue = "client=web,app=share,version=v2.3.1"
 )
 
+var DriveId = ""
+
 func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	accountId := setting.GetStr("ali_account_id", "")
 	accessTokenOpen := token.GetToken("AccessTokenOpen-" + accountId)
@@ -130,8 +132,27 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 
 	d.SaveToken(t)
 
+	d.getDriveId()
+
 	op.MustSaveDriverStorage(d)
 	return nil
+}
+
+func (d *AliyundriveShare2Open) getDriveId() error {
+	if DriveId == "" {
+		res, err := d.request("https://user.aliyundrive.com/v2/user/get", http.MethodPost, nil)
+		if err != nil {
+			return err
+		}
+		d.DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
+		if d.DriveId == "" {
+			d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
+		}
+		DriveId = d.DriveId
+		utils.Log.Printf("资源盘ID： %v", d.DriveId)
+	} else {
+		d.DriveId = DriveId
+	}
 }
 
 func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
