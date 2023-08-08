@@ -22,8 +22,6 @@ const (
 	CanaryHeaderValue = "client=web,app=share,version=v2.3.1"
 )
 
-var DriveId = ""
-
 func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	accountId := setting.GetStr("ali_account_id", "")
 	accessTokenOpen := token.GetToken("AccessTokenOpen-" + accountId)
@@ -132,19 +130,17 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 
 	d.SaveToken(t)
 
-	d.getDriveId()
-
 	op.MustSaveDriverStorage(d)
 	return nil
 }
 
-func (d *AliyundriveShare2Open) getDriveId() error {
+func (d *AliyundriveShare2Open) getDriveId() {
 	if DriveId == "" {
-		res, err := d.request("https://user.aliyundrive.com/v2/user/get", http.MethodPost, nil)
+		res, err := d.requestOpen("/adrive/v1.0/user/getDriveInfo", http.MethodPost, nil)
 		if err != nil {
-			return err
+			return
 		}
-		d.DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
+		d.DriveId = utils.Json.Get(res, d.DriveType+"_drive_id").ToString()
 		if d.DriveId == "" {
 			d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
 		}
@@ -153,7 +149,6 @@ func (d *AliyundriveShare2Open) getDriveId() error {
 	} else {
 		d.DriveId = DriveId
 	}
-	return nil
 }
 
 func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
@@ -170,9 +165,9 @@ func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
 		utils.Log.Printf("save AccessToken failed: %v", err)
 	}
 
-    if d.RefreshToken == "" {
-        return
-    }
+	if d.RefreshToken == "" {
+		return
+	}
 
 	item = &model.Token{
 		Key:       "RefreshToken-" + strconv.Itoa(accountId),

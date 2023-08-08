@@ -19,6 +19,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var DriveId = ""
+
 type AliyundriveShare2Open struct {
 	base string
 	model.Storage
@@ -66,6 +68,8 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	d.getDriveId()
 
 	d.limitList = rateg.LimitFnCtx(d.list, rateg.LimitFnOption{
 		Limit:  4,
@@ -156,7 +160,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 }
 
 func (d *AliyundriveShare2Open) getDownloadUrl(ctx context.Context, file model.Obj) (*model.Link, error) {
-    utils.Log.Printf("获取文件直链 %v %v", d.DriveId, file.GetID())
+	utils.Log.Printf("获取文件直链 %v %v", d.DriveId, file.GetID())
 	data := base.Json{
 		"drive_id":   d.DriveId,
 		"file_id":    file.GetID(),
