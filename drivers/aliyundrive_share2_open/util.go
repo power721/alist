@@ -170,6 +170,10 @@ func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
 		utils.Log.Printf("save AccessToken failed: %v", err)
 	}
 
+    if d.RefreshToken == "" {
+        return
+    }
+
 	item = &model.Token{
 		Key:       "RefreshToken-" + strconv.Itoa(accountId),
 		Value:     d.RefreshToken,
