@@ -62,12 +62,6 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 		d.OauthTokenURL = conf.Conf.OpenTokenAuthUrl
 	}
 
-	d.DriveType = "resource"
-	err = d.refreshOpenToken(false)
-	if err != nil {
-		return err
-	}
-
 	d.limitList = rateg.LimitFnCtx(d.list, rateg.LimitFnOption{
 		Limit:  4,
 		Bucket: 1,
@@ -179,7 +173,6 @@ func (d *AliyundriveShare2Open) getDownloadUrl(ctx context.Context, file model.O
 
 func (d *AliyundriveShare2Open) getOpenLink(ctx context.Context, file model.Obj) (*model.Link, error) {
 	utils.Log.Printf("获取文件直链 %v %v", d.DriveId, file.GetID())
-	// TODO: use access token
 	res, err := d.requestOpen("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id":   d.DriveId,
