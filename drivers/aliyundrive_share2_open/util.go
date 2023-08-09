@@ -32,7 +32,9 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 		utils.Log.Println("RefreshTokenOpen已经存在")
 		return nil
 	}
-	d.RefreshTokenOpen = refreshTokenOpen
+	if refreshTokenOpen != "" {
+	    d.RefreshTokenOpen = refreshTokenOpen
+	}
 
 	t := time.Now()
 	url := setting.GetStr("open_token_url", d.base+"/oauth/access_token")
@@ -108,7 +110,9 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 		utils.Log.Println("RefreshToken已经存在")
 		return nil
 	}
-	d.RefreshToken = refreshToken
+	if refreshToken != "" {
+	    d.RefreshToken = refreshToken
+	}
 
 	t := time.Now()
 	url := "https://auth.aliyundrive.com/v2/account/token"
