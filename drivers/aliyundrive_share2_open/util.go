@@ -24,8 +24,8 @@ const (
 
 func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	accountId := setting.GetStr("ali_account_id", "")
-	accessTokenOpen := token.GetToken("AccessTokenOpen-" + accountId)
-	refreshTokenOpen := token.GetToken("RefreshTokenOpen-" + accountId)
+	accessTokenOpen := token.GetToken("AccessTokenOpen-"+accountId, 7200)
+	refreshTokenOpen := token.GetToken("RefreshTokenOpen-"+accountId, 0)
 	utils.Log.Debugf("force %v accountID %v accessTokenOpen %v refreshTokenOpen: %v", force, accountId, accessTokenOpen, refreshTokenOpen)
 	if !force && accessTokenOpen != "" && refreshTokenOpen != "" {
 		d.RefreshTokenOpen, d.AccessTokenOpen = refreshTokenOpen, accessTokenOpen
@@ -33,7 +33,7 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 		return nil
 	}
 	if refreshTokenOpen != "" {
-	    d.RefreshTokenOpen = refreshTokenOpen
+		d.RefreshTokenOpen = refreshTokenOpen
 	}
 
 	t := time.Now()
@@ -103,15 +103,15 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 
 func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 	accountId := setting.GetStr("ali_account_id", "")
-	accessToken := token.GetToken("AccessToken-" + accountId)
-	refreshToken := token.GetToken("RefreshToken-" + accountId)
+	accessToken := token.GetToken("AccessToken-"+accountId, 7200)
+	refreshToken := token.GetToken("RefreshToken-"+accountId, 0)
 	if !force && accessToken != "" && refreshToken != "" {
 		d.RefreshToken, d.AccessToken = refreshToken, accessToken
 		utils.Log.Println("RefreshToken已经存在")
 		return nil
 	}
 	if refreshToken != "" {
-	    d.RefreshToken = refreshToken
+		d.RefreshToken = refreshToken
 	}
 
 	t := time.Now()

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func GetToken(key string, defaultValue ...string) string {
+func GetToken(key string, expire float64, defaultValue ...string) string {
 	val, _ := op.GetTokenByKey(key)
 	if val == nil {
 		if len(defaultValue) > 0 {
@@ -15,11 +15,15 @@ func GetToken(key string, defaultValue ...string) string {
 		}
 		return ""
 	}
-	diff := time.Now().Sub(val.Modified)
-	utils.Log.Debugf("%v %v %v", key, val, diff)
-	if diff.Seconds() >= 7200 {
-		return ""
+	if expire > 0 {
+		diff := time.Now().Sub(val.Modified)
+		utils.Log.Debugf("%v %v %v", key, val, diff)
+		if diff.Seconds() >= expire {
+			utils.Log.Printf("%v expired at %v", key, val.Modified)
+			return ""
+		}
 	}
+
 	return val.Value
 }
 
