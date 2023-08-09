@@ -16,7 +16,6 @@ import (
 	"github.com/alist-org/alist/v3/pkg/cron"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
-	log "github.com/sirupsen/logrus"
 )
 
 var DriveId = ""
@@ -52,13 +51,17 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	d.cron = cron.NewCron(time.Hour * 2)
-	d.cron.Do(func() {
-		err := d.refreshToken(true)
-		if err != nil {
-			log.Errorf("%+v", err)
-		}
-	})
+	//d.cron = cron.NewCron(time.Hour * 2)
+	//d.cron.Do(func() {
+	//	err := d.refreshToken(true)
+	//	if err != nil {
+	//		log.Errorf("%+v", err)
+	//	}
+	//	err = d.refreshOpenToken(true)
+	//	if err != nil {
+	//		log.Errorf("%+v", err)
+	//	}
+	//})
 
 	if d.OauthTokenURL == "" {
 		d.OauthTokenURL = conf.Conf.OpenTokenAuthUrl

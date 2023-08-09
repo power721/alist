@@ -62,7 +62,7 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	}
 	refresh, access := utils.Json.Get(res.Body(), "refresh_token").ToString(), utils.Json.Get(res.Body(), "access_token").ToString()
 	if refresh == "" {
-		return errors.New("failed to refresh token: refresh token is empty")
+		return errors.New("failed to refresh open token: refresh token is empty")
 	}
 	d.RefreshTokenOpen, d.AccessTokenOpen = refresh, access
 
