@@ -9,6 +9,4 @@ FROM xiaoyaliu/alist:hostmode
 
 LABEL MAINTAINER="Har01d"
 
-RUN sed -i 's/5244/5234/' /opt/alist/data/config.json
-
 COPY --from=builder /app/bin/alist ./
