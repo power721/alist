@@ -85,18 +85,21 @@ func LoadStorage(ctx context.Context, storage model.Storage) error {
 
 // initStorage initialize the driver and store to storagesMap
 func initStorage(ctx context.Context, storage model.Storage, storageDriver driver.Driver) (err error) {
+	log.Println("initStorage", storage.Driver, storage.MountPath)
 	storageDriver.SetStorage(storage)
 	driverStorage := storageDriver.GetStorage()
 
 	// Unmarshal Addition
 	err = utils.Json.UnmarshalFromString(driverStorage.Addition, storageDriver.GetAddition())
 	if err == nil {
+		log.Println("Init", driverStorage.Driver, driverStorage.MountPath)
 		err = storageDriver.Init(ctx)
 	}
+	log.Println("Store", driverStorage.Driver, driverStorage.MountPath)
 	storagesMap.Store(driverStorage.MountPath, storageDriver)
 	if err != nil {
 		driverStorage.SetStatus(err.Error())
-		err = errors.Wrap(err, "failed init storage")
+		err = errors.Wrap(err, "failed init storage: "+driverStorage.MountPath)
 	} else {
 		driverStorage.SetStatus(WORK)
 	}

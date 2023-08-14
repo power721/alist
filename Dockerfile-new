@@ -1,0 +1,5 @@
+FROM xiaoyaliu/alist:latest
+
+LABEL MAINTAINER="Har01d"
+
+COPY ./bin/alist ./
