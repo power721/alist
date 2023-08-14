@@ -2,11 +2,13 @@ package aliyundrive_open
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
+	"github.com/alist-org/alist/v3/internal/token"
 	"net/http"
-	"strings"
+	"strconv"
 	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
@@ -18,11 +20,23 @@ import (
 
 // do others that not defined in Driver interface
 
-func (d *AliyundriveOpen) _refreshToken() (string, string, error) {
-	url := d.base + "/oauth/access_token"
+func (d *AliyundriveOpen) refreshToken() error {
+	accountId := strconv.Itoa(d.AccountId)
+	accessTokenOpen := token.GetToken("AccessTokenOpen-"+accountId, 7200)
+	refreshTokenOpen := token.GetToken("RefreshTokenOpen-"+accountId, 0)
+	utils.Log.Debugf("accountID %v accessTokenOpen %v refreshTokenOpen: %v", accountId, accessTokenOpen, refreshTokenOpen)
+	if accessTokenOpen != "" && refreshTokenOpen != "" {
+		d.RefreshToken, d.AccessToken = refreshTokenOpen, accessTokenOpen
+		utils.Log.Println("RefreshTokenOpen已经存在")
+		return nil
+	}
+
+	t := time.Now()
+	url := setting.GetStr("open_token_url", d.base+"/oauth/access_token")
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
 	}
+	utils.Log.Println("refreshOpenToken", url)
 	//var resp base.TokenResp
 	var e ErrResp
 	res, err := base.RestyClient.R().
@@ -37,59 +51,49 @@ func (d *AliyundriveOpen) _refreshToken() (string, string, error) {
 		SetError(&e).
 		Post(url)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 	log.Debugf("[ali_open] refresh token response: %s", res.String())
 	if e.Code != "" {
-		return "", "", fmt.Errorf("failed to refresh token: %s", e.Message)
+		return fmt.Errorf("failed to refresh token: %s", e.Message)
 	}
 	refresh, access := utils.Json.Get(res.Body(), "refresh_token").ToString(), utils.Json.Get(res.Body(), "access_token").ToString()
 	if refresh == "" {
-		return "", "", errors.New("failed to refresh token: refresh token is empty")
+		return errors.New("failed to refresh token: refresh token is empty")
 	}
-	curSub, err := getSub(d.RefreshToken)
-	if err != nil {
-		return "", "", err
-	}
-	newSub, err := getSub(refresh)
-	if err != nil {
-		return "", "", err
-	}
-	if curSub != newSub {
-		return "", "", errors.New("failed to refresh token: sub not match")
-	}
-	return refresh, access, nil
-}
-
-func getSub(token string) (string, error) {
-	segments := strings.Split(token, ".")
-	if len(segments) != 3 {
-		return "", errors.New("not a jwt token because of invalid segments")
-	}
-	bs, err := base64.RawStdEncoding.DecodeString(segments[1])
-	if err != nil {
-		return "", errors.New("failed to decode jwt token")
-	}
-	return utils.Json.Get(bs, "sub").ToString(), nil
-}
-
-func (d *AliyundriveOpen) refreshToken() error {
-	refresh, access, err := d._refreshToken()
-	for i := 0; i < 3; i++ {
-		if err == nil {
-			break
-		} else {
-			log.Errorf("[ali_open] failed to refresh token: %s", err)
-		}
-		refresh, access, err = d._refreshToken()
-	}
-	if err != nil {
-		return err
-	}
-	log.Infof("[ali_open] toekn exchange: %s -> %s", d.RefreshToken, refresh)
 	d.RefreshToken, d.AccessToken = refresh, access
+
+	d.SaveOpenToken(t)
+
 	op.MustSaveDriverStorage(d)
 	return nil
+}
+
+func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
+	accountId := strconv.Itoa(d.AccountId)
+	item := &model.Token{
+		Key:       "AccessTokenOpen-" + accountId,
+		Value:     d.AccessToken,
+		AccountId: d.AccountId,
+		Modified:  t,
+	}
+
+	err := token.SaveToken(item)
+	if err != nil {
+		utils.Log.Printf("save AccessTokenOpen failed: %v", err)
+	}
+
+	item = &model.Token{
+		Key:       "RefreshTokenOpen-" + accountId,
+		Value:     d.RefreshToken,
+		AccountId: d.AccountId,
+		Modified:  t,
+	}
+
+	err = token.SaveToken(item)
+	if err != nil {
+		utils.Log.Printf("save RefreshTokenOpen failed: %v", err)
+	}
 }
 
 func (d *AliyundriveOpen) request(uri, method string, callback base.ReqCallback, retry ...bool) ([]byte, error) {
@@ -169,10 +173,4 @@ func (d *AliyundriveOpen) getFiles(ctx context.Context, fileId string) ([]File, 
 		res = append(res, resp.Items...)
 	}
 	return res, nil
-}
-
-func getNowTime() (time.Time, string) {
-	nowTime := time.Now()
-	nowTimeStr := nowTime.Format("2006-01-02T15:04:05.000Z")
-	return nowTime, nowTimeStr
 }

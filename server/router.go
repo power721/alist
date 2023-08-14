@@ -27,6 +27,7 @@ func Init(e *gin.Engine) {
 	g.Any("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
 	})
+	g.GET("/qrcode", handles.QrCode)
 	g.GET("/favicon.ico", handles.Favicon)
 	g.GET("/robots.txt", handles.Robots)
 	g.GET("/i/:link_name", handles.Plist)
@@ -46,7 +47,6 @@ func Init(e *gin.Engine) {
 	auth := api.Group("", middlewares.Auth)
 
 	api.POST("/auth/login", handles.Login)
-	api.POST("/auth/login/hash", handles.LoginHash)
 	auth.GET("/me", handles.CurrentUser)
 	auth.POST("/me/update", handles.UpdateCurrent)
 	auth.POST("/auth/2fa/generate", handles.Generate2FA)
@@ -78,6 +78,12 @@ func admin(g *gin.RouterGroup) {
 	meta.POST("/update", handles.UpdateMeta)
 	meta.POST("/delete", handles.DeleteMeta)
 
+	token := g.Group("/token")
+	token.GET("/list", handles.GetTokens)
+	token.GET("/get", handles.GetToken)
+	token.POST("/update", handles.UpdateToken)
+	token.POST("/delete", handles.DeleteToken)
+
 	user := g.Group("/user")
 	user.GET("/list", handles.ListUsers)
 	user.GET("/get", handles.GetUser)
@@ -85,7 +91,6 @@ func admin(g *gin.RouterGroup) {
 	user.POST("/update", handles.UpdateUser)
 	user.POST("/cancel_2fa", handles.Cancel2FAById)
 	user.POST("/delete", handles.DeleteUser)
-	user.POST("/del_cache", handles.DelUserCache)
 
 	storage := g.Group("/storage")
 	storage.GET("/list", handles.ListStorages)
