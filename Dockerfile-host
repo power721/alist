@@ -5,7 +5,7 @@ COPY ./ ./
 RUN apk add --no-cache bash curl gcc git go musl-dev; \
     bash build.sh release docker
 
-FROM xiaoyaliu/alist:latest
+FROM xiaoyaliu/alist:hostmode
 
 LABEL MAINTAINER="Har01d"
 

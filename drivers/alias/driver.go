@@ -111,4 +111,19 @@ func (d *Alias) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (
 	return nil, errs.ObjectNotFound
 }
 
+func (d *Alias) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
+	root, sub := d.getRootAndPath(args.Obj.GetPath())
+	dsts, ok := d.pathMap[root]
+	if !ok {
+		return nil, errs.ObjectNotFound
+	}
+	for _, dst := range dsts {
+		link, err := d.other(ctx, dst, sub, args)
+		if err == nil {
+			return link, nil
+		}
+	}
+	return nil, errs.ObjectNotFound
+}
+
 var _ driver.Driver = (*Alias)(nil)

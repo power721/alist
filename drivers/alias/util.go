@@ -112,3 +112,14 @@ func (d *Alias) link(ctx context.Context, dst, sub string, args model.LinkArgs) 
 	link, _, err := fs.Link(ctx, reqPath, args)
 	return link, err
 }
+
+func (d *Alias) other(ctx context.Context, dst, sub string, args model.OtherArgs) (interface{}, error) {
+	reqPath := stdpath.Join(dst, sub)
+	fsArg := model.FsOtherArgs{
+		Method: args.Method,
+		Data:   args.Data,
+		Path:   reqPath,
+	}
+	utils.Log.Printf("utils other: %v", fsArg)
+	return fs.Other(ctx, fsArg)
+}

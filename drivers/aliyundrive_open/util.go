@@ -4,7 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
+	"github.com/alist-org/alist/v3/internal/token"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/op"
@@ -16,10 +21,22 @@ import (
 // do others that not defined in Driver interface
 
 func (d *AliyundriveOpen) refreshToken() error {
-	url := d.base + "/oauth/access_token"
+	accountId := strconv.Itoa(d.AccountId)
+	accessTokenOpen := token.GetToken("AccessTokenOpen-"+accountId, 7200)
+	refreshTokenOpen := token.GetToken("RefreshTokenOpen-"+accountId, 0)
+	utils.Log.Debugf("accountID %v accessTokenOpen %v refreshTokenOpen: %v", accountId, accessTokenOpen, refreshTokenOpen)
+	if accessTokenOpen != "" && refreshTokenOpen != "" {
+		d.RefreshToken, d.AccessToken = refreshTokenOpen, accessTokenOpen
+		utils.Log.Println("RefreshTokenOpen已经存在")
+		return nil
+	}
+
+	t := time.Now()
+	url := setting.GetStr("open_token_url", d.base+"/oauth/access_token")
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
 	}
+	utils.Log.Println("refreshOpenToken", url)
 	//var resp base.TokenResp
 	var e ErrResp
 	res, err := base.RestyClient.R().
@@ -45,8 +62,38 @@ func (d *AliyundriveOpen) refreshToken() error {
 		return errors.New("failed to refresh token: refresh token is empty")
 	}
 	d.RefreshToken, d.AccessToken = refresh, access
+
+	d.SaveOpenToken(t)
+
 	op.MustSaveDriverStorage(d)
 	return nil
+}
+
+func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
+	accountId := strconv.Itoa(d.AccountId)
+	item := &model.Token{
+		Key:       "AccessTokenOpen-" + accountId,
+		Value:     d.AccessToken,
+		AccountId: d.AccountId,
+		Modified:  t,
+	}
+
+	err := token.SaveToken(item)
+	if err != nil {
+		utils.Log.Printf("save AccessTokenOpen failed: %v", err)
+	}
+
+	item = &model.Token{
+		Key:       "RefreshTokenOpen-" + accountId,
+		Value:     d.RefreshToken,
+		AccountId: d.AccountId,
+		Modified:  t,
+	}
+
+	err = token.SaveToken(item)
+	if err != nil {
+		utils.Log.Printf("save RefreshTokenOpen failed: %v", err)
+	}
 }
 
 func (d *AliyundriveOpen) request(uri, method string, callback base.ReqCallback, retry ...bool) ([]byte, error) {

@@ -27,6 +27,7 @@ func Init(e *gin.Engine) {
 	g.Any("/ping", func(c *gin.Context) {
 		c.String(200, "pong")
 	})
+	g.GET("/qrcode", handles.QrCode)
 	g.GET("/favicon.ico", handles.Favicon)
 	g.GET("/robots.txt", handles.Robots)
 	g.GET("/i/:link_name", handles.Plist)
@@ -78,6 +79,12 @@ func admin(g *gin.RouterGroup) {
 	meta.POST("/update", handles.UpdateMeta)
 	meta.POST("/delete", handles.DeleteMeta)
 
+	token := g.Group("/token")
+	token.GET("/list", handles.GetTokens)
+	token.GET("/get", handles.GetToken)
+	token.POST("/update", handles.UpdateToken)
+	token.POST("/delete", handles.DeleteToken)
+
 	user := g.Group("/user")
 	user.GET("/list", handles.ListUsers)
 	user.GET("/get", handles.GetUser)
@@ -105,6 +112,7 @@ func admin(g *gin.RouterGroup) {
 	setting := g.Group("/setting")
 	setting.GET("/get", handles.GetSetting)
 	setting.GET("/list", handles.ListSettings)
+	setting.POST("/update", handles.SaveSetting)
 	setting.POST("/save", handles.SaveSettings)
 	setting.POST("/delete", handles.DeleteSetting)
 	setting.POST("/reset_token", handles.ResetToken)

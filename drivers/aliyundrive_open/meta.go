@@ -19,6 +19,7 @@ type Addition struct {
 	InternalUpload     bool   `json:"internal_upload" help:"If you are using Aliyun ECS is located in Beijing, you can turn it on to boost the upload speed"`
 	LIVPDownloadFormat string `json:"livp_download_format" type:"select" options:"jpeg,mov" default:"jpeg"`
 	AccessToken        string
+	AccountId          int `json:"account_id"`
 }
 
 var config = driver.Config{

@@ -47,6 +47,7 @@ type Config struct {
 	TokenExpiresIn        int       `json:"token_expires_in" env:"TOKEN_EXPIRES_IN"`
 	Database              Database  `json:"database"`
 	Scheme                Scheme    `json:"scheme"`
+	OpenTokenAuthUrl      string    `json:"opentoken_auth_url"`
 	TempDir               string    `json:"temp_dir" env:"TEMP_DIR"`
 	BleveDir              string    `json:"bleve_dir" env:"BLEVE_DIR"`
 	Log                   LogConfig `json:"log"`
@@ -79,7 +80,8 @@ func DefaultConfig() *Config {
 			TablePrefix: "x_",
 			DBFile:      dbPath,
 		},
-		BleveDir: indexDir,
+		OpenTokenAuthUrl: "https://api.xhofe.top/alist/ali_open/token",
+		BleveDir:         indexDir,
 		Log: LogConfig{
 			Enable:     true,
 			Name:       logPath,

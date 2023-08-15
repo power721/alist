@@ -96,7 +96,7 @@ func initStorage(ctx context.Context, storage model.Storage, storageDriver drive
 	storagesMap.Store(driverStorage.MountPath, storageDriver)
 	if err != nil {
 		driverStorage.SetStatus(err.Error())
-		err = errors.Wrap(err, "failed init storage")
+		err = errors.Wrap(err, "failed init storage: "+driverStorage.MountPath)
 	} else {
 		driverStorage.SetStatus(WORK)
 	}
