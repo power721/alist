@@ -8,7 +8,7 @@ if [ "$1" = "dev" ]; then
   version="dev"
   webVersion="dev"
 else
-  version=$(git describe --abbrev=0 --tags)
+  version=3.25.1
   webVersion=3.25.1
 fi
 
