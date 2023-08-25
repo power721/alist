@@ -232,8 +232,8 @@ func (d *AliyundriveShare2Open) request(url, method string, callback base.ReqCal
 	}
 	if e.Code != "" {
 		utils.Log.Println(e)
-		if e.Code == "AccessTokenInvalid" || e.Code == "AccessTokenExpired" || e.Code == "ShareLinkTokenInvalid" {
-			if e.Code == "AccessTokenInvalid" || e.Code == "AccessTokenExpired" {
+		if e.Code == "AccessTokenInvalid" || e.Code == "ShareLinkTokenInvalid" {
+			if e.Code == "AccessTokenInvalid" {
 				err = d.refreshToken(true)
 			} else {
 				err = d.getShareToken()
@@ -278,12 +278,8 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 		}
 		log.Debugf("aliyundrive share get files: %s", res.String())
 		if e.Code != "" {
-			if e.Code == "AccessTokenInvalid" || e.Code == "AccessTokenExpired" || e.Code == "ShareLinkTokenInvalid" {
-				if e.Code == "AccessTokenInvalid" || e.Code == "AccessTokenExpired" {
-					err = d.refreshToken(true)
-				} else {
-					err = d.getShareToken()
-				}
+			if e.Code == "AccessTokenInvalid" || e.Code == "ShareLinkTokenInvalid" {
+				err = d.getShareToken()
 				if err != nil {
 					return nil, err
 				}
@@ -307,6 +303,7 @@ func (d *AliyundriveShare2Open) requestOpen(uri, method string, callback base.Re
 
 func (d *AliyundriveShare2Open) requestReturnErrResp(uri, method string, callback base.ReqCallback, retry ...bool) ([]byte, error, *ErrorResp) {
 	req := base.RestyClient.R()
+	// TODO check whether access_token is expired
 	req.SetHeader("Authorization", "Bearer "+d.AccessTokenOpen)
 	if method == http.MethodPost {
 		req.SetHeader("Content-Type", "application/json")
@@ -326,7 +323,7 @@ func (d *AliyundriveShare2Open) requestReturnErrResp(uri, method string, callbac
 	isRetry := len(retry) > 0 && retry[0]
 	if e.Code != "" {
 		if !isRetry && (utils.SliceContains([]string{"AccessTokenInvalid", "AccessTokenExpired", "I400JD"}, e.Code) || d.AccessTokenOpen == "") {
-			err = d.refreshOpenToken(true)
+			err = d.refreshOpenToken(false)
 			if err != nil {
 				return nil, err, nil
 			}
