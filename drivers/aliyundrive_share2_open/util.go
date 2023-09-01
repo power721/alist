@@ -323,7 +323,7 @@ func (d *AliyundriveShare2Open) requestReturnErrResp(uri, method string, callbac
 	isRetry := len(retry) > 0 && retry[0]
 	if e.Code != "" {
 		if !isRetry && (utils.SliceContains([]string{"AccessTokenInvalid", "AccessTokenExpired", "I400JD"}, e.Code) || d.AccessTokenOpen == "") {
-			err = d.refreshOpenToken(false)
+			err = d.refreshOpenToken(true)
 			if err != nil {
 				return nil, err, nil
 			}

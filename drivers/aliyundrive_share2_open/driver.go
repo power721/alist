@@ -157,6 +157,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 
 	err := d.getShareToken()
 	if err != nil {
+		utils.Log.Printf("getShareToken failed: %v", err)
 		return "", err
 	}
 
@@ -164,6 +165,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 		req.SetBody(data)
 	})
 	if err != nil {
+		utils.Log.Printf("saveFile failed: %v", err)
 		return "", err
 	}
 	newFile := utils.Json.Get(res, "responses", 0, "body", "file_id").ToString()
@@ -181,6 +183,7 @@ func (d *AliyundriveShare2Open) getDownloadUrl(file model.Obj) (*model.Link, err
 		req.SetBody(data)
 	})
 	if err != nil {
+		utils.Log.Printf("getDownloadUrl failed: %v", err)
 		return nil, err
 	}
 	return &model.Link{
