@@ -41,7 +41,7 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
 	}
-	utils.Log.Println("refreshOpenToken", accountId, url)
+	utils.Log.Println("refreshOpenToken", accountId, url, force)
 	//var resp base.TokenResp
 	var e ErrorResp
 	res, err := base.RestyClient.R().
