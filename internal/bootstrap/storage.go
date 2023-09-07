@@ -2,8 +2,6 @@ package bootstrap
 
 import (
 	"context"
-	"time"
-
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/db"
 	"github.com/alist-org/alist/v3/internal/model"
@@ -24,9 +22,6 @@ func LoadStorages() {
 			} else {
 				utils.Log.Infof("success load storage: [%s], driver: [%s]",
 					storages[i].MountPath, storages[i].Driver)
-			}
-			if storages[i].Driver == "AliyundriveShare2Open" {
-				time.Sleep(time.Second)
 			}
 		}
 		conf.StoragesLoaded = true

@@ -142,15 +142,18 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 func (d *AliyundriveShare2Open) getDriveId() {
 	if DriveId == "" {
 		res, err := d.requestOpen("/adrive/v1.0/user/getDriveInfo", http.MethodPost, nil)
+		lastTime = time.Now().UnixMilli()
 		if err != nil {
 			return
 		}
 		d.DriveId = utils.Json.Get(res, d.DriveType+"_drive_id").ToString()
 		if d.DriveId == "" {
 			d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
+			utils.Log.Printf("备份盘ID： %v", d.DriveId)
+		} else {
+			utils.Log.Printf("资源盘ID： %v", d.DriveId)
 		}
 		DriveId = d.DriveId
-		utils.Log.Printf("资源盘ID： %v", d.DriveId)
 	} else {
 		d.DriveId = DriveId
 	}
@@ -200,6 +203,7 @@ func (d *AliyundriveShare2Open) getShareToken() error {
 	_, err := base.RestyClient.R().
 		SetResult(&resp).SetError(&e).SetBody(data).
 		Post("https://api.aliyundrive.com/v2/share_link/get_share_token")
+	lastTime = time.Now().UnixMilli()
 	if err != nil {
 		return err
 	}

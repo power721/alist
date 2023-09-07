@@ -19,6 +19,7 @@ import (
 )
 
 var DriveId = ""
+var lastTime int64 = 0
 
 type AliyundriveShare2Open struct {
 	base string
@@ -43,6 +44,11 @@ func (d *AliyundriveShare2Open) GetAddition() driver.Additional {
 }
 
 func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
+	if lastTime > 0 {
+		diff := lastTime + 1000 - time.Now().UnixMilli()
+		time.Sleep(time.Duration(diff) * time.Millisecond)
+	}
+
 	err := d.refreshToken(false)
 	if err != nil {
 		return err
@@ -51,17 +57,6 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	//d.cron = cron.NewCron(time.Hour * 2)
-	//d.cron.Do(func() {
-	//	err := d.refreshToken(true)
-	//	if err != nil {
-	//		utils.Log.Errorf("%+v", err)
-	//	}
-	//	err = d.refreshOpenToken(true)
-	//	if err != nil {
-	//		utils.Log.Errorf("%+v", err)
-	//	}
-	//})
 
 	if d.OauthTokenURL == "" {
 		d.OauthTokenURL = conf.Conf.OpenTokenAuthUrl
