@@ -228,14 +228,13 @@ func (d *AliyundriveShare2Open) delete(fileId string) error {
 		"requests": []base.Json{
 			{
 				"body": base.Json{
-					"id":       fileId,
-					"file_id":  fileId,
 					"drive_id": d.DriveId,
+					"file_id":  fileId,
 				},
 				"headers": base.Json{
 					"Content-Type": "application/json",
 				},
-				"id":     "0",
+				"id":     fileId,
 				"method": "POST",
 				"url":    "/file/delete",
 			},
@@ -246,6 +245,9 @@ func (d *AliyundriveShare2Open) delete(fileId string) error {
 	_, err := d.request("https://api.aliyundrive.com/v3/batch", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data)
 	})
+	if err != nil {
+		utils.Log.Printf("删除文件%v失败： %v", fileId, err)
+	}
 
 	return err
 }

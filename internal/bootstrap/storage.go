@@ -24,6 +24,7 @@ func LoadStorages() {
 					storages[i].MountPath, storages[i].Driver)
 			}
 		}
+		// TODO: retry failed
 		conf.StoragesLoaded = true
 	}(storages)
 }
