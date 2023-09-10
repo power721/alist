@@ -55,6 +55,6 @@ func other(ctx context.Context, args model.FsOtherArgs) (interface{}, error) {
 		return nil, errors.WithMessage(err, "failed get storage")
 	}
 	args.Path = actualPath
-	utils.Log.Printf("%v %v", storage, actualPath)
+	utils.Log.Debugf("%v %v", storage, actualPath)
 	return op.Other(ctx, storage, args)
 }
