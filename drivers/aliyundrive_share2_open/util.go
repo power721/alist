@@ -146,7 +146,7 @@ func (d *AliyundriveShare2Open) getDriveId() {
 		if err != nil {
 			return
 		}
-		d.DriveId = utils.Json.Get(res, d.DriveType+"_drive_id").ToString()
+		d.DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
 		if d.DriveId == "" {
 			d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
 			utils.Log.Printf("备份盘ID： %v", d.DriveId)
