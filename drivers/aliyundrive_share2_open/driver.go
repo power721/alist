@@ -121,10 +121,13 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		return nil, err
 	}
 
+	go d.deleteDelay(fileId)
+
 	newFile := MyFile{
 		FileId: fileId,
 		Name:   "livp",
 	}
+
 	return d.getOpenLink(newFile)
 }
 
@@ -209,8 +212,6 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 		url = utils.Json.Get(res, "streamsUrl", "mov").ToString()
 	}
 
-	go d.deleteDelay(file.GetID())
-
 	exp := time.Hour
 	return &model.Link{
 		URL:        url,
@@ -258,6 +259,8 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 		return nil, err
 	}
 
+	go d.deleteDelay(fileId)
+
 	var resp base.Json
 	var uri string
 	data := base.Json{
@@ -275,8 +278,6 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	_, err = d.requestOpen(uri, http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data).SetResult(&resp)
 	})
-
-	go d.deleteDelay(fileId)
 
 	if err != nil {
 		return nil, err
