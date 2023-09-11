@@ -116,7 +116,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 	// 1. 转存资源
 	// 2. 获取链接
 	// 3. 删除文件
-	utils.Log.Printf("获取文件直链 %v %v %v %v", d.DriveId, file.GetName(), file.GetID(), file.GetPath())
+	utils.Log.Printf("获取文件直链 %v %v %v %v", d.DriveId, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(file.GetID())
 	if err != nil {
 		return nil, err
@@ -253,7 +253,11 @@ func (d *AliyundriveShare2Open) delete(fileId string) error {
 }
 
 func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
-	utils.Log.Printf("获取文件直链 %v %v %v %v", d.DriveId, args.Obj.GetName(), args.Obj.GetID(), args.Obj.GetPath())
+	if args.Method != "video_preview" {
+		return nil, errs.NotSupport
+	}
+
+	utils.Log.Printf("获取文件链接 %v %v %v %v", d.DriveId, args.Obj.GetName(), args.Obj.GetID(), args.Obj.GetSize())
 	fileId, err := d.saveFile(args.Obj.GetID())
 	if err != nil {
 		return nil, err
