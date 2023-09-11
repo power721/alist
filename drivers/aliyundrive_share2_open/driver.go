@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/conf"
+	"log"
 	"net/http"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+var ParentFileId = ""
 var DriveId = ""
 var lastTime int64 = 0
 
@@ -68,6 +70,7 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 	}
 
 	d.getDriveId()
+	d.createFolderOpen()
 
 	d.limitList = rateg.LimitFnCtx(d.list, rateg.LimitFnOption{
 		Limit:  4,
@@ -116,7 +119,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 	// 1. 转存资源
 	// 2. 获取链接
 	// 3. 删除文件
-	utils.Log.Printf("获取文件直链 %v %v %v %v", d.DriveId, file.GetName(), file.GetID(), file.GetSize())
+	log.Printf("获取文件直链 %v %v %v %v", d.DriveId, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(file.GetID())
 	if err != nil {
 		return nil, err
@@ -140,7 +143,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 					"file_id":           fileId,
 					"share_id":          d.ShareId,
 					"auto_rename":       true,
-					"to_parent_file_id": "root",
+					"to_parent_file_id": ParentFileId,
 					"to_drive_id":       d.DriveId,
 				},
 				"headers": base.Json{
@@ -156,7 +159,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 
 	err := d.getShareToken()
 	if err != nil {
-		utils.Log.Printf("getShareToken failed: %v", err)
+		log.Printf("getShareToken failed: %v", err)
 		return "", err
 	}
 
@@ -164,32 +167,11 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 		req.SetBody(data)
 	})
 	if err != nil {
-		utils.Log.Printf("saveFile failed: %v", err)
+		log.Printf("saveFile failed: %v", err)
 		return "", err
 	}
 	newFile := utils.Json.Get(res, "responses", 0, "body", "file_id").ToString()
 	return newFile, nil
-}
-
-func (d *AliyundriveShare2Open) getDownloadUrl(file model.Obj) (*model.Link, error) {
-	data := base.Json{
-		"drive_id":   d.DriveId,
-		"file_id":    file.GetID(),
-		"expire_sec": 14400,
-	}
-	res, err := d.request("https://api.aliyundrive.com/v2/file/get_download_url", http.MethodPost, func(req *resty.Request) {
-		req.SetBody(data)
-	})
-	if err != nil {
-		utils.Log.Printf("getDownloadUrl failed: %v", err)
-		return nil, err
-	}
-	return &model.Link{
-		Header: http.Header{
-			"Referer": []string{"https://www.aliyundrive.com/"},
-		},
-		URL: utils.Json.Get(res, "url").ToString(),
-	}, nil
 }
 
 func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error) {
@@ -220,7 +202,20 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 
 func (d *AliyundriveShare2Open) deleteDelay(fileId string) error {
 	time.Sleep(1 * time.Second)
-	return d.delete(fileId)
+	return d.deleteOpen(fileId)
+}
+
+func (d *AliyundriveShare2Open) deleteOpen(fileId string) error {
+	_, err := d.requestOpen("/adrive/v1.0/openFile/delete", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(base.Json{
+			"drive_id": d.DriveId,
+			"file_id":  fileId,
+		})
+	})
+	if err != nil {
+		log.Printf("删除文件%v失败： %v", fileId, err)
+	}
+	return err
 }
 
 func (d *AliyundriveShare2Open) delete(fileId string) error {
@@ -246,7 +241,7 @@ func (d *AliyundriveShare2Open) delete(fileId string) error {
 		req.SetBody(data)
 	})
 	if err != nil {
-		utils.Log.Printf("删除文件%v失败： %v", fileId, err)
+		log.Printf("删除文件%v失败： %v", fileId, err)
 	}
 
 	return err
@@ -257,7 +252,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 		return nil, errs.NotSupport
 	}
 
-	utils.Log.Printf("获取文件链接 %v %v %v %v", d.DriveId, args.Obj.GetName(), args.Obj.GetID(), args.Obj.GetSize())
+	log.Printf("获取文件链接 %v %v %v %v", d.DriveId, args.Obj.GetName(), args.Obj.GetID(), args.Obj.GetSize())
 	fileId, err := d.saveFile(args.Obj.GetID())
 	if err != nil {
 		return nil, err

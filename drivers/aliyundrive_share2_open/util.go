@@ -7,6 +7,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/utils"
+	"github.com/go-resty/resty/v2"
 	"net/http"
 	"strconv"
 	"time"
@@ -26,10 +27,10 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	accountId := setting.GetStr("ali_account_id", "")
 	accessTokenOpen := token.GetToken("AccessTokenOpen-"+accountId, 7200)
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-"+accountId, 0)
-	utils.Log.Debugf("force %v accountId %v accessTokenOpen %v refreshTokenOpen: %v", force, accountId, accessTokenOpen, refreshTokenOpen)
+	log.Debugf("force %v accountId %v accessTokenOpen %v refreshTokenOpen: %v", force, accountId, accessTokenOpen, refreshTokenOpen)
 	if !force && accessTokenOpen != "" && refreshTokenOpen != "" {
 		d.RefreshTokenOpen, d.AccessTokenOpen = refreshTokenOpen, accessTokenOpen
-		utils.Log.Println("RefreshTokenOpen已经存在")
+		log.Debugf("RefreshTokenOpen已经存在")
 		return nil
 	}
 	if refreshTokenOpen != "" {
@@ -41,7 +42,7 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
 	}
-	utils.Log.Println("refreshOpenToken", accountId, url, force)
+	log.Println("refreshOpenToken", accountId, url, force)
 	//var resp base.TokenResp
 	var e ErrorResp
 	res, err := base.RestyClient.R().
@@ -85,7 +86,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 
 	err := token.SaveToken(item)
 	if err != nil {
-		utils.Log.Printf("save AccessTokenOpen failed: %v", err)
+		log.Printf("save AccessTokenOpen failed: %v", err)
 	}
 
 	item = &model.Token{
@@ -97,7 +98,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 
 	err = token.SaveToken(item)
 	if err != nil {
-		utils.Log.Printf("save RefreshTokenOpen failed: %v", err)
+		log.Printf("save RefreshTokenOpen failed: %v", err)
 	}
 }
 
@@ -105,10 +106,10 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 	accountId := setting.GetStr("ali_account_id", "1")
 	accessToken := token.GetToken("AccessToken-"+accountId, 7200)
 	refreshToken := token.GetToken("RefreshToken-"+accountId, 0)
-	utils.Log.Debugf("refreshToken: %v %v %v", accountId, accessToken, refreshToken)
+	log.Debugf("refreshToken: %v %v %v", accountId, accessToken, refreshToken)
 	if !force && accessToken != "" && refreshToken != "" {
 		d.RefreshToken, d.AccessToken = refreshToken, accessToken
-		utils.Log.Println("RefreshToken已经存在")
+		log.Debugf("RefreshToken已经存在")
 		return nil
 	}
 	if refreshToken != "" {
@@ -117,7 +118,7 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 
 	t := time.Now()
 	url := "https://auth.aliyundrive.com/v2/account/token"
-	utils.Log.Println("refreshToken", accountId, url)
+	log.Println("refreshToken", accountId, url)
 	var resp base.TokenResp
 	var e ErrorResp
 	_, err := base.RestyClient.R().
@@ -149,14 +150,41 @@ func (d *AliyundriveShare2Open) getDriveId() {
 		d.DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
 		if d.DriveId == "" {
 			d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
-			utils.Log.Printf("备份盘ID： %v", d.DriveId)
+			log.Printf("备份盘ID： %v", d.DriveId)
 		} else {
-			utils.Log.Printf("资源盘ID： %v", d.DriveId)
+			log.Printf("资源盘ID： %v", d.DriveId)
 		}
 		DriveId = d.DriveId
 	} else {
 		d.DriveId = DriveId
 	}
+}
+
+func (d *AliyundriveShare2Open) createFolderOpen() {
+	if ParentFileId != "" {
+		return
+	}
+
+	res, err := d.requestOpen("/adrive/v1.0/openFile/create", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(base.Json{
+			"check_name_mode": "refuse",
+			"drive_id":        d.DriveId,
+			"name":            "xiaoya-tvbox-temp",
+			"parent_file_id":  "root",
+			"type":            "folder",
+		})
+	})
+
+	if err != nil {
+		log.Printf("创建缓存文件夹失败: %v", err)
+	} else {
+		ParentFileId = utils.Json.Get(res, "file_id").ToString()
+	}
+
+	if ParentFileId == "" {
+		ParentFileId = "root"
+	}
+	log.Printf("缓存文件夹ID： %v", ParentFileId)
 }
 
 func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
@@ -170,7 +198,7 @@ func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
 
 	err := token.SaveToken(item)
 	if err != nil {
-		utils.Log.Printf("save AccessToken failed: %v", err)
+		log.Printf("save AccessToken failed: %v", err)
 	}
 
 	if d.RefreshToken == "" {
@@ -186,7 +214,7 @@ func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
 
 	err = token.SaveToken(item)
 	if err != nil {
-		utils.Log.Printf("save RefreshToken failed: %v", err)
+		log.Printf("save RefreshToken failed: %v", err)
 	}
 }
 
@@ -211,7 +239,7 @@ func (d *AliyundriveShare2Open) getShareToken() error {
 		return errors.New(e.Message)
 	}
 	d.ShareToken = resp.ShareToken
-	utils.Log.Debug("getShareToken", d.ShareId, d.ShareToken)
+	log.Debug("getShareToken", d.ShareId, d.ShareToken)
 	return nil
 }
 
@@ -235,7 +263,7 @@ func (d *AliyundriveShare2Open) request(url, method string, callback base.ReqCal
 		return nil, err
 	}
 	if e.Code != "" {
-		utils.Log.Println(e)
+		log.Println(e)
 		if e.Code == "AccessTokenInvalid" || e.Code == "ShareLinkTokenInvalid" {
 			if e.Code == "AccessTokenInvalid" {
 				err = d.refreshToken(true)
