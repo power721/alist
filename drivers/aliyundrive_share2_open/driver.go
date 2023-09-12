@@ -157,6 +157,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 		"resource": "file",
 	}
 
+	// TODO: delete this
 	err := d.getShareToken()
 	if err != nil {
 		log.Printf("getShareToken failed: %v", err)
@@ -183,6 +184,7 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 		})
 	})
 	if err != nil {
+		log.Printf("getOpenLink failed: %v", err)
 		return nil, err
 	}
 	url := utils.Json.Get(res, "url").ToString()
@@ -201,7 +203,7 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 }
 
 func (d *AliyundriveShare2Open) deleteDelay(fileId string) error {
-	time.Sleep(1 * time.Second)
+	time.Sleep(1200 * time.Millisecond)
 	return d.deleteOpen(fileId)
 }
 
@@ -279,6 +281,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	})
 
 	if err != nil {
+		log.Printf("获取文件链接失败：%v", err)
 		return nil, err
 	}
 	return resp, nil
