@@ -125,8 +125,6 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		return nil, err
 	}
 
-	go d.deleteDelay(fileId)
-
 	newFile := MyFile{
 		FileId: fileId,
 		Name:   "livp",
@@ -183,6 +181,9 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 			"expire_sec": 14400,
 		})
 	})
+
+	go d.deleteDelay(file.GetID())
+
 	if err != nil {
 		log.Printf("getOpenLink failed: %v", err)
 		return nil, err
@@ -202,12 +203,12 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 	}, nil
 }
 
-func (d *AliyundriveShare2Open) deleteDelay(fileId string) error {
-	time.Sleep(1200 * time.Millisecond)
-	return d.deleteOpen(fileId)
+func (d *AliyundriveShare2Open) deleteDelay(fileId string) {
+	time.Sleep(1000 * time.Millisecond)
+	d.deleteOpen(fileId)
 }
 
-func (d *AliyundriveShare2Open) deleteOpen(fileId string) error {
+func (d *AliyundriveShare2Open) deleteOpen(fileId string) {
 	_, err := d.requestOpen("/adrive/v1.0/openFile/delete", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id": d.DriveId,
@@ -217,7 +218,6 @@ func (d *AliyundriveShare2Open) deleteOpen(fileId string) error {
 	if err != nil {
 		log.Printf("删除文件%v失败： %v", fileId, err)
 	}
-	return err
 }
 
 func (d *AliyundriveShare2Open) delete(fileId string) error {
@@ -260,8 +260,6 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 		return nil, err
 	}
 
-	go d.deleteDelay(fileId)
-
 	var resp base.Json
 	var uri string
 	data := base.Json{
@@ -279,6 +277,8 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	_, err = d.requestOpen(uri, http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data).SetResult(&resp)
 	})
+
+	go d.deleteDelay(fileId)
 
 	if err != nil {
 		log.Printf("获取文件链接失败：%v", err)
