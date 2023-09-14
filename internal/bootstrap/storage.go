@@ -15,16 +15,31 @@ func LoadStorages() {
 		utils.Log.Fatalf("failed get enabled storages: %+v", err)
 	}
 	go func(storages []model.Storage) {
+		var failed []model.Storage
 		for i := range storages {
 			err := op.LoadStorage(context.Background(), storages[i])
 			if err != nil {
-				utils.Log.Errorf("failed get enabled storages [%s]: %+v", storages[i].MountPath, err)
+				failed = append(failed, storages[i])
+				utils.Log.Warnf("failed get enabled storages [%s], will retry: %+v", storages[i].MountPath, err)
 			} else {
 				utils.Log.Infof("success load storage: [%s], driver: [%s]",
 					storages[i].MountPath, storages[i].Driver)
 			}
 		}
-		// TODO: retry failed
+
+		if len(failed) > 0 {
+			utils.Log.Infof("retry %v failed storages", len(failed))
+			for i := range failed {
+				err := op.LoadStorage(context.Background(), failed[i])
+				if err != nil {
+					utils.Log.Errorf("failed get enabled storages [%s]: %+v", failed[i].MountPath, err)
+				} else {
+					utils.Log.Infof("success load storage: [%s], driver: [%s]",
+						failed[i].MountPath, failed[i].Driver)
+				}
+			}
+		}
+
 		conf.StoragesLoaded = true
 	}(storages)
 }

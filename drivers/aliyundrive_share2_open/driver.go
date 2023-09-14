@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/conf"
-	"log"
 	"net/http"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/alist-org/alist/v3/pkg/cron"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
+	log "github.com/sirupsen/logrus"
 )
 
 var ParentFileId = ""
@@ -119,7 +119,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 	// 1. 转存资源
 	// 2. 获取链接
 	// 3. 删除文件
-	log.Printf("获取文件直链 %v %v %v %v", d.DriveId, file.GetName(), file.GetID(), file.GetSize())
+	log.Infof("获取文件直链 %v %v %v %v", d.DriveId, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(file.GetID())
 	if err != nil {
 		return nil, err
@@ -155,18 +155,11 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 		"resource": "file",
 	}
 
-	// TODO: delete this
-	err := d.getShareToken()
-	if err != nil {
-		log.Printf("getShareToken failed: %v", err)
-		return "", err
-	}
-
 	res, err := d.request("https://api.aliyundrive.com/adrive/v2/batch", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data)
 	})
 	if err != nil {
-		log.Printf("saveFile failed: %v", err)
+		log.Warnf("saveFile failed: %v", err)
 		return "", err
 	}
 	newFile := utils.Json.Get(res, "responses", 0, "body", "file_id").ToString()
@@ -185,7 +178,7 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 	go d.deleteDelay(file.GetID())
 
 	if err != nil {
-		log.Printf("getOpenLink failed: %v", err)
+		log.Warnf("getOpenLink failed: %v", err)
 		return nil, err
 	}
 	url := utils.Json.Get(res, "url").ToString()
@@ -216,7 +209,7 @@ func (d *AliyundriveShare2Open) deleteOpen(fileId string) {
 		})
 	})
 	if err != nil {
-		log.Printf("删除文件%v失败： %v", fileId, err)
+		log.Warnf("删除文件%v失败： %v", fileId, err)
 	}
 }
 
@@ -243,7 +236,7 @@ func (d *AliyundriveShare2Open) delete(fileId string) error {
 		req.SetBody(data)
 	})
 	if err != nil {
-		log.Printf("删除文件%v失败： %v", fileId, err)
+		log.Warnf("删除文件%v失败： %v", fileId, err)
 	}
 
 	return err
@@ -254,7 +247,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 		return nil, errs.NotSupport
 	}
 
-	log.Printf("获取文件链接 %v %v %v %v", d.DriveId, args.Obj.GetName(), args.Obj.GetID(), args.Obj.GetSize())
+	log.Infof("获取文件链接 %v %v %v %v", d.DriveId, args.Obj.GetName(), args.Obj.GetID(), args.Obj.GetSize())
 	fileId, err := d.saveFile(args.Obj.GetID())
 	if err != nil {
 		return nil, err
@@ -281,7 +274,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	go d.deleteDelay(fileId)
 
 	if err != nil {
-		log.Printf("获取文件链接失败：%v", err)
+		log.Warnf("获取文件链接失败：%v", err)
 		return nil, err
 	}
 	return resp, nil

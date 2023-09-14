@@ -24,10 +24,10 @@ func (d *AliyundriveOpen) refreshToken() error {
 	accountId := strconv.Itoa(d.AccountId)
 	accessTokenOpen := token.GetToken("AccessTokenOpen-"+accountId, 7200)
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-"+accountId, 0)
-	utils.Log.Debugf("accountID %v accessTokenOpen %v refreshTokenOpen: %v", accountId, accessTokenOpen, refreshTokenOpen)
+	log.Debugf("accountID %v accessTokenOpen %v refreshTokenOpen: %v", accountId, accessTokenOpen, refreshTokenOpen)
 	if accessTokenOpen != "" && refreshTokenOpen != "" {
 		d.RefreshToken, d.AccessToken = refreshTokenOpen, accessTokenOpen
-		utils.Log.Println("RefreshTokenOpen已经存在")
+		log.Println("RefreshTokenOpen已经存在")
 		return nil
 	}
 
@@ -36,7 +36,7 @@ func (d *AliyundriveOpen) refreshToken() error {
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
 	}
-	utils.Log.Println("refreshOpenToken", url)
+	log.Println("refreshOpenToken", url)
 	//var resp base.TokenResp
 	var e ErrResp
 	res, err := base.RestyClient.R().
@@ -80,7 +80,7 @@ func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
 
 	err := token.SaveToken(item)
 	if err != nil {
-		utils.Log.Printf("save AccessTokenOpen failed: %v", err)
+		log.Warnf("save AccessTokenOpen failed: %v", err)
 	}
 
 	item = &model.Token{
@@ -92,7 +92,7 @@ func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
 
 	err = token.SaveToken(item)
 	if err != nil {
-		utils.Log.Printf("save RefreshTokenOpen failed: %v", err)
+		log.Warnf("save RefreshTokenOpen failed: %v", err)
 	}
 }
 

@@ -86,7 +86,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 
 	err := token.SaveToken(item)
 	if err != nil {
-		log.Printf("save AccessTokenOpen failed: %v", err)
+		log.Warnf("save AccessTokenOpen failed: %v", err)
 	}
 
 	item = &model.Token{
@@ -98,7 +98,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 
 	err = token.SaveToken(item)
 	if err != nil {
-		log.Printf("save RefreshTokenOpen failed: %v", err)
+		log.Warnf("save RefreshTokenOpen failed: %v", err)
 	}
 }
 
@@ -176,7 +176,7 @@ func (d *AliyundriveShare2Open) createFolderOpen() {
 	})
 
 	if err != nil {
-		log.Printf("创建缓存文件夹失败: %v", err)
+		log.Warnf("创建缓存文件夹失败: %v", err)
 	} else {
 		ParentFileId = utils.Json.Get(res, "file_id").ToString()
 	}
