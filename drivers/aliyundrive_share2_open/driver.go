@@ -47,7 +47,7 @@ func (d *AliyundriveShare2Open) GetAddition() driver.Additional {
 
 func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 	if lastTime > 0 {
-		diff := lastTime + 1000 - time.Now().UnixMilli()
+		diff := lastTime + 1100 - time.Now().UnixMilli()
 		time.Sleep(time.Duration(diff) * time.Millisecond)
 	}
 
