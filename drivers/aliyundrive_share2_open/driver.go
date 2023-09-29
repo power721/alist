@@ -159,9 +159,16 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 		req.SetBody(data)
 	})
 	if err != nil {
-		log.Warnf("saveFile failed: %v", err)
+		log.Warnf("保存文件失败: %v", err)
 		return "", err
 	}
+
+	msg := utils.Json.Get(res, "responses", 0, "body", "message").ToString()
+	if msg != "" {
+		log.Warnf("保存文件失败: %v", msg)
+		return "", errors.New(msg)
+	}
+
 	newFile := utils.Json.Get(res, "responses", 0, "body", "file_id").ToString()
 	return newFile, nil
 }
