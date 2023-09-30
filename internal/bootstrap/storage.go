@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"github.com/alist-org/alist/v3/drivers/aliyundrive_share2_open"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/db"
 	"github.com/alist-org/alist/v3/internal/model"
@@ -28,6 +29,7 @@ func LoadStorages() {
 		}
 
 		if len(failed) > 0 {
+			aliyundrive_share2_open.DelayTime = 2000
 			utils.Log.Infof("retry %v failed storages", len(failed))
 			for i := range failed {
 				err := op.LoadStorage(context.Background(), failed[i])

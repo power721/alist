@@ -2,7 +2,6 @@ package aliyundrive_share2_open
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"net/http"
@@ -21,6 +20,7 @@ import (
 
 var ParentFileId = ""
 var DriveId = ""
+var DelayTime int64 = 1500
 var lastTime int64 = 0
 
 type AliyundriveShare2Open struct {
@@ -47,16 +47,19 @@ func (d *AliyundriveShare2Open) GetAddition() driver.Additional {
 
 func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 	if lastTime > 0 {
-		diff := lastTime + 1500 - time.Now().UnixMilli()
+		diff := lastTime + DelayTime - time.Now().UnixMilli()
 		time.Sleep(time.Duration(diff) * time.Millisecond)
 	}
 
 	err := d.refreshToken(false)
 	if err != nil {
+		log.Errorf("refreshToken error: %v", err)
 		return err
 	}
+
 	err = d.getShareToken()
 	if err != nil {
+		log.Errorf("getShareToken error: %v", err)
 		return err
 	}
 
@@ -66,6 +69,7 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 
 	err = d.refreshOpenToken(false)
 	if err != nil {
+		log.Errorf("refreshOpenToken error: %v", err)
 		return err
 	}
 
@@ -101,6 +105,7 @@ func (d *AliyundriveShare2Open) List(ctx context.Context, dir model.Obj, args mo
 func (d *AliyundriveShare2Open) list(ctx context.Context, dir model.Obj) ([]model.Obj, error) {
 	files, err := d.getFiles(dir.GetID())
 	if err != nil {
+		log.Warnf("list files error: %v", err)
 		return nil, err
 	}
 	return utils.SliceConvert(files, func(src File) (model.Obj, error) {
@@ -131,122 +136,6 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 	}
 
 	return d.getOpenLink(newFile)
-}
-
-func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
-	data := base.Json{
-		"requests": []base.Json{
-			{
-				"body": base.Json{
-					"file_id":           fileId,
-					"share_id":          d.ShareId,
-					"auto_rename":       true,
-					"to_parent_file_id": ParentFileId,
-					"to_drive_id":       d.DriveId,
-				},
-				"headers": base.Json{
-					"Content-Type": "application/json",
-				},
-				"id":     "0",
-				"method": "POST",
-				"url":    "/file/copy",
-			},
-		},
-		"resource": "file",
-	}
-
-	res, err := d.request("https://api.aliyundrive.com/adrive/v2/batch", http.MethodPost, func(req *resty.Request) {
-		req.SetBody(data)
-	})
-	if err != nil {
-		log.Warnf("保存文件失败: %v", err)
-		return "", err
-	}
-
-	msg := utils.Json.Get(res, "responses", 0, "body", "message").ToString()
-	if msg != "" {
-		log.Warnf("保存文件失败: %v", msg)
-		return "", errors.New(msg)
-	}
-
-	newFile := utils.Json.Get(res, "responses", 0, "body", "file_id").ToString()
-	return newFile, nil
-}
-
-func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error) {
-	res, err := d.requestOpen("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
-		req.SetBody(base.Json{
-			"drive_id":   d.DriveId,
-			"file_id":    file.GetID(),
-			"expire_sec": 14400,
-		})
-	})
-
-	go d.deleteDelay(file.GetID())
-
-	if err != nil {
-		log.Warnf("getOpenLink failed: %v", err)
-		return nil, err
-	}
-	url := utils.Json.Get(res, "url").ToString()
-	if url == "" {
-		if utils.Ext(file.GetName()) != "livp" {
-			return nil, errors.New("get download url failed: " + string(res))
-		}
-		url = utils.Json.Get(res, "streamsUrl", "mov").ToString()
-	}
-
-	exp := time.Hour
-	return &model.Link{
-		URL:        url,
-		Expiration: &exp,
-	}, nil
-}
-
-func (d *AliyundriveShare2Open) deleteDelay(fileId string) {
-	time.Sleep(1000 * time.Millisecond)
-	d.deleteOpen(fileId)
-}
-
-func (d *AliyundriveShare2Open) deleteOpen(fileId string) {
-	_, err := d.requestOpen("/adrive/v1.0/openFile/delete", http.MethodPost, func(req *resty.Request) {
-		req.SetBody(base.Json{
-			"drive_id": d.DriveId,
-			"file_id":  fileId,
-		})
-	})
-	if err != nil {
-		log.Warnf("删除文件%v失败： %v", fileId, err)
-	}
-}
-
-func (d *AliyundriveShare2Open) delete(fileId string) error {
-	data := base.Json{
-		"requests": []base.Json{
-			{
-				"body": base.Json{
-					"drive_id": d.DriveId,
-					"file_id":  fileId,
-				},
-				"headers": base.Json{
-					"Content-Type": "application/json",
-				},
-				"id":     fileId,
-				"method": "POST",
-				"url":    "/file/delete",
-			},
-		},
-		"resource": "file",
-	}
-
-	_, err := d.request("https://api.aliyundrive.com/v3/batch", http.MethodPost, func(req *resty.Request) {
-		req.SetBody(data)
-	})
-	if err != nil {
-		log.Warnf("删除文件%v失败： %v", fileId, err)
-	}
-
-	return err
 }
 
 func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
@@ -281,7 +170,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	go d.deleteDelay(fileId)
 
 	if err != nil {
-		log.Warnf("获取文件链接失败：%v", err)
+		log.Errorf("获取文件链接失败：%v", err)
 		return nil, err
 	}
 	return resp, nil
