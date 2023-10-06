@@ -276,7 +276,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 
 	msg := utils.Json.Get(res, "responses", 0, "body", "message").ToString()
 	if msg != "" {
-		log.Errorf("保存文件失败: %v", msg)
+		log.Errorf("保存文件失败 : %v", msg)
 		return "", errors.New(msg)
 	}
 
@@ -380,7 +380,7 @@ func (d *AliyundriveShare2Open) request(url, method string, callback base.ReqCal
 		return nil, err
 	}
 	if e.Code != "" {
-		log.Println(e)
+		log.Warnf("请求失败: %v %v", e.Code, e.Message)
 		if e.Code == "AccessTokenInvalid" || e.Code == "ShareLinkTokenInvalid" {
 			if e.Code == "AccessTokenInvalid" {
 				err = d.refreshToken(true)
