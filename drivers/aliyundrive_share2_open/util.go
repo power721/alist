@@ -116,6 +116,11 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 		d.RefreshToken = refreshToken
 	}
 
+	if lastTime > 0 {
+		diff := lastTime + DelayTime - time.Now().UnixMilli()
+		time.Sleep(time.Duration(diff) * time.Millisecond)
+	}
+
 	t := time.Now()
 	url := "https://auth.aliyundrive.com/v2/account/token"
 	log.Println("refreshToken", accountId, url)

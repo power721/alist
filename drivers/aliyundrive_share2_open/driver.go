@@ -46,15 +46,15 @@ func (d *AliyundriveShare2Open) GetAddition() driver.Additional {
 }
 
 func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
-	if lastTime > 0 {
-		diff := lastTime + DelayTime - time.Now().UnixMilli()
-		time.Sleep(time.Duration(diff) * time.Millisecond)
-	}
-
 	err := d.refreshToken(false)
 	if err != nil {
 		log.Errorf("refreshToken error: %v", err)
 		return err
+	}
+
+	if lastTime > 0 {
+		diff := lastTime + DelayTime - time.Now().UnixMilli()
+		time.Sleep(time.Duration(diff) * time.Millisecond)
 	}
 
 	err = d.getShareToken()
