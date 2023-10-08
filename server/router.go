@@ -38,8 +38,8 @@ func Init(e *gin.Engine) {
 	}
 	WebDav(g.Group("/dav"))
 
-	g.GET("/d/*path", middlewares.Down, handles.Down)
-	g.GET("/p/*path", middlewares.Down, handles.Proxy)
+	g.GET("/d/*path", middlewares.Auth, middlewares.Down, handles.Down)
+	g.GET("/p/*path", middlewares.Auth, middlewares.Down, handles.Proxy)
 	g.HEAD("/d/*path", middlewares.Down, handles.Down)
 	g.HEAD("/p/*path", middlewares.Down, handles.Proxy)
 

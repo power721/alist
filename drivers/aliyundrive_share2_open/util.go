@@ -67,6 +67,7 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	if refresh == "" {
 		return errors.New("failed to refresh open token: refresh token is empty")
 	}
+	log.Debugf("[ali_share_open] toekn exchange: %s -> %s", d.RefreshToken, refresh)
 	d.RefreshTokenOpen, d.AccessTokenOpen = refresh, access
 
 	d.SaveOpenToken(t)
