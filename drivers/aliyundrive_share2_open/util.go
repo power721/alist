@@ -24,7 +24,7 @@ const (
 )
 
 func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
-	accountId := setting.GetStr("ali_account_id", "")
+	accountId := setting.GetStr("ali_account_id", "0")
 	accessTokenOpen := token.GetToken("AccessTokenOpen-"+accountId, 7200)
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-"+accountId, 0)
 	log.Debugf("force %v accountId %v accessTokenOpen %v refreshTokenOpen: %v", force, accountId, accessTokenOpen, refreshTokenOpen)
@@ -104,7 +104,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 }
 
 func (d *AliyundriveShare2Open) refreshToken(force bool) error {
-	accountId := setting.GetStr("ali_account_id", "1")
+	accountId := setting.GetStr("ali_account_id", "0")
 	accessToken := token.GetToken("AccessToken-"+accountId, 7200)
 	refreshToken := token.GetToken("RefreshToken-"+accountId, 0)
 	log.Debugf("refreshToken: %v %v %v", accountId, accessToken, refreshToken)

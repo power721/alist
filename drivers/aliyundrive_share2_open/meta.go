@@ -6,11 +6,11 @@ import (
 )
 
 type Addition struct {
-	RefreshToken         string `json:"RefreshToken" required:"true"`
+	RefreshToken         string `json:"RefreshToken"`
 	ShareId              string `json:"share_id" required:"true"`
 	SharePwd             string `json:"share_pwd"`
 	TempTransferFolderID string `json:"TempTransferFolderID" default:"root"`
-	RefreshTokenOpen     string `json:"RefreshTokenOpen" required:"true"`
+	RefreshTokenOpen     string `json:"RefreshTokenOpen"`
 	OauthTokenURL        string `json:"oauth_token_url" default:"https://api.xhofe.top/alist/ali_open/token"`
 	ClientID             string `json:"client_id" required:"false" help:"Keep it empty if you don't have one"`
 	ClientSecret         string `json:"client_secret" required:"false" help:"Keep it empty if you don't have one"`
