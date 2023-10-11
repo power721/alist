@@ -168,6 +168,8 @@ func InitialSettings() []model.SettingItem {
 		// qbittorrent settings
 		{Key: conf.QbittorrentUrl, Value: "http://admin:adminadmin@localhost:8080/", Type: conf.TypeString, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: conf.QbittorrentSeedtime, Value: "0", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
+		// customized settings
+		{Key: "open_token_url", Value: "https://api.xhofe.top/alist/ali_open/token", Type: conf.TypeString, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "ali_account_id", Value: "0", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
 	}
 	if flags.Dev {

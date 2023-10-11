@@ -3,6 +3,7 @@ package handles
 import (
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"image/png"
 	"time"
 
@@ -110,6 +111,10 @@ func UpdateCurrent(c *gin.Context) {
 	var req model.User
 	if err := c.ShouldBind(&req); err != nil {
 		common.ErrorResp(c, err, 400)
+		return
+	}
+	if req.Username == "atv" {
+		common.ErrorResp(c, errors.New("cannot change default user"), 403)
 		return
 	}
 	user := c.MustGet("user").(*model.User)
