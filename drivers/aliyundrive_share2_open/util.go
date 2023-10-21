@@ -383,6 +383,7 @@ func (d *AliyundriveShare2Open) request(url, method string, callback base.ReqCal
 	}
 	resp, err := req.Execute(method, url)
 	if err != nil {
+		log.Warnf("请求失败: %v", err)
 		return nil, err
 	}
 	if e.Code != "" {
