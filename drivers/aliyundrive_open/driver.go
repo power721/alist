@@ -83,7 +83,7 @@ func (d *AliyundriveOpen) link(ctx context.Context, file model.Obj) (*model.Link
 		req.SetBody(base.Json{
 			"drive_id":   d.DriveId,
 			"file_id":    file.GetID(),
-			"expire_sec": 14400,
+			"expire_sec": 600,
 		})
 	})
 	if err != nil {
