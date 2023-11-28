@@ -188,7 +188,7 @@ func (d *AliyundriveOpen) Other(ctx context.Context, args model.OtherArgs) (inte
 	case "video_preview":
 		uri = "/adrive/v1.0/openFile/getVideoPreviewPlayInfo"
 		data["category"] = "live_transcoding"
-		data["url_expire_sec"] = 14400
+		data["url_expire_sec"] = 600
 	default:
 		return nil, errs.NotSupport
 	}
