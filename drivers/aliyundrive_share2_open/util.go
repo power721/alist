@@ -295,7 +295,7 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 		req.SetBody(base.Json{
 			"drive_id":   d.DriveId,
 			"file_id":    file.GetID(),
-			"expire_sec": 600,
+			"expire_sec": 1800,
 		})
 	})
 
@@ -313,7 +313,7 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 		url = utils.Json.Get(res, "streamsUrl", "mov").ToString()
 	}
 
-	exp := time.Hour
+	exp := 12 * time.Minute
 	return &model.Link{
 		URL:        url,
 		Expiration: &exp,
