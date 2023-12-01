@@ -320,6 +320,27 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 	}, nil
 }
 
+func (d *AliyundriveShare2Open) getOriginLink(fileId string) (string, error) {
+	res, err := d.requestOpen("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(base.Json{
+			"drive_id":   d.DriveId,
+			"file_id":    fileId,
+			"expire_sec": 14400,
+		})
+	})
+
+	if err != nil {
+		log.Errorf("getOriginLink failed: %v", err)
+		return "", err
+	}
+	url := utils.Json.Get(res, "url").ToString()
+	if url == "" {
+		url = utils.Json.Get(res, "streamsUrl", "mov").ToString()
+	}
+
+	return url, nil
+}
+
 func (d *AliyundriveShare2Open) getPreviewLink(file model.Obj) (*model.Link, error) {
 	res, err := d.requestOpen("/adrive/v1.0/openFile/getVideoPreviewPlayInfo", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{

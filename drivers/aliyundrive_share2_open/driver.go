@@ -159,7 +159,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	case "video_preview":
 		uri = "/adrive/v1.0/openFile/getVideoPreviewPlayInfo"
 		data["category"] = "live_transcoding"
-		data["url_expire_sec"] = 900
+		data["url_expire_sec"] = 14400
 	default:
 		return nil, errs.NotSupport
 	}
@@ -172,6 +172,15 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	if err != nil {
 		log.Errorf("获取文件链接失败：%v", err)
 		return nil, err
+	}
+
+	url, err := d.getOriginLink(fileId)
+	if url != "" {
+		resp.VideoPreviewPlayInfo.LiveTranscodingTaskList = append(resp.VideoPreviewPlayInfo.LiveTranscodingTaskList, LiveTranscoding{
+			TemplateId: "原画限速",
+			Status:     "finished",
+			Url:        url,
+		})
 	}
 
 	return resp, nil
