@@ -320,6 +320,81 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 	}, nil
 }
 
+func (d *AliyundriveShare2Open) getPreviewLink(file model.Obj) (*model.Link, error) {
+	res, err := d.requestOpen("/adrive/v1.0/openFile/getVideoPreviewPlayInfo", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(base.Json{
+			"drive_id":       d.DriveId,
+			"file_id":        file.GetID(),
+			"category":       "live_transcoding",
+			"template_id":    "",
+			"mode":           "high_res",
+			"url_expire_sec": 14400,
+		})
+	})
+
+	go d.deleteDelay(file.GetID())
+
+	if err != nil {
+		log.Errorf("getPreviewLink failed: %v", err)
+		return nil, err
+	}
+
+	var resp VideoPreviewResponse
+	err = utils.Json.Unmarshal(res, &resp)
+	if err != nil {
+		log.Errorf("Unmarshal failed: %v", err)
+		return nil, err
+	}
+
+	log.Infof("%v", resp)
+
+	n := len(resp.VideoPreviewPlayInfo.LiveTranscodingTaskList)
+	url := resp.VideoPreviewPlayInfo.LiveTranscodingTaskList[n-1].Url
+
+	exp := 12 * time.Minute
+	return &model.Link{
+		URL:        url,
+		Expiration: &exp,
+	}, nil
+}
+
+func (d *AliyundriveShare2Open) getLink(file model.Obj) (*model.Link, error) {
+	res, err := d.request("https://api.aliyundrive.com/v2/file/get_video_preview_play_info", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(base.Json{
+			"drive_id":       d.DriveId,
+			"file_id":        file.GetID(),
+			"category":       "live_transcoding",
+			"template_id":    "",
+			"mode":           "high_res",
+			"url_expire_sec": 14400,
+		})
+	})
+
+	go d.deleteDelay(file.GetID())
+
+	if err != nil {
+		log.Errorf("getLink failed: %v", err)
+		return nil, err
+	}
+	var resp VideoPreviewResponse
+	err = utils.Json.Unmarshal(res, &resp)
+	if err != nil {
+		log.Errorf("Unmarshal failed: %v", err)
+		return nil, err
+	}
+
+	log.Infof("%v", resp)
+
+	n := len(resp.VideoPreviewPlayInfo.LiveTranscodingTaskList)
+	url := resp.VideoPreviewPlayInfo.LiveTranscodingTaskList[n-1].Url
+
+	exp := time.Hour
+	return &model.Link{
+		URL:        url,
+		Expiration: &exp,
+	}, nil
+}
+
 func (d *AliyundriveShare2Open) deleteDelay(fileId string) {
 	time.Sleep(1000 * time.Millisecond)
 	d.deleteOpen(fileId)
@@ -372,7 +447,7 @@ func (d *AliyundriveShare2Open) request(url, method string, callback base.ReqCal
 		SetError(&e).
 		SetHeader("content-type", "application/json").
 		SetHeader("Referer", "https://www.aliyundrive.com/").
-		SetHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36").
+		SetHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36").
 		SetHeader("Authorization", "Bearer\t"+d.AccessToken).
 		SetHeader(CanaryHeaderKey, CanaryHeaderValue).
 		SetHeader("x-share-token", d.ShareToken)

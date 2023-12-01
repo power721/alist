@@ -67,6 +67,19 @@ type MyFile struct {
 	UpdateAt time.Time `json:"UpdateAt"`
 }
 
+type VideoPreviewResponse struct {
+	VideoPreviewPlayInfo VideoPreviewPlayInfo `json:"video_preview_play_info"`
+}
+
+type VideoPreviewPlayInfo struct {
+	LiveTranscodingTaskList []LiveTranscoding `json:"live_transcoding_task_list"`
+}
+
+type LiveTranscoding struct {
+	TemplateId string `json:"template_id"`
+	Url        string `json:"url"`
+}
+
 func (f MyFile) GetPath() string {
 	return ""
 }

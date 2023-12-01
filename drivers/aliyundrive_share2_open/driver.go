@@ -135,7 +135,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		Name:   "livp",
 	}
 
-	return d.getOpenLink(newFile)
+	return d.getPreviewLink(newFile)
 }
 
 func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
