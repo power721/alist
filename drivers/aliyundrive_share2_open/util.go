@@ -351,7 +351,7 @@ func (d *AliyundriveShare2Open) getPreviewLink(file model.Obj) (*model.Link, err
 	n := len(resp.VideoPreviewPlayInfo.LiveTranscodingTaskList)
 	url := resp.VideoPreviewPlayInfo.LiveTranscodingTaskList[n-1].Url
 
-	exp := 12 * time.Minute
+	exp := 895 * time.Second
 	return &model.Link{
 		URL:        url,
 		Expiration: &exp,
