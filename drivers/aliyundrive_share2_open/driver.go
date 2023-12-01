@@ -149,7 +149,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 		return nil, err
 	}
 
-	var resp base.Json
+	var resp VideoPreviewResponse
 	var uri string
 	data := base.Json{
 		"drive_id": d.DriveId,
@@ -173,6 +173,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 		log.Errorf("获取文件链接失败：%v", err)
 		return nil, err
 	}
+
 	return resp, nil
 }
 
