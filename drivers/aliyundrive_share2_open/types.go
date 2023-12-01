@@ -77,6 +77,7 @@ type VideoPreviewPlayInfo struct {
 
 type LiveTranscoding struct {
 	TemplateId string `json:"template_id"`
+	Status     string `json:"status"`
 	Url        string `json:"url"`
 }
 
