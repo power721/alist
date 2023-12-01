@@ -177,7 +177,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	url, err := d.getOriginLink(fileId)
 	if url != "" {
 		resp.VideoPreviewPlayInfo.LiveTranscodingTaskList = append(resp.VideoPreviewPlayInfo.LiveTranscodingTaskList, LiveTranscoding{
-			TemplateId: "原画限速",
+			TemplateId: "直链限速",
 			Status:     "finished",
 			Url:        url,
 		})
