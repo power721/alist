@@ -432,6 +432,10 @@ func (d *AliyundriveShare2Open) getLink(file model.Obj) (*model.Link, error) {
 
 func (d *AliyundriveShare2Open) deleteDelay(fileId string) {
 	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
+	if delayTime == 0 {
+		return
+	}
+
 	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	d.deleteOpen(fileId)
