@@ -320,7 +320,8 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 	}, nil
 }
 
-func (d *AliyundriveShare2Open) getOriginLink(fileId string) (string, error) {
+func (d *AliyundriveShare2Open) getDownloadUrl(fileId string) (string, error) {
+	log.Infof("getDownloadUrl %v %v", d.DriveId, fileId)
 	res, err := d.requestOpen("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id":   d.DriveId,
@@ -330,7 +331,7 @@ func (d *AliyundriveShare2Open) getOriginLink(fileId string) (string, error) {
 	})
 
 	if err != nil {
-		log.Errorf("getOriginLink failed: %v", err)
+		log.Errorf("getDownloadUrl failed: %v", err)
 		return "", err
 	}
 	url := utils.Json.Get(res, "url").ToString()
@@ -369,8 +370,16 @@ func (d *AliyundriveShare2Open) getPreviewLink(file model.Obj) (*model.Link, err
 
 	log.Infof("%v", resp)
 
-	n := len(resp.VideoPreviewPlayInfo.LiveTranscodingTaskList)
-	url := resp.VideoPreviewPlayInfo.LiveTranscodingTaskList[n-1].Url
+	url := ""
+	for _, item := range resp.VideoPreviewPlayInfo.LiveTranscodingTaskList {
+		if item.Status == "finished" {
+			url = item.Url
+		}
+	}
+
+	if url == "" {
+		url, _ = d.getDownloadUrl(file.GetID())
+	}
 
 	exp := 895 * time.Second
 	return &model.Link{
