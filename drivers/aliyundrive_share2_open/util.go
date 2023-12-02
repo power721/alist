@@ -313,7 +313,7 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 		url = utils.Json.Get(res, "streamsUrl", "mov").ToString()
 	}
 
-	exp := 12 * time.Minute
+	exp := 895 * time.Second
 	return &model.Link{
 		URL:        url,
 		Expiration: &exp,

@@ -135,7 +135,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		Name:   "livp",
 	}
 
-	return d.getPreviewLink(newFile)
+	return d.getOpenLink(newFile)
 }
 
 func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
@@ -177,7 +177,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	url, err := d.getDownloadUrl(fileId)
 	if url != "" {
 		resp.PlayInfo.Videos = append(resp.PlayInfo.Videos, LiveTranscoding{
-			TemplateId: "直链限速",
+			TemplateId: "原画",
 			Status:     "finished",
 			Url:        url,
 		})
