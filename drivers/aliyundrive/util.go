@@ -156,7 +156,7 @@ func (d *AliDrive) getFiles(fileId string) ([]File, error) {
 			"order_direction":         d.OrderDirection,
 			"parent_file_id":          fileId,
 			"video_thumbnail_process": "video/snapshot,t_0,f_jpg,ar_auto,w_300",
-			"url_expire_sec":          900,
+			"url_expire_sec":          14400,
 		}
 		_, err, _ := d.request("https://api.aliyundrive.com/v2/file/list", http.MethodPost, func(req *resty.Request) {
 			req.SetBody(data)
