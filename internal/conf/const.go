@@ -36,6 +36,7 @@ const (
 	CustomizeHead           = "customize_head"
 	CustomizeBody           = "customize_body"
 	LinkExpiration          = "link_expiration"
+	DeleteDelayTime         = "delete_delay_time"
 	SignAll                 = "sign_all"
 	PrivacyRegs             = "privacy_regs"
 	OcrApi                  = "ocr_api"

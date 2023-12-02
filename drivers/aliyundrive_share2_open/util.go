@@ -3,6 +3,7 @@ package aliyundrive_share2_open
 import (
 	"errors"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/internal/token"
@@ -430,7 +431,9 @@ func (d *AliyundriveShare2Open) getLink(file model.Obj) (*model.Link, error) {
 }
 
 func (d *AliyundriveShare2Open) deleteDelay(fileId string) {
-	time.Sleep(1000 * time.Millisecond)
+	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
+	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
+	time.Sleep(time.Duration(delayTime) * time.Second)
 	d.deleteOpen(fileId)
 }
 
