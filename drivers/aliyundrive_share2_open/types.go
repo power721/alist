@@ -68,17 +68,24 @@ type MyFile struct {
 }
 
 type VideoPreviewResponse struct {
-	VideoPreviewPlayInfo VideoPreviewPlayInfo `json:"video_preview_play_info"`
+	PlayInfo VideoPreviewPlayInfo `json:"video_preview_play_info"`
 }
 
 type VideoPreviewPlayInfo struct {
-	LiveTranscodingTaskList []LiveTranscoding `json:"live_transcoding_task_list"`
+	Videos    []LiveTranscoding         `json:"live_transcoding_task_list"`
+	Subtitles []LiveTranscodingSubtitle `json:"live_transcoding_subtitle_task_list"`
 }
 
 type LiveTranscoding struct {
 	TemplateId string `json:"template_id"`
 	Status     string `json:"status"`
 	Url        string `json:"url"`
+}
+
+type LiveTranscodingSubtitle struct {
+	Language string `json:"language"`
+	Status   string `json:"status"`
+	Url      string `json:"url"`
 }
 
 func (f MyFile) GetPath() string {

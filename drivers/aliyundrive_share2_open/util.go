@@ -371,7 +371,7 @@ func (d *AliyundriveShare2Open) getPreviewLink(file model.Obj) (*model.Link, err
 	log.Infof("%v", resp)
 
 	url := ""
-	for _, item := range resp.VideoPreviewPlayInfo.LiveTranscodingTaskList {
+	for _, item := range resp.PlayInfo.Videos {
 		if item.Status == "finished" {
 			url = item.Url
 		}
@@ -413,10 +413,14 @@ func (d *AliyundriveShare2Open) getLink(file model.Obj) (*model.Link, error) {
 		return nil, err
 	}
 
-	log.Infof("%v", resp)
+	log.Debugf("%v", resp)
 
-	n := len(resp.VideoPreviewPlayInfo.LiveTranscodingTaskList)
-	url := resp.VideoPreviewPlayInfo.LiveTranscodingTaskList[n-1].Url
+	url := ""
+	for _, item := range resp.PlayInfo.Videos {
+		if item.Status == "finished" {
+			url = item.Url
+		}
+	}
 
 	exp := time.Hour
 	return &model.Link{
