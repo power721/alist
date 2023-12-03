@@ -197,7 +197,7 @@ func (d *AliyundriveOpen) upload(ctx context.Context, dstDir model.Obj, stream m
 			return err
 		}
 		createData["size"] = stream.GetSize()
-		createData["pre_hash"] = utils.GetSHA1Encode(buf.Bytes())
+		createData["pre_hash"] = utils.HashData(utils.SHA1, buf.Bytes())
 		// if support seek, seek to start
 		if localFile, ok := stream.(io.Seeker); ok {
 			if _, err := localFile.Seek(0, io.SeekStart); err != nil {
