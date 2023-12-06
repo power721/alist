@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
@@ -18,6 +18,7 @@ import (
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/avast/retry-go"
 	"github.com/foxxorcat/mopan-sdk-go"
+	log "github.com/sirupsen/logrus"
 )
 
 type MoPan struct {
@@ -54,6 +55,16 @@ func (d *MoPan) Init(ctx context.Context) error {
 			return err
 		}
 		d.userID = info.UserID
+		log.Debugf("[mopan] Phone: %s UserCloudStorageRelations: %+v", d.Phone, data.UserCloudStorageRelations)
+		cloudCircleApp, _ := d.client.QueryAllCloudCircleApp()
+		log.Debugf("[mopan] Phone: %s CloudCircleApp: %+v", d.Phone, cloudCircleApp)
+		if d.RootFolderID == "" {
+			for _, userCloudStorage := range data.UserCloudStorageRelations {
+				if userCloudStorage.Path == "/文件" {
+					d.RootFolderID = userCloudStorage.FolderID
+				}
+			}
+		}
 		return nil
 	}
 	d.client = mopan.NewMoClientWithRestyClient(base.NewRestyClient()).
@@ -94,6 +105,7 @@ func (d *MoPan) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([
 			break
 		}
 
+		log.Debugf("[mopan] Phone: %s folder: %+v", d.Phone, data.FileListAO.FolderList)
 		files = append(files, utils.MustSliceConvert(data.FileListAO.FolderList, folderToObj)...)
 		files = append(files, utils.MustSliceConvert(data.FileListAO.FileList, fileToObj)...)
 	}
@@ -104,6 +116,18 @@ func (d *MoPan) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (
 	data, err := d.client.GetFileDownloadUrl(file.GetID(), mopan.WarpParamOption(mopan.ParamOptionShareFile(d.CloudID)))
 	if err != nil {
 		return nil, err
+	}
+
+	data.DownloadUrl = strings.Replace(strings.ReplaceAll(data.DownloadUrl, "&amp;", "&"), "http://", "https://", 1)
+	res, err := base.NoRedirectClient.R().SetDoNotParseResponse(true).SetContext(ctx).Get(data.DownloadUrl)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = res.RawBody().Close()
+	}()
+	if res.StatusCode() == 302 {
+		data.DownloadUrl = res.Header().Get("location")
 	}
 
 	return &model.Link{
@@ -219,13 +243,12 @@ func (d *MoPan) Remove(ctx context.Context, obj model.Obj) error {
 }
 
 func (d *MoPan) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) (model.Obj, error) {
-	file, err := utils.CreateTempFile(stream, stream.GetSize())
+	file, err := stream.CacheFullInTempFile()
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
 		_ = file.Close()
-		_ = os.Remove(file.Name())
 	}()
 
 	// step.1
@@ -252,7 +275,7 @@ func (d *MoPan) Put(ctx context.Context, dstDir model.Obj, stream model.FileStre
 	}
 
 	if !initUpdload.FileDataExists {
-		fmt.Println(d.client.CloudDiskStartBusiness())
+		utils.Log.Error(d.client.CloudDiskStartBusiness())
 
 		threadG, upCtx := errgroup.NewGroupWithContext(ctx, d.uploadThread,
 			retry.Attempts(3),
@@ -288,7 +311,7 @@ func (d *MoPan) Put(ctx context.Context, dstDir model.Obj, stream model.FileStre
 				if resp.StatusCode != http.StatusOK {
 					return fmt.Errorf("upload err,code=%d", resp.StatusCode)
 				}
-				up(100 * int(threadG.Success()) / len(parts))
+				up(100 * float64(threadG.Success()) / float64(len(parts)))
 				initUpdload.PartInfos[i] = ""
 				return nil
 			})

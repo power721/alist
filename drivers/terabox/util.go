@@ -1,10 +1,11 @@
-package terbox
+package terabox
 
 import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -15,7 +16,39 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-func (d *Terabox) request(furl string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
+func getStrBetween(raw, start, end string) string {
+	regexPattern := fmt.Sprintf(`%s(.*?)%s`, regexp.QuoteMeta(start), regexp.QuoteMeta(end))
+	regex := regexp.MustCompile(regexPattern)
+	matches := regex.FindStringSubmatch(raw)
+	if len(matches) < 2 {
+		return ""
+	}
+	mid := matches[1]
+	return mid
+}
+
+func (d *Terabox) resetJsToken() error {
+	u := "https://www.terabox.com/main"
+	res, err := base.RestyClient.R().SetHeaders(map[string]string{
+		"Cookie":           d.Cookie,
+		"Accept":           "application/json, text/plain, */*",
+		"Referer":          "https://www.terabox.com/",
+		"User-Agent":       base.UserAgent,
+		"X-Requested-With": "XMLHttpRequest",
+	}).Get(u)
+	if err != nil {
+		return err
+	}
+	html := res.String()
+	jsToken := getStrBetween(html, "`function%20fn%28a%29%7Bwindow.jsToken%20%3D%20a%7D%3Bfn%28%22", "%22%29`")
+	if jsToken == "" {
+		return fmt.Errorf("jsToken not found, html: %s", html)
+	}
+	d.JsToken = jsToken
+	return nil
+}
+
+func (d *Terabox) request(furl string, method string, callback base.ReqCallback, resp interface{}, noRetry ...bool) ([]byte, error) {
 	req := base.RestyClient.R()
 	req.SetHeaders(map[string]string{
 		"Cookie":           d.Cookie,
@@ -24,10 +57,13 @@ func (d *Terabox) request(furl string, method string, callback base.ReqCallback,
 		"User-Agent":       base.UserAgent,
 		"X-Requested-With": "XMLHttpRequest",
 	})
-	req.SetQueryParam("app_id", "250528")
-	req.SetQueryParam("web", "1")
-	req.SetQueryParam("channel", "dubox")
-	req.SetQueryParam("clienttype", "0")
+	req.SetQueryParams(map[string]string{
+		"app_id":     "250528",
+		"web":        "1",
+		"channel":    "dubox",
+		"clienttype": "0",
+		"jsToken":    d.JsToken,
+	})
 	if callback != nil {
 		callback(req)
 	}
@@ -37,6 +73,17 @@ func (d *Terabox) request(furl string, method string, callback base.ReqCallback,
 	res, err := req.Execute(method, furl)
 	if err != nil {
 		return nil, err
+	}
+	errno := utils.Json.Get(res.Body(), "errno").ToInt()
+	if errno == 4000023 {
+		// reget jsToken
+		err = d.resetJsToken()
+		if err != nil {
+			return nil, err
+		}
+		if !utils.IsBool(noRetry...) {
+			return d.request(furl, method, callback, resp, true)
+		}
 	}
 	return res.Body(), nil
 }
@@ -186,7 +233,7 @@ func (d *Terabox) manage(opera string, filelist interface{}) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	data := fmt.Sprintf("async=0&filelist=%s&ondup=newcopy", string(marshal))
+	data := fmt.Sprintf("async=0&filelist=%s&ondup=newcopy", encodeURIComponent(string(marshal)))
 	return d.post("/api/filemanager", params, data, nil)
 }
 
