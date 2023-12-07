@@ -174,13 +174,15 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 		return nil, err
 	}
 
-	url, err := d.getDownloadUrl(fileId)
-	if url != "" {
-		resp.PlayInfo.Videos = append(resp.PlayInfo.Videos, LiveTranscoding{
-			TemplateId: "原画",
-			Status:     "finished",
-			Url:        url,
-		})
+	if args.Data == "preview" {
+		url, _ := d.getDownloadUrl(fileId)
+		if url != "" {
+			resp.PlayInfo.Videos = append(resp.PlayInfo.Videos, LiveTranscoding{
+				TemplateId: "原画",
+				Status:     "finished",
+				Url:        url,
+			})
+		}
 	}
 
 	return resp, nil
