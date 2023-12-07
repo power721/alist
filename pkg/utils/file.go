@@ -113,7 +113,7 @@ func CreateNestedFile(path string) (*os.File, error) {
 }
 
 // CreateTempFile create temp file from io.ReadCloser, and seek to 0
-func CreateTempFile(r io.Reader, size int64) (*os.File, error) {
+func CreateTempFile(r io.ReadCloser, size int64) (*os.File, error) {
 	if f, ok := r.(*os.File); ok {
 		return f, nil
 	}
@@ -126,7 +126,7 @@ func CreateTempFile(r io.Reader, size int64) (*os.File, error) {
 		_ = os.Remove(f.Name())
 		return nil, errs.NewErr(err, "CreateTempFile failed")
 	}
-	if size > 0 && readBytes != size {
+	if size != 0 && readBytes != size {
 		_ = os.Remove(f.Name())
 		return nil, errs.NewErr(err, "CreateTempFile failed, incoming stream actual size= %d, expect = %d ", readBytes, size)
 	}
@@ -163,25 +163,11 @@ func GetObjType(filename string, isDir bool) int {
 	return GetFileType(filename)
 }
 
-var extraMimeTypes = map[string]string{
-	".apk": "application/vnd.android.package-archive",
-}
-
 func GetMimeType(name string) string {
 	ext := path.Ext(name)
-	if m, ok := extraMimeTypes[ext]; ok {
-		return m
-	}
 	m := mime.TypeByExtension(ext)
 	if m != "" {
 		return m
 	}
 	return "application/octet-stream"
 }
-
-const (
-	KB = 1 << (10 * (iota + 1))
-	MB
-	GB
-	TB
-)

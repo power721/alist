@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alist-org/alist/v3/internal/stream"
-
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -98,14 +96,14 @@ func (d *S3) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*mo
 func (d *S3) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) error {
 	return d.Put(ctx, &model.Object{
 		Path: stdpath.Join(parentDir.GetPath(), dirName),
-	}, &stream.FileStream{
+	}, &model.FileStream{
 		Obj: &model.Object{
 			Name:     getPlaceholderName(d.Placeholder),
 			Modified: time.Now(),
 		},
-		Reader:   io.NopCloser(bytes.NewReader([]byte{})),
-		Mimetype: "application/octet-stream",
-	}, func(float64) {})
+		ReadCloser: io.NopCloser(bytes.NewReader([]byte{})),
+		Mimetype:   "application/octet-stream",
+	}, func(int) {})
 }
 
 func (d *S3) Move(ctx context.Context, srcObj, dstDir model.Obj) error {

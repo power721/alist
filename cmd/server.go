@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/alist-org/alist/v3/cmd/flags"
+	_ "github.com/alist-org/alist/v3/drivers"
 	"github.com/alist-org/alist/v3/internal/bootstrap"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/pkg/utils"
@@ -35,9 +35,9 @@ the address is defined in config file`,
 			utils.Log.Infof("delayed start for %d seconds", conf.Conf.DelayedStart)
 			time.Sleep(time.Duration(conf.Conf.DelayedStart) * time.Second)
 		}
-		bootstrap.InitOfflineDownloadTools()
+		bootstrap.InitAria2()
+		bootstrap.InitQbittorrent()
 		bootstrap.LoadStorages()
-		bootstrap.InitTaskManager()
 		if !flags.Debug && !flags.Dev {
 			gin.SetMode(gin.ReleaseMode)
 		}
@@ -51,7 +51,7 @@ the address is defined in config file`,
 			httpSrv = &http.Server{Addr: httpBase, Handler: r}
 			go func() {
 				err := httpSrv.ListenAndServe()
-				if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				if err != nil && err != http.ErrServerClosed {
 					utils.Log.Fatalf("failed to start http: %s", err.Error())
 				}
 			}()
@@ -62,7 +62,7 @@ the address is defined in config file`,
 			httpsSrv = &http.Server{Addr: httpsBase, Handler: r}
 			go func() {
 				err := httpsSrv.ListenAndServeTLS(conf.Conf.Scheme.CertFile, conf.Conf.Scheme.KeyFile)
-				if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				if err != nil && err != http.ErrServerClosed {
 					utils.Log.Fatalf("failed to start https: %s", err.Error())
 				}
 			}()
@@ -86,7 +86,7 @@ the address is defined in config file`,
 					}
 				}
 				err = unixSrv.Serve(listener)
-				if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				if err != nil && err != http.ErrServerClosed {
 					utils.Log.Fatalf("failed to start unix: %s", err.Error())
 				}
 			}()
@@ -100,7 +100,7 @@ the address is defined in config file`,
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		<-quit
 		utils.Log.Println("Shutdown server...")
-		Release()
+
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 		defer cancel()
 		var wg sync.WaitGroup

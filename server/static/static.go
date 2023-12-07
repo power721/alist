@@ -3,47 +3,26 @@ package static
 import (
 	"errors"
 	"fmt"
-	"github.com/alist-org/alist/v3/public"
-	"io"
 	"io/fs"
 	"net/http"
-	"os"
+	"net/http/pprof"
 	"strings"
 
+	"github.com/alist-org/alist/v3/cmd/flags"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/utils"
+	"github.com/alist-org/alist/v3/public"
 	"github.com/gin-gonic/gin"
 )
 
-var static fs.FS = public.Public
-
-func initStatic() {
-	if conf.Conf.DistDir == "" {
-		dist, err := fs.Sub(static, "dist")
-		if err != nil {
-			utils.Log.Fatalf("failed to read dist dir")
-		}
-		static = dist
-		return
-	}
-	static = os.DirFS(conf.Conf.DistDir)
-}
-
-func initIndex() {
-	indexFile, err := static.Open("index.html")
+func InitIndex() {
+	index, err := public.Public.ReadFile("dist/index.html")
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			utils.Log.Fatalf("index.html not exist, you may forget to put dist of frontend to public/dist")
 		}
 		utils.Log.Fatalf("failed to read index.html: %v", err)
-	}
-	defer func() {
-		_ = indexFile.Close()
-	}()
-	index, err := io.ReadAll(indexFile)
-	if err != nil {
-		utils.Log.Fatalf("failed to read dist/index.html")
 	}
 	conf.RawIndexHtml = string(index)
 	siteConfig := getSiteConfig()
@@ -83,8 +62,7 @@ func UpdateIndex() {
 }
 
 func Static(r *gin.RouterGroup, noRoute func(handlers ...gin.HandlerFunc)) {
-	initStatic()
-	initIndex()
+	InitIndex()
 	folders := []string{"assets", "images", "streamer", "static"}
 	r.Use(func(c *gin.Context) {
 		for i := range folders {
@@ -94,7 +72,8 @@ func Static(r *gin.RouterGroup, noRoute func(handlers ...gin.HandlerFunc)) {
 		}
 	})
 	for i, folder := range folders {
-		sub, err := fs.Sub(static, folder)
+		folder = "dist/" + folder
+		sub, err := fs.Sub(public.Public, folder)
 		if err != nil {
 			utils.Log.Fatalf("can't find folder: %s", folder)
 		}
@@ -106,6 +85,8 @@ func Static(r *gin.RouterGroup, noRoute func(handlers ...gin.HandlerFunc)) {
 		c.Status(200)
 		if strings.HasPrefix(c.Request.URL.Path, "/@manage") {
 			_, _ = c.Writer.WriteString(conf.ManageHtml)
+		} else if strings.HasPrefix(c.Request.URL.Path, "/debug/pprof") && flags.Debug {
+			pprof.Index(c.Writer, c.Request)
 		} else {
 			_, _ = c.Writer.WriteString(conf.IndexHtml)
 		}

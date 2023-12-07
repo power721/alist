@@ -2,12 +2,10 @@ package handles
 
 import (
 	"encoding/base32"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 	"time"
 
@@ -38,85 +36,71 @@ var opts = totp.ValidateOpts{
 
 func SSOLoginRedirect(c *gin.Context) {
 	method := c.Query("method")
-	usecompatibility := setting.GetBool(conf.SSOCompatibilityMode)
 	enabled := setting.GetBool(conf.SSOLoginEnabled)
 	clientId := setting.GetStr(conf.SSOClientId)
 	platform := setting.GetStr(conf.SSOLoginPlatform)
 	var r_url string
 	var redirect_uri string
-	if !enabled {
-		common.ErrorStrResp(c, "Single sign-on is not enabled", 403)
-		return
-	}
-	urlValues := url.Values{}
-	if method == "" {
-		common.ErrorStrResp(c, "no method provided", 400)
-		return
-	}
-	if usecompatibility {
-		redirect_uri = common.GetApiUrl(c.Request) + "/api/auth/" + method
-	} else {
+	if enabled {
+		urlValues := url.Values{}
+		if method == "" {
+			common.ErrorStrResp(c, "no method provided", 400)
+			return
+		}
 		redirect_uri = common.GetApiUrl(c.Request) + "/api/auth/sso_callback" + "?method=" + method
-	}
-	urlValues.Add("response_type", "code")
-	urlValues.Add("redirect_uri", redirect_uri)
-	urlValues.Add("client_id", clientId)
-	switch platform {
-	case "Github":
-		r_url = "https://github.com/login/oauth/authorize?"
-		urlValues.Add("scope", "read:user")
-	case "Microsoft":
-		r_url = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?"
-		urlValues.Add("scope", "user.read")
-		urlValues.Add("response_mode", "query")
-	case "Google":
-		r_url = "https://accounts.google.com/o/oauth2/v2/auth?"
-		urlValues.Add("scope", "https://www.googleapis.com/auth/userinfo.profile")
-	case "Dingtalk":
-		r_url = "https://login.dingtalk.com/oauth2/auth?"
-		urlValues.Add("scope", "openid")
-		urlValues.Add("prompt", "consent")
 		urlValues.Add("response_type", "code")
-	case "Casdoor":
-		endpoint := strings.TrimSuffix(setting.GetStr(conf.SSOEndpointName), "/")
-		r_url = endpoint + "/login/oauth/authorize?"
-		urlValues.Add("scope", "profile")
-		urlValues.Add("state", endpoint)
-	case "OIDC":
-		oauth2Config, err := GetOIDCClient(c)
-		if err != nil {
-			common.ErrorStrResp(c, err.Error(), 400)
+		urlValues.Add("redirect_uri", redirect_uri)
+		urlValues.Add("client_id", clientId)
+		switch platform {
+		case "Github":
+			r_url = "https://github.com/login/oauth/authorize?"
+			urlValues.Add("scope", "read:user")
+		case "Microsoft":
+			r_url = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?"
+			urlValues.Add("scope", "user.read")
+			urlValues.Add("response_mode", "query")
+		case "Google":
+			r_url = "https://accounts.google.com/o/oauth2/v2/auth?"
+			urlValues.Add("scope", "https://www.googleapis.com/auth/userinfo.profile")
+		case "Dingtalk":
+			r_url = "https://login.dingtalk.com/oauth2/auth?"
+			urlValues.Add("scope", "openid")
+			urlValues.Add("prompt", "consent")
+			urlValues.Add("response_type", "code")
+		case "Casdoor":
+			endpoint := strings.TrimSuffix(setting.GetStr(conf.SSOEndpointName), "/")
+			r_url = endpoint + "/login/oauth/authorize?"
+			urlValues.Add("scope", "profile")
+			urlValues.Add("state", endpoint)
+		case "OIDC":
+			oauth2Config, err := GetOIDCClient(c)
+			if err != nil {
+				common.ErrorStrResp(c, err.Error(), 400)
+				return
+			}
+			// generate state parameter
+			state, err := totp.GenerateCodeCustom(base32.StdEncoding.EncodeToString([]byte(oauth2Config.ClientSecret)), time.Now(), opts)
+			if err != nil {
+				common.ErrorStrResp(c, err.Error(), 400)
+				return
+			}
+			c.Redirect(http.StatusFound, oauth2Config.AuthCodeURL(state))
+			return
+		default:
+			common.ErrorStrResp(c, "invalid platform", 400)
 			return
 		}
-		// generate state parameter
-		state, err := totp.GenerateCodeCustom(base32.StdEncoding.EncodeToString([]byte(oauth2Config.ClientSecret)), time.Now(), opts)
-		if err != nil {
-			common.ErrorStrResp(c, err.Error(), 400)
-			return
-		}
-		c.Redirect(http.StatusFound, oauth2Config.AuthCodeURL(state))
-		return
-	default:
-		common.ErrorStrResp(c, "invalid platform", 400)
-		return
+		c.Redirect(302, r_url+urlValues.Encode())
+	} else {
+		common.ErrorStrResp(c, "Single sign-on is not enabled", 403)
 	}
-	c.Redirect(302, r_url+urlValues.Encode())
 }
 
 var ssoClient = resty.New().SetRetryCount(3)
 
 func GetOIDCClient(c *gin.Context) (*oauth2.Config, error) {
-	var redirect_uri string
-	usecompatibility := setting.GetBool(conf.SSOCompatibilityMode)
 	argument := c.Query("method")
-	if usecompatibility {
-		argument = path.Base(c.Request.URL.Path)
-	}
-	if usecompatibility {
-		redirect_uri = common.GetApiUrl(c.Request) + "/api/auth/" + argument
-	} else {
-		redirect_uri = common.GetApiUrl(c.Request) + "/api/auth/sso_callback" + "?method=" + argument
-	}
+	redirect_uri := common.GetApiUrl(c.Request) + "/api/auth/sso_callback" + "?method=" + argument
 	endpoint := setting.GetStr(conf.SSOEndpointName)
 	provider, err := oidc.NewProvider(c, endpoint)
 	if err != nil {
@@ -167,24 +151,8 @@ func autoRegister(username, userID string, err error) (*model.User, error) {
 	return user, nil
 }
 
-func parseJWT(p string) ([]byte, error) {
-	parts := strings.Split(p, ".")
-	if len(parts) < 2 {
-		return nil, fmt.Errorf("oidc: malformed jwt, expected 3 parts got %d", len(parts))
-	}
-	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
-	if err != nil {
-		return nil, fmt.Errorf("oidc: malformed jwt payload: %v", err)
-	}
-	return payload, nil
-}
-
 func OIDCLoginCallback(c *gin.Context) {
-	useCompatibility := setting.GetBool(conf.SSOCompatibilityMode)
 	argument := c.Query("method")
-	if useCompatibility {
-		argument = path.Base(c.Request.URL.Path)
-	}
 	clientId := setting.GetStr(conf.SSOClientId)
 	endpoint := setting.GetStr(conf.SSOEndpointName)
 	provider, err := oidc.NewProvider(c, endpoint)
@@ -221,26 +189,21 @@ func OIDCLoginCallback(c *gin.Context) {
 	verifier := provider.Verifier(&oidc.Config{
 		ClientID: clientId,
 	})
-	_, err = verifier.Verify(c, rawIDToken)
+	idToken, err := verifier.Verify(c, rawIDToken)
 	if err != nil {
 		common.ErrorResp(c, err, 400)
 		return
 	}
-	payload, err := parseJWT(rawIDToken)
-	if err != nil {
+	type UserInfo struct {
+		Name string `json:"name"`
+	}
+	claims := UserInfo{}
+	if err := idToken.Claims(&claims); err != nil {
 		common.ErrorResp(c, err, 400)
 		return
 	}
-	userID := utils.Json.Get(payload, conf.SSOOIDCUsernameKey).ToString()
-	if userID == "" {
-		common.ErrorStrResp(c, "cannot get username from OIDC provider", 400)
-		return
-	}
+	UserID := claims.Name
 	if argument == "get_sso_id" {
-		if useCompatibility {
-			c.Redirect(302, common.GetApiUrl(c.Request)+"/@manage?sso_id="+userID)
-			return
-		}
 		html := fmt.Sprintf(`<!DOCTYPE html>
 				<head></head>
 				<body>
@@ -248,25 +211,21 @@ func OIDCLoginCallback(c *gin.Context) {
 				window.opener.postMessage({"sso_id": "%s"}, "*")
 				window.close()
 				</script>
-				</body>`, userID)
+				</body>`, UserID)
 		c.Data(200, "text/html; charset=utf-8", []byte(html))
 		return
 	}
 	if argument == "sso_get_token" {
-		user, err := db.GetUserBySSOID(userID)
+		user, err := db.GetUserBySSOID(UserID)
 		if err != nil {
-			user, err = autoRegister(userID, userID, err)
+			user, err = autoRegister(UserID, UserID, err)
 			if err != nil {
 				common.ErrorResp(c, err, 400)
 			}
 		}
-		token, err := common.GenerateToken(user)
+		token, err := common.GenerateToken(user.Username)
 		if err != nil {
 			common.ErrorResp(c, err, 400)
-		}
-		if useCompatibility {
-			c.Redirect(302, common.GetApiUrl(c.Request)+"/@login?token="+token)
-			return
 		}
 		html := fmt.Sprintf(`<!DOCTYPE html>
 				<head></head>
@@ -283,18 +242,12 @@ func OIDCLoginCallback(c *gin.Context) {
 
 func SSOLoginCallback(c *gin.Context) {
 	enabled := setting.GetBool(conf.SSOLoginEnabled)
-	usecompatibility := setting.GetBool(conf.SSOCompatibilityMode)
 	if !enabled {
 		common.ErrorResp(c, errors.New("sso login is disabled"), 500)
-		return
 	}
 	argument := c.Query("method")
-	if usecompatibility {
-		argument = path.Base(c.Request.URL.Path)
-	}
 	if !utils.SliceContains([]string{"get_sso_id", "sso_get_token"}, argument) {
 		common.ErrorResp(c, errors.New("invalid request"), 500)
-		return
 	}
 	clientId := setting.GetStr(conf.SSOClientId)
 	platform := setting.GetStr(conf.SSOLoginPlatform)
@@ -364,18 +317,12 @@ func SSOLoginCallback(c *gin.Context) {
 			}).
 			Post(tokenUrl)
 	} else {
-		var redirect_uri string
-		if usecompatibility {
-			redirect_uri = common.GetApiUrl(c.Request) + "/api/auth/" + argument
-		} else {
-			redirect_uri = common.GetApiUrl(c.Request) + "/api/auth/sso_callback" + "?method=" + argument
-		}
 		resp, err = ssoClient.R().SetHeader("Accept", "application/json").
 			SetFormData(map[string]string{
 				"client_id":     clientId,
 				"client_secret": clientSecret,
 				"code":          callbackCode,
-				"redirect_uri":  redirect_uri,
+				"redirect_uri":  common.GetApiUrl(c.Request) + "/api/auth/sso_callback?method=" + argument,
 				"scope":         scope,
 			}).SetFormData(additionalForm).Post(tokenUrl)
 	}
@@ -402,10 +349,6 @@ func SSOLoginCallback(c *gin.Context) {
 		return
 	}
 	if argument == "get_sso_id" {
-		if usecompatibility {
-			c.Redirect(302, common.GetApiUrl(c.Request)+"/@manage?sso_id="+userID)
-			return
-		}
 		html := fmt.Sprintf(`<!DOCTYPE html>
 				<head></head>
 				<body>
@@ -426,13 +369,9 @@ func SSOLoginCallback(c *gin.Context) {
 			return
 		}
 	}
-	token, err := common.GenerateToken(user)
+	token, err := common.GenerateToken(user.Username)
 	if err != nil {
 		common.ErrorResp(c, err, 400)
-	}
-	if usecompatibility {
-		c.Redirect(302, common.GetApiUrl(c.Request)+"/@login?token="+token)
-		return
 	}
 	html := fmt.Sprintf(`<!DOCTYPE html>
 							<head></head>

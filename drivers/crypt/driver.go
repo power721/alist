@@ -3,8 +3,8 @@ package crypt
 import (
 	"context"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"io"
+	"net/http"
 	stdpath "path"
 	"regexp"
 	"strings"
@@ -13,10 +13,10 @@ import (
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/fs"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/net"
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/pkg/http_range"
 	"github.com/alist-org/alist/v3/pkg/utils"
-	"github.com/alist-org/alist/v3/server/common"
 	rcCrypt "github.com/rclone/rclone/backend/crypt"
 	"github.com/rclone/rclone/fs/config/configmap"
 	"github.com/rclone/rclone/fs/config/obscure"
@@ -55,8 +55,6 @@ func (d *Crypt) Init(ctx context.Context) error {
 	if !isCryptExt(d.EncryptedSuffix) {
 		return fmt.Errorf("EncryptedSuffix is Illegal")
 	}
-	d.FileNameEncoding = utils.GetNoneEmpty(d.FileNameEncoding, "base64")
-	d.EncryptedSuffix = utils.GetNoneEmpty(d.EncryptedSuffix, ".bin")
 
 	op.MustSaveDriverStorage(d)
 
@@ -74,7 +72,7 @@ func (d *Crypt) Init(ctx context.Context) error {
 		"password2":                 p2,
 		"filename_encryption":       d.FileNameEnc,
 		"directory_name_encryption": d.DirNameEnc,
-		"filename_encoding":         d.FileNameEncoding,
+		"filename_encoding":         "base64",
 		"suffix":                    d.EncryptedSuffix,
 		"pass_bad_blocks":           "",
 	}
@@ -84,6 +82,7 @@ func (d *Crypt) Init(ctx context.Context) error {
 	}
 	d.cipher = c
 
+	//c, err := rcCrypt.newCipher(rcCrypt.NameEncryptionStandard, "", "", true, nil)
 	return nil
 }
 
@@ -124,16 +123,11 @@ func (d *Crypt) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([
 				//filter illegal files
 				continue
 			}
-			if !d.ShowHidden && strings.HasPrefix(name, ".") {
-				continue
-			}
 			objRes := model.Object{
 				Name:     name,
 				Size:     0,
 				Modified: obj.ModTime(),
 				IsFolder: obj.IsDir(),
-				Ctime:    obj.CreateTime(),
-				// discarding hash as it's encrypted
 			}
 			result = append(result, &objRes)
 		} else {
@@ -148,21 +142,13 @@ func (d *Crypt) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([
 				//filter illegal files
 				continue
 			}
-			if !d.ShowHidden && strings.HasPrefix(name, ".") {
-				continue
-			}
 			objRes := model.Object{
 				Name:     name,
 				Size:     size,
 				Modified: obj.ModTime(),
 				IsFolder: obj.IsDir(),
-				Ctime:    obj.CreateTime(),
-				// discarding hash as it's encrypted
 			}
-			if d.Thumbnail && thumb == "" {
-				thumb = utils.EncodePath(common.GetApiUrl(nil)+stdpath.Join("/d", args.ReqPath, ".thumbnails", name+".webp"), true)
-			}
-			if !ok && !d.Thumbnail {
+			if !ok {
 				result = append(result, &objRes)
 			} else {
 				objWithThumb := model.ObjThumb{
@@ -246,53 +232,70 @@ func (d *Crypt) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (
 		return nil, err
 	}
 
-	if remoteLink.RangeReadCloser == nil && remoteLink.MFile == nil && len(remoteLink.URL) == 0 {
+	if remoteLink.RangeReadCloser.RangeReader == nil && remoteLink.ReadSeekCloser == nil && len(remoteLink.URL) == 0 {
 		return nil, fmt.Errorf("the remote storage driver need to be enhanced to support encrytion")
 	}
 	remoteFileSize := remoteFile.GetSize()
-	remoteClosers := utils.EmptyClosers()
+	remoteClosers := utils.NewClosers()
 	rangeReaderFunc := func(ctx context.Context, underlyingOffset, underlyingLength int64) (io.ReadCloser, error) {
 		length := underlyingLength
 		if underlyingLength >= 0 && underlyingOffset+underlyingLength >= remoteFileSize {
 			length = -1
 		}
-		rrc := remoteLink.RangeReadCloser
-		if len(remoteLink.URL) > 0 {
-
-			rangedRemoteLink := &model.Link{
-				URL:    remoteLink.URL,
-				Header: remoteLink.Header,
-			}
-			var converted, err = stream.GetRangeReadCloserFromLink(remoteFileSize, rangedRemoteLink)
-			if err != nil {
-				return nil, err
-			}
-			rrc = converted
-		}
-		if rrc != nil {
+		if remoteLink.RangeReadCloser.RangeReader != nil {
 			//remoteRangeReader, err :=
-			remoteReader, err := rrc.RangeRead(ctx, http_range.Range{Start: underlyingOffset, Length: length})
-			remoteClosers.AddClosers(rrc.GetClosers())
+			remoteReader, err := remoteLink.RangeReadCloser.RangeReader(http_range.Range{Start: underlyingOffset, Length: length})
+			remoteClosers.Add(remoteLink.RangeReadCloser.Closers)
 			if err != nil {
 				return nil, err
 			}
 			return remoteReader, nil
 		}
-		if remoteLink.MFile != nil {
-			_, err := remoteLink.MFile.Seek(underlyingOffset, io.SeekStart)
+		if remoteLink.ReadSeekCloser != nil {
+			_, err := remoteLink.ReadSeekCloser.Seek(underlyingOffset, io.SeekStart)
 			if err != nil {
 				return nil, err
 			}
-			//remoteClosers.Add(remoteLink.MFile)
-			//keep reuse same MFile and close at last.
-			remoteClosers.Add(remoteLink.MFile)
-			return io.NopCloser(remoteLink.MFile), nil
+			//remoteClosers.Add(remoteLink.ReadSeekCloser)
+			//keep reuse same ReadSeekCloser and close at last.
+			return io.NopCloser(remoteLink.ReadSeekCloser), nil
 		}
+		if len(remoteLink.URL) > 0 {
+			rangedRemoteLink := &model.Link{
+				URL:    remoteLink.URL,
+				Header: remoteLink.Header,
+			}
+			response, err := RequestRangedHttp(args.HttpReq, rangedRemoteLink, underlyingOffset, length)
+			//remoteClosers.Add(response.Body)
+			if err != nil {
+				return nil, fmt.Errorf("remote storage http request failure,status: %d err:%s", response.StatusCode, err)
+			}
+			if underlyingOffset == 0 && length == -1 || response.StatusCode == http.StatusPartialContent {
+				return response.Body, nil
+			} else if response.StatusCode == http.StatusOK {
+				log.Warnf("remote http server not supporting range request, expect low perfromace!")
+				readCloser, err := net.GetRangedHttpReader(response.Body, underlyingOffset, length)
+				if err != nil {
+					return nil, err
+				}
+				return readCloser, nil
+			}
 
+			return response.Body, nil
+		}
+		//if remoteLink.Data != nil {
+		//	log.Warnf("remote storage not supporting range request, expect low perfromace!")
+		//	readCloser, err := net.GetRangedHttpReader(remoteLink.Data, underlyingOffset, length)
+		//	remoteCloser = remoteLink.Data
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	return readCloser, nil
+		//}
 		return nil, errs.NotSupport
 
 	}
-	resultRangeReader := func(ctx context.Context, httpRange http_range.Range) (io.ReadCloser, error) {
+	resultRangeReader := func(httpRange http_range.Range) (io.ReadCloser, error) {
 		readSeeker, err := d.cipher.DecryptDataSeek(ctx, rangeReaderFunc, httpRange.Start, httpRange.Length)
 		if err != nil {
 			return nil, err
@@ -303,7 +306,7 @@ func (d *Crypt) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (
 	resultRangeReadCloser := &model.RangeReadCloser{RangeReader: resultRangeReader, Closers: remoteClosers}
 	resultLink := &model.Link{
 		Header:          remoteLink.Header,
-		RangeReadCloser: resultRangeReadCloser,
+		RangeReadCloser: *resultRangeReadCloser,
 		Expiration:      remoteLink.Expiration,
 	}
 
@@ -367,32 +370,32 @@ func (d *Crypt) Remove(ctx context.Context, obj model.Obj) error {
 	return op.Remove(ctx, d.remoteStorage, remoteActualPath)
 }
 
-func (d *Crypt) Put(ctx context.Context, dstDir model.Obj, streamer model.FileStreamer, up driver.UpdateProgress) error {
+func (d *Crypt) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
 	dstDirActualPath, err := d.getActualPathForRemote(dstDir.GetPath(), true)
 	if err != nil {
 		return fmt.Errorf("failed to convert path to remote path: %w", err)
 	}
 
+	in := stream.GetReadCloser()
 	// Encrypt the data into wrappedIn
-	wrappedIn, err := d.cipher.EncryptData(streamer)
+	wrappedIn, err := d.cipher.EncryptData(in)
 	if err != nil {
 		return fmt.Errorf("failed to EncryptData: %w", err)
 	}
 
-	// doesn't support seekableStream, since rapid-upload is not working for encrypted data
-	streamOut := &stream.FileStream{
+	streamOut := &model.FileStream{
 		Obj: &model.Object{
-			ID:       streamer.GetID(),
-			Path:     streamer.GetPath(),
-			Name:     d.cipher.EncryptFileName(streamer.GetName()),
-			Size:     d.cipher.EncryptedSize(streamer.GetSize()),
-			Modified: streamer.ModTime(),
-			IsFolder: streamer.IsDir(),
+			ID:       stream.GetID(),
+			Path:     stream.GetPath(),
+			Name:     d.cipher.EncryptFileName(stream.GetName()),
+			Size:     d.cipher.EncryptedSize(stream.GetSize()),
+			Modified: stream.ModTime(),
+			IsFolder: stream.IsDir(),
 		},
-		Reader:       wrappedIn,
+		ReadCloser:   io.NopCloser(wrappedIn),
 		Mimetype:     "application/octet-stream",
-		WebPutAsTask: streamer.NeedStore(),
-		Exist:        streamer.GetExist(),
+		WebPutAsTask: stream.NeedStore(),
+		Old:          stream.GetOld(),
 	}
 	err = op.Put(ctx, d.remoteStorage, dstDirActualPath, streamOut, up, false)
 	if err != nil {

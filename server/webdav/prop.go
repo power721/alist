@@ -131,8 +131,8 @@ var liveProps = map[xml.Name]struct {
 		dir: true,
 	},
 	{Space: "DAV:", Local: "creationdate"}: {
-		findFn: findCreationDate,
-		dir:    true,
+		findFn: nil,
+		dir:    false,
 	},
 	{Space: "DAV:", Local: "getcontentlanguage"}: {
 		findFn: nil,
@@ -383,9 +383,6 @@ func findContentLength(ctx context.Context, ls LockSystem, name string, fi model
 func findLastModified(ctx context.Context, ls LockSystem, name string, fi model.Obj) (string, error) {
 	return fi.ModTime().UTC().Format(http.TimeFormat), nil
 }
-func findCreationDate(ctx context.Context, ls LockSystem, name string, fi model.Obj) (string, error) {
-	return fi.CreateTime().UTC().Format(http.TimeFormat), nil
-}
 
 // ErrNotImplemented should be returned by optional interfaces if they
 // want the original implementation to be used.
@@ -460,7 +457,7 @@ type ETager interface {
 func findETag(ctx context.Context, ls LockSystem, name string, fi model.Obj) (string, error) {
 	if do, ok := fi.(ETager); ok {
 		etag, err := do.ETag(ctx)
-		if !errors.Is(err, ErrNotImplemented) {
+		if err != ErrNotImplemented {
 			return etag, err
 		}
 	}

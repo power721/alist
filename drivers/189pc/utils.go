@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -513,7 +514,7 @@ func (y *Cloud189PC) StreamUpload(ctx context.Context, dstDir model.Obj, file mo
 			if err != nil {
 				return err
 			}
-			up(float64(threadG.Success()) * 100 / float64(count))
+			up(int(threadG.Success()) * 100 / count)
 			return nil
 		})
 	}
@@ -546,30 +547,17 @@ func (y *Cloud189PC) StreamUpload(ctx context.Context, dstDir model.Obj, file mo
 	return resp.toFile(), nil
 }
 
-func (y *Cloud189PC) RapidUpload(ctx context.Context, dstDir model.Obj, stream model.FileStreamer) (model.Obj, error) {
-	fileMd5 := stream.GetHash().GetHash(utils.MD5)
-	if len(fileMd5) < utils.MD5.Width {
-		return nil, errors.New("invalid hash")
-	}
-
-	uploadInfo, err := y.OldUploadCreate(ctx, dstDir.GetID(), fileMd5, stream.GetName(), fmt.Sprint(stream.GetSize()))
-	if err != nil {
-		return nil, err
-	}
-
-	if uploadInfo.FileDataExists != 1 {
-		return nil, errors.New("rapid upload fail")
-	}
-
-	return y.OldUploadCommit(ctx, uploadInfo.FileCommitUrl, uploadInfo.UploadFileId)
-}
-
 // 快传
 func (y *Cloud189PC) FastUpload(ctx context.Context, dstDir model.Obj, file model.FileStreamer, up driver.UpdateProgress) (model.Obj, error) {
-	tempFile, err := file.CacheFullInTempFile()
+	// 需要获取完整文件md5,必须支持 io.Seek
+	tempFile, err := utils.CreateTempFile(file.GetReadCloser(), file.GetSize())
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		_ = tempFile.Close()
+		_ = os.Remove(tempFile.Name())
+	}()
 
 	var sliceSize = partSize(file.GetSize())
 	count := int(math.Ceil(float64(file.GetSize()) / float64(sliceSize)))
@@ -676,7 +664,7 @@ func (y *Cloud189PC) FastUpload(ctx context.Context, dstDir model.Obj, file mode
 					return err
 				}
 
-				up(float64(threadG.Success()) * 100 / float64(len(uploadUrls)))
+				up(int(threadG.Success()) * 100 / len(uploadUrls))
 				uploadProgress.UploadParts[i] = ""
 				return nil
 			})
@@ -753,24 +741,69 @@ func (y *Cloud189PC) GetMultiUploadUrls(ctx context.Context, uploadFileId string
 
 // 旧版本上传，家庭云不支持覆盖
 func (y *Cloud189PC) OldUpload(ctx context.Context, dstDir model.Obj, file model.FileStreamer, up driver.UpdateProgress) (model.Obj, error) {
-	tempFile, err := file.CacheFullInTempFile()
+	// 需要获取完整文件md5,必须支持 io.Seek
+	tempFile, err := utils.CreateTempFile(file.GetReadCloser(), file.GetSize())
 	if err != nil {
 		return nil, err
 	}
-	fileMd5, err := utils.HashFile(utils.MD5, tempFile)
-	if err != nil {
+	defer func() {
+		_ = tempFile.Close()
+		_ = os.Remove(tempFile.Name())
+	}()
+
+	// 计算md5
+	fileMd5 := md5.New()
+	if _, err := io.Copy(fileMd5, tempFile); err != nil {
 		return nil, err
 	}
+	if _, err = tempFile.Seek(0, io.SeekStart); err != nil {
+		return nil, err
+	}
+	fileMd5Hex := strings.ToUpper(hex.EncodeToString(fileMd5.Sum(nil)))
 
 	// 创建上传会话
-	uploadInfo, err := y.OldUploadCreate(ctx, dstDir.GetID(), fileMd5, file.GetName(), fmt.Sprint(file.GetSize()))
+	var uploadInfo CreateUploadFileResp
+
+	fullUrl := API_URL + "/createUploadFile.action"
+	if y.isFamily() {
+		fullUrl = API_URL + "/family/file/createFamilyFile.action"
+	}
+	_, err = y.post(fullUrl, func(req *resty.Request) {
+		req.SetContext(ctx)
+		if y.isFamily() {
+			req.SetQueryParams(map[string]string{
+				"familyId":     y.FamilyID,
+				"fileMd5":      fileMd5Hex,
+				"fileName":     file.GetName(),
+				"fileSize":     fmt.Sprint(file.GetSize()),
+				"parentId":     dstDir.GetID(),
+				"resumePolicy": "1",
+			})
+		} else {
+			req.SetFormData(map[string]string{
+				"parentFolderId": dstDir.GetID(),
+				"fileName":       file.GetName(),
+				"size":           fmt.Sprint(file.GetSize()),
+				"md5":            fileMd5Hex,
+				"opertype":       "3",
+				"flag":           "1",
+				"resumePolicy":   "1",
+				"isLog":          "0",
+				// "baseFileId":     "",
+				// "lastWrite":"",
+				// "localPath": strings.ReplaceAll(param.LocalPath, "\\", "/"),
+				// "fileExt": "",
+			})
+		}
+	}, &uploadInfo)
+
 	if err != nil {
 		return nil, err
 	}
 
 	// 网盘中不存在该文件，开始上传
-	status := GetUploadFileStatusResp{CreateUploadFileResp: *uploadInfo}
-	for status.GetSize() < file.GetSize() && status.FileDataExists != 1 {
+	status := GetUploadFileStatusResp{CreateUploadFileResp: uploadInfo}
+	for status.Size < file.GetSize() && status.FileDataExists != 1 {
 		if utils.IsCanceled(ctx) {
 			return nil, ctx.Err()
 		}
@@ -809,70 +842,28 @@ func (y *Cloud189PC) OldUpload(ctx context.Context, dstDir model.Obj, file model
 		if err != nil {
 			return nil, err
 		}
+
 		if _, err := tempFile.Seek(status.GetSize(), io.SeekStart); err != nil {
 			return nil, err
 		}
-		up(float64(status.GetSize()) / float64(file.GetSize()) * 100)
+		up(int(status.Size / file.GetSize()))
 	}
 
-	return y.OldUploadCommit(ctx, status.FileCommitUrl, status.UploadFileId)
-}
-
-// 创建上传会话
-func (y *Cloud189PC) OldUploadCreate(ctx context.Context, parentID string, fileMd5, fileName, fileSize string) (*CreateUploadFileResp, error) {
-	var uploadInfo CreateUploadFileResp
-
-	fullUrl := API_URL + "/createUploadFile.action"
-	if y.isFamily() {
-		fullUrl = API_URL + "/family/file/createFamilyFile.action"
-	}
-	_, err := y.post(fullUrl, func(req *resty.Request) {
-		req.SetContext(ctx)
-		if y.isFamily() {
-			req.SetQueryParams(map[string]string{
-				"familyId":     y.FamilyID,
-				"parentId":     parentID,
-				"fileMd5":      fileMd5,
-				"fileName":     fileName,
-				"fileSize":     fileSize,
-				"resumePolicy": "1",
-			})
-		} else {
-			req.SetFormData(map[string]string{
-				"parentFolderId": parentID,
-				"fileName":       fileName,
-				"size":           fileSize,
-				"md5":            fileMd5,
-				"opertype":       "3",
-				"flag":           "1",
-				"resumePolicy":   "1",
-				"isLog":          "0",
-			})
-		}
-	}, &uploadInfo)
-
-	if err != nil {
-		return nil, err
-	}
-	return &uploadInfo, nil
-}
-
-// 提交上传文件
-func (y *Cloud189PC) OldUploadCommit(ctx context.Context, fileCommitUrl string, uploadFileID int64) (model.Obj, error) {
+	// 提交
 	var resp OldCommitUploadFileResp
-	_, err := y.post(fileCommitUrl, func(req *resty.Request) {
+	_, err = y.post(status.FileCommitUrl, func(req *resty.Request) {
 		req.SetContext(ctx)
 		if y.isFamily() {
 			req.SetHeaders(map[string]string{
 				"ResumePolicy": "1",
-				"UploadFileId": fmt.Sprint(uploadFileID),
+				"UploadFileId": fmt.Sprint(status.UploadFileId),
 				"FamilyId":     fmt.Sprint(y.FamilyID),
 			})
 		} else {
 			req.SetFormData(map[string]string{
 				"opertype":     "3",
 				"resumePolicy": "1",
-				"uploadFileId": fmt.Sprint(uploadFileID),
+				"uploadFileId": fmt.Sprint(status.UploadFileId),
 				"isLog":        "0",
 			})
 		}

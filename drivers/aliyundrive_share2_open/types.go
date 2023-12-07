@@ -1,7 +1,6 @@
 package aliyundrive_share2_open
 
 import (
-	"github.com/alist-org/alist/v3/pkg/utils"
 	"time"
 
 	"github.com/alist-org/alist/v3/internal/model"
@@ -66,14 +65,6 @@ type MyFile struct {
 	Name     string    `json:"name"`
 	Size     int64     `json:"size"`
 	UpdateAt time.Time `json:"UpdateAt"`
-}
-
-func (f MyFile) CreateTime() time.Time {
-	return f.UpdateAt
-}
-
-func (f MyFile) GetHash() utils.HashInfo {
-	return utils.HashInfo{}
 }
 
 type VideoPreviewResponse struct {

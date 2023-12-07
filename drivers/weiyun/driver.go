@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -308,14 +309,15 @@ func (d *WeiYun) Remove(ctx context.Context, obj model.Obj) error {
 }
 
 func (d *WeiYun) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) (model.Obj, error) {
-	// NOTE:
-	// 秒传需要sha1最后一个状态,但sha1无法逆运算需要读完整个文件(或许可以??)
-	// 服务器支持上传进度恢复,不需要额外实现
 	if folder, ok := dstDir.(*Folder); ok {
-		file, err := stream.CacheFullInTempFile()
+		file, err := utils.CreateTempFile(stream, stream.GetSize())
 		if err != nil {
 			return nil, err
 		}
+		defer func() {
+			_ = file.Close()
+			_ = os.Remove(file.Name())
+		}()
 
 		// step 1.
 		preData, err := d.client.PreUpload(ctx, weiyunsdkgo.UpdloadFileParam{
@@ -333,7 +335,7 @@ func (d *WeiYun) Put(ctx context.Context, dstDir model.Obj, stream model.FileStr
 			return nil, err
 		}
 
-		// not fast upload
+		// fast upload
 		if !preData.FileExist {
 			// step.2 增加上传通道
 			if len(preData.ChannelList) < d.uploadThread {

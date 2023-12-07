@@ -3,7 +3,9 @@ package thunder
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/alist-org/alist/v3/drivers/base"
@@ -12,7 +14,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/pkg/utils"
-	hash_extend "github.com/alist-org/alist/v3/pkg/utils/hash"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -332,22 +333,25 @@ func (xc *XunLeiCommon) Remove(ctx context.Context, obj model.Obj) error {
 }
 
 func (xc *XunLeiCommon) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
-	hi := stream.GetHash()
-	gcid := hi.GetHash(hash_extend.GCID)
-	if len(gcid) < hash_extend.GCID.Width {
-		tFile, err := stream.CacheFullInTempFile()
-		if err != nil {
-			return err
-		}
+	tempFile, err := utils.CreateTempFile(stream.GetReadCloser(), stream.GetSize())
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tempFile.Close()
+		_ = os.Remove(tempFile.Name())
+	}()
 
-		gcid, err = utils.HashFile(hash_extend.GCID, tFile, stream.GetSize())
-		if err != nil {
-			return err
-		}
+	gcid, err := getGcid(tempFile, stream.GetSize())
+	if err != nil {
+		return err
+	}
+	if _, err := tempFile.Seek(0, io.SeekStart); err != nil {
+		return err
 	}
 
 	var resp UploadTaskResponse
-	_, err := xc.Request(FILE_API_URL, http.MethodPost, func(r *resty.Request) {
+	_, err = xc.Request(FILE_API_URL, http.MethodPost, func(r *resty.Request) {
 		r.SetContext(ctx)
 		r.SetBody(&base.Json{
 			"kind":        FILE,
@@ -377,7 +381,7 @@ func (xc *XunLeiCommon) Put(ctx context.Context, dstDir model.Obj, stream model.
 			Bucket:  aws.String(param.Bucket),
 			Key:     aws.String(param.Key),
 			Expires: aws.Time(param.Expiration),
-			Body:    stream,
+			Body:    tempFile,
 		})
 		return err
 	}

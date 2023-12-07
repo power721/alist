@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -21,8 +21,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/sign"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/alist-org/alist/v3/server/common"
-	"github.com/djherbis/times"
-	log "github.com/sirupsen/logrus"
 	_ "golang.org/x/image/webp"
 )
 
@@ -104,14 +102,6 @@ func (d *Local) FileInfoToObj(f fs.FileInfo, reqPath string, fullPath string) mo
 	if !isFolder {
 		size = f.Size()
 	}
-	var ctime time.Time
-	t, err := times.Stat(stdpath.Join(fullPath, f.Name()))
-	if err == nil {
-		if t.HasBirthTime() {
-			ctime = t.BirthTime()
-		}
-	}
-
 	file := model.ObjThumb{
 		Object: model.Object{
 			Path:     filepath.Join(fullPath, f.Name()),
@@ -119,7 +109,6 @@ func (d *Local) FileInfoToObj(f fs.FileInfo, reqPath string, fullPath string) mo
 			Modified: f.ModTime(),
 			Size:     size,
 			IsFolder: isFolder,
-			Ctime:    ctime,
 		},
 		Thumbnail: model.Thumbnail{
 			Thumbnail: thumb,
@@ -156,18 +145,10 @@ func (d *Local) Get(ctx context.Context, path string) (model.Obj, error) {
 	if isFolder {
 		size = 0
 	}
-	var ctime time.Time
-	t, err := times.Stat(path)
-	if err == nil {
-		if t.HasBirthTime() {
-			ctime = t.BirthTime()
-		}
-	}
 	file := model.Object{
 		Path:     path,
 		Name:     f.Name(),
 		Modified: f.ModTime(),
-		Ctime:    ctime,
 		Size:     size,
 		IsFolder: isFolder,
 	}
@@ -190,9 +171,9 @@ func (d *Local) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (
 			if err != nil {
 				return nil, err
 			}
-			link.MFile = open
+			link.ReadSeekCloser = open
 		} else {
-			link.MFile = model.NewNopMFile(bytes.NewReader(buf.Bytes()))
+			link.ReadSeekCloser = utils.ReadSeekerNopCloser(bytes.NewReader(buf.Bytes()))
 			//link.Header.Set("Content-Length", strconv.Itoa(buf.Len()))
 		}
 	} else {
@@ -200,7 +181,15 @@ func (d *Local) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (
 		if err != nil {
 			return nil, err
 		}
-		link.MFile = open
+		link.ReadSeekCloser = struct {
+			io.Reader
+			io.Seeker
+			io.Closer
+		}{
+			Reader: open,
+			Seeker: open,
+			Closer: open,
+		}
 	}
 	return &link, nil
 }
@@ -283,10 +272,6 @@ func (d *Local) Put(ctx context.Context, dstDir model.Obj, stream model.FileStre
 	err = utils.CopyWithCtx(ctx, out, stream, stream.GetSize(), up)
 	if err != nil {
 		return err
-	}
-	err = os.Chtimes(fullPath, stream.ModTime(), stream.ModTime())
-	if err != nil {
-		log.Errorf("[local] failed to change time of %s: %s", fullPath, err)
 	}
 	return nil
 }

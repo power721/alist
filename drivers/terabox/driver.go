@@ -1,4 +1,4 @@
-package terabox
+package terbox
 
 import (
 	"bytes"
@@ -6,15 +6,15 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"io"
-	"math"
-	stdpath "path"
-	"strconv"
-	"strings"
-
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	log "github.com/sirupsen/logrus"
+	"io"
+	"math"
+	"os"
+	stdpath "path"
+	"strconv"
+	"strings"
 
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
@@ -23,7 +23,6 @@ import (
 type Terabox struct {
 	model.Storage
 	Addition
-	JsToken string
 }
 
 func (d *Terabox) Config() driver.Config {
@@ -117,10 +116,14 @@ func (d *Terabox) Remove(ctx context.Context, obj model.Obj) error {
 }
 
 func (d *Terabox) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
-	tempFile, err := stream.CacheFullInTempFile()
+	tempFile, err := utils.CreateTempFile(stream.GetReadCloser(), stream.GetSize())
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = tempFile.Close()
+		_ = os.Remove(tempFile.Name())
+	}()
 	var Default int64 = 4 * 1024 * 1024
 	defaultByteData := make([]byte, Default)
 	count := int(math.Ceil(float64(stream.GetSize()) / float64(Default)))
@@ -167,9 +170,6 @@ func (d *Terabox) Put(ctx context.Context, dstDir model.Obj, stream model.FileSt
 		return err
 	}
 	log.Debugf("%+v", precreateResp)
-	if precreateResp.Errno != 0 {
-		return fmt.Errorf("[terabox] failed to precreate file, errno: %d", precreateResp.Errno)
-	}
 	if precreateResp.ReturnType == 2 {
 		return nil
 	}
@@ -213,7 +213,7 @@ func (d *Terabox) Put(ctx context.Context, dstDir model.Obj, stream model.FileSt
 		}
 		log.Debugln(res.String())
 		if len(precreateResp.BlockList) > 0 {
-			up(float64(i) * 100 / float64(len(precreateResp.BlockList)))
+			up(i * 100 / len(precreateResp.BlockList))
 		}
 	}
 	_, err = d.create(rawPath, stream.GetSize(), 0, precreateResp.Uploadid, block_list_str)

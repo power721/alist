@@ -6,6 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
@@ -17,9 +22,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
-	"io"
-	"net/http"
-	"net/url"
 )
 
 type Pan123 struct {
@@ -182,12 +184,13 @@ func (d *Pan123) Put(ctx context.Context, dstDir model.Obj, stream model.FileStr
 	// const DEFAULT int64 = 10485760
 	h := md5.New()
 	// need to calculate md5 of the full content
-	tempFile, err := stream.CacheFullInTempFile()
+	tempFile, err := utils.CreateTempFile(stream.GetReadCloser(), stream.GetSize())
 	if err != nil {
 		return err
 	}
 	defer func() {
 		_ = tempFile.Close()
+		_ = os.Remove(tempFile.Name())
 	}()
 	if _, err = io.Copy(h, tempFile); err != nil {
 		return err
