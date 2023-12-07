@@ -2,7 +2,6 @@ package op
 
 import (
 	"context"
-	"os"
 	stdpath "path"
 	"time"
 
@@ -85,6 +84,14 @@ func addCacheObj(storage driver.Driver, path string, newObj model.Obj) {
 }
 
 func ClearCache(storage driver.Driver, path string) {
+	objs, ok := listCache.Get(Key(storage, path))
+	if ok {
+		for _, obj := range objs {
+			if obj.IsDir() {
+				ClearCache(storage, stdpath.Join(path, obj.GetName()))
+			}
+		}
+	}
 	listCache.Del(Key(storage, path))
 }
 
@@ -474,6 +481,10 @@ func Remove(ctx context.Context, storage driver.Driver, path string) error {
 		err = s.Remove(ctx, model.UnwrapObj(rawObj))
 		if err == nil {
 			delCacheObj(storage, dirPath, rawObj)
+			// clear folder cache recursively
+			if rawObj.IsDir() {
+				ClearCache(storage, path)
+			}
 		}
 	default:
 		return errs.NotImplement
@@ -481,18 +492,10 @@ func Remove(ctx context.Context, storage driver.Driver, path string) error {
 	return errors.WithStack(err)
 }
 
-func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file *model.FileStream, up driver.UpdateProgress, lazyCache ...bool) error {
+func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file model.FileStreamer, up driver.UpdateProgress, lazyCache ...bool) error {
 	if storage.Config().CheckStatus && storage.GetStorage().Status != WORK {
 		return errors.Errorf("storage not init: %s", storage.GetStorage().Status)
 	}
-	defer func() {
-		if f, ok := file.GetReadCloser().(*os.File); ok {
-			err := os.RemoveAll(f.Name())
-			if err != nil {
-				log.Errorf("failed to remove file [%s]", f.Name())
-			}
-		}
-	}()
 	defer func() {
 		if err := file.Close(); err != nil {
 			log.Errorf("failed to close file streamer, %v", err)
@@ -508,7 +511,7 @@ func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file *mo
 		if fi.GetSize() == 0 {
 			err = Remove(ctx, storage, dstPath)
 			if err != nil {
-				return errors.WithMessagef(err, "failed remove file that exist and have size 0")
+				return errors.WithMessagef(err, "while uploading, failed remove existing file which size = 0")
 			}
 		} else if storage.Config().NoOverwriteUpload {
 			// try to rename old obj
@@ -517,7 +520,7 @@ func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file *mo
 				return err
 			}
 		} else {
-			file.Old = fi
+			file.SetExist(fi)
 		}
 	}
 	err = MakeDir(ctx, storage, dstDirPath)
@@ -531,7 +534,7 @@ func Put(ctx context.Context, storage driver.Driver, dstDirPath string, file *mo
 	}
 	// if up is nil, set a default to prevent panic
 	if up == nil {
-		up = func(p int) {}
+		up = func(p float64) {}
 	}
 
 	switch s := storage.(type) {

@@ -1,11 +1,15 @@
 package model
 
 import (
+	"encoding/binary"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/alist-org/alist/v3/pkg/utils/random"
+	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/pkg/errors"
 )
 
@@ -21,15 +25,16 @@ type User struct {
 	ID       uint   `json:"id" gorm:"primaryKey"`                      // unique key
 	Username string `json:"username" gorm:"unique" binding:"required"` // username
 	PwdHash  string `json:"-"`                                         // password hash
-	Salt     string // unique salt
-	Password string `json:"password"`  // password
-	BasePath string `json:"base_path"` // base path
-	Role     int    `json:"role"`      // user's role
+	PwdTS    int64  `json:"-"`                                         // password timestamp
+	Salt     string `json:"-"`                                         // unique salt
+	Password string `json:"password"`                                  // password
+	BasePath string `json:"base_path"`                                 // base path
+	Role     int    `json:"role"`                                      // user's role
 	Disabled bool   `json:"disabled"`
 	// Determine permissions by bit
 	//   0: can see hidden files
 	//   1: can access without password
-	//   2: can add aria2 tasks
+	//   2: can add offline download tasks
 	//   3: can mkdir and upload
 	//   4: can rename
 	//   5: can move
@@ -37,10 +42,10 @@ type User struct {
 	//   7: can remove
 	//   8: webdav read
 	//   9: webdav write
-	//  10: can add qbittorrent tasks
 	Permission int32  `json:"permission"`
 	OtpSecret  string `json:"-"`
 	SsoID      string `json:"sso_id"` // unique by sso platform
+	Authn      string `gorm:"type:text" json:"-"`
 }
 
 func (u *User) IsGuest() bool {
@@ -68,6 +73,7 @@ func (u *User) ValidatePwdStaticHash(pwdStaticHash string) error {
 func (u *User) SetPassword(pwd string) *User {
 	u.Salt = random.String(16)
 	u.PwdHash = TwoHashPwd(pwd, u.Salt)
+	u.PwdTS = time.Now().Unix()
 	return u
 }
 
@@ -79,7 +85,7 @@ func (u *User) CanAccessWithoutPassword() bool {
 	return u.IsAdmin() || (u.Permission>>1)&1 == 1
 }
 
-func (u *User) CanAddAria2Tasks() bool {
+func (u *User) CanAddOfflineDownloadTasks() bool {
 	return u.IsAdmin() || (u.Permission>>2)&1 == 1
 }
 
@@ -111,10 +117,6 @@ func (u *User) CanWebdavManage() bool {
 	return u.IsAdmin() || (u.Permission>>9)&1 == 1
 }
 
-func (u *User) CanAddQbittorrentTasks() bool {
-	return u.IsAdmin() || (u.Permission>>10)&1 == 1
-}
-
 func (u *User) JoinPath(reqPath string) (string, error) {
 	return utils.JoinBasePath(u.BasePath, reqPath)
 }
@@ -129,4 +131,31 @@ func HashPwd(static string, salt string) string {
 
 func TwoHashPwd(password string, salt string) string {
 	return HashPwd(StaticHash(password), salt)
+}
+
+func (u *User) WebAuthnID() []byte {
+	bs := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bs, uint64(u.ID))
+	return bs
+}
+
+func (u *User) WebAuthnName() string {
+	return u.Username
+}
+
+func (u *User) WebAuthnDisplayName() string {
+	return u.Username
+}
+
+func (u *User) WebAuthnCredentials() []webauthn.Credential {
+	var res []webauthn.Credential
+	err := json.Unmarshal([]byte(u.Authn), &res)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return res
+}
+
+func (u *User) WebAuthnIcon() string {
+	return "https://alist.nn.ci/logo.svg"
 }

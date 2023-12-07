@@ -7,14 +7,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/alist-org/alist/v3/pkg/http_range"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"sync"
 	"testing"
+
+	"github.com/alist-org/alist/v3/pkg/http_range"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 )
 
 var buf22MB = make([]byte, 1024*1024*22)
@@ -55,7 +55,7 @@ func TestDownloadOrder(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
-	resultBuf, err := io.ReadAll(*readCloser)
+	resultBuf, err := io.ReadAll(readCloser)
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
@@ -111,7 +111,7 @@ func TestDownloadSingle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
-	resultBuf, err := io.ReadAll(*readCloser)
+	resultBuf, err := io.ReadAll(readCloser)
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
@@ -142,7 +142,7 @@ type downloadCaptureClient struct {
 	lock sync.Mutex
 }
 
-func (c *downloadCaptureClient) HttpRequest(params *HttpRequestParams) (*http.Response, error) {
+func (c *downloadCaptureClient) HttpRequest(ctx context.Context, params *HttpRequestParams) (*http.Response, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -168,7 +168,7 @@ func newDownloadRangeClient(data []byte) (*downloadCaptureClient, *int, *[]strin
 		header := &http.Header{}
 		header.Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, fin-1, len(data)))
 		return &http.Response{
-			Body:          ioutil.NopCloser(bytes.NewReader(bodyBytes)),
+			Body:          io.NopCloser(bytes.NewReader(bodyBytes)),
 			Header:        *header,
 			ContentLength: int64(len(bodyBytes)),
 		}, nil
