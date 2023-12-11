@@ -49,19 +49,7 @@ func (d *Cloudreve) List(ctx context.Context, dir model.Obj, args model.ListArgs
 	}
 
 	return utils.SliceConvert(r.Objects, func(src Object) (model.Obj, error) {
-		thumb, err := d.GetThumb(src)
-		if err != nil {
-			return nil, err
-		}
-		if src.Type == "dir" && d.EnableThumbAndFolderSize {
-			var dprop DirectoryProp
-			err = d.request(http.MethodGet, "/object/property/"+src.Id+"?is_folder=true", nil, &dprop)
-			if err != nil {
-				return nil, err
-			}
-			src.Size = dprop.Size
-		}
-		return objectToObj(src, thumb), nil
+		return objectToObj(src), nil
 	})
 }
 
@@ -127,7 +115,7 @@ func (d *Cloudreve) Remove(ctx context.Context, obj model.Obj) error {
 }
 
 func (d *Cloudreve) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
-	if io.ReadCloser(stream) == http.NoBody {
+	if stream.GetReadCloser() == http.NoBody {
 		return d.create(ctx, dstDir, stream)
 	}
 	var r DirectoryResp

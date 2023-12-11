@@ -41,24 +41,24 @@ func (d *Template) Link(ctx context.Context, file model.Obj, args model.LinkArgs
 	return nil, errs.NotImplement
 }
 
-func (d *Template) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) (model.Obj, error) {
+func (d *Template) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) error {
 	// TODO create folder, optional
-	return nil, errs.NotImplement
+	return errs.NotImplement
 }
 
-func (d *Template) Move(ctx context.Context, srcObj, dstDir model.Obj) (model.Obj, error) {
+func (d *Template) Move(ctx context.Context, srcObj, dstDir model.Obj) error {
 	// TODO move obj, optional
-	return nil, errs.NotImplement
+	return errs.NotImplement
 }
 
-func (d *Template) Rename(ctx context.Context, srcObj model.Obj, newName string) (model.Obj, error) {
+func (d *Template) Rename(ctx context.Context, srcObj model.Obj, newName string) error {
 	// TODO rename obj, optional
-	return nil, errs.NotImplement
+	return errs.NotImplement
 }
 
-func (d *Template) Copy(ctx context.Context, srcObj, dstDir model.Obj) (model.Obj, error) {
+func (d *Template) Copy(ctx context.Context, srcObj, dstDir model.Obj) error {
 	// TODO copy obj, optional
-	return nil, errs.NotImplement
+	return errs.NotImplement
 }
 
 func (d *Template) Remove(ctx context.Context, obj model.Obj) error {
@@ -66,9 +66,9 @@ func (d *Template) Remove(ctx context.Context, obj model.Obj) error {
 	return errs.NotImplement
 }
 
-func (d *Template) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) (model.Obj, error) {
+func (d *Template) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
 	// TODO upload file, optional
-	return nil, errs.NotImplement
+	return errs.NotImplement
 }
 
 //func (d *Template) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {

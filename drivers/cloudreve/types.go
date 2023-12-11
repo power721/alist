@@ -44,20 +44,13 @@ type Object struct {
 	SourceEnabled bool      `json:"source_enabled"`
 }
 
-type DirectoryProp struct {
-	Size int `json:"size"`
-}
-
-func objectToObj(f Object, t model.Thumbnail) *model.ObjThumb {
-	return &model.ObjThumb{
-		Object: model.Object{
-			ID:       f.Id,
-			Name:     f.Name,
-			Size:     int64(f.Size),
-			Modified: f.Date,
-			IsFolder: f.Type == "dir",
-		},
-		Thumbnail: t,
+func objectToObj(f Object) *model.Object {
+	return &model.Object{
+		ID:       f.Id,
+		Name:     f.Name,
+		Size:     int64(f.Size),
+		Modified: f.Date,
+		IsFolder: f.Type == "dir",
 	}
 }
 

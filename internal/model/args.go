@@ -1,7 +1,6 @@
 package model
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"time"
@@ -23,14 +22,13 @@ type LinkArgs struct {
 }
 
 type Link struct {
-	URL             string            `json:"url"`    // most common way
-	Header          http.Header       `json:"header"` // needed header (for url)
-	RangeReadCloser RangeReadCloserIF `json:"-"`      // recommended way if can't use URL
-	MFile           File              `json:"-"`      // best for local,smb... file system, which exposes MFile
+	URL             string            `json:"url"`
+	Header          http.Header       `json:"header"` // needed header (for url) or response header(for data or writer)
+	RangeReadCloser RangeReadCloser   `json:"-"`      // recommended way
+	ReadSeekCloser  io.ReadSeekCloser `json:"-"`      // best for local,smb... file system, which exposes ReadSeekCloser
 
 	Expiration *time.Duration // local cache expire Duration
 	IPCacheKey bool           `json:"-"` // add ip to cache key
-
 	//for accelerating request, use multi-thread downloading
 	Concurrency int `json:"concurrency"`
 	PartSize    int `json:"part_size"`
@@ -47,23 +45,10 @@ type FsOtherArgs struct {
 	Method string      `json:"method" form:"method"`
 	Data   interface{} `json:"data" form:"data"`
 }
-type RangeReadCloserIF interface {
-	RangeRead(ctx context.Context, httpRange http_range.Range) (io.ReadCloser, error)
-	utils.ClosersIF
-}
-
-var _ RangeReadCloserIF = (*RangeReadCloser)(nil)
-
 type RangeReadCloser struct {
 	RangeReader RangeReaderFunc
-	utils.Closers
+	Closers     *utils.Closers
 }
 
-func (r RangeReadCloser) RangeRead(ctx context.Context, httpRange http_range.Range) (io.ReadCloser, error) {
-	rc, err := r.RangeReader(ctx, httpRange)
-	r.Closers.Add(rc)
-	return rc, err
-}
-
-// type WriterFunc func(w io.Writer) error
-type RangeReaderFunc func(ctx context.Context, httpRange http_range.Range) (io.ReadCloser, error)
+type WriterFunc func(w io.Writer) error
+type RangeReaderFunc func(httpRange http_range.Range) (io.ReadCloser, error)

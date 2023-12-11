@@ -1,7 +1,6 @@
 package _123Share
 
 import (
-	"github.com/alist-org/alist/v3/pkg/utils"
 	"net/url"
 	"path"
 	"strconv"
@@ -22,10 +21,6 @@ type File struct {
 	DownloadUrl string    `json:"DownloadUrl"`
 }
 
-func (f File) GetHash() utils.HashInfo {
-	return utils.HashInfo{}
-}
-
 func (f File) GetPath() string {
 	return ""
 }
@@ -39,9 +34,6 @@ func (f File) GetName() string {
 }
 
 func (f File) ModTime() time.Time {
-	return f.UpdateAt
-}
-func (f File) CreateTime() time.Time {
 	return f.UpdateAt
 }
 

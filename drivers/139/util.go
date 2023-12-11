@@ -48,7 +48,7 @@ func calSign(body, ts, randStr string) string {
 }
 
 func getTime(t string) time.Time {
-	stamp, _ := time.ParseInLocation("20060102150405", t, utils.CNLoc)
+	stamp, _ := time.ParseInLocation("20060102150405", t, time.Local)
 	return stamp
 }
 
@@ -139,7 +139,6 @@ func (d *Yun139) getFiles(catalogID string) ([]model.Obj, error) {
 				Name:     catalog.CatalogName,
 				Size:     0,
 				Modified: getTime(catalog.UpdateTime),
-				Ctime:    getTime(catalog.CreateTime),
 				IsFolder: true,
 			}
 			files = append(files, &f)
@@ -151,7 +150,6 @@ func (d *Yun139) getFiles(catalogID string) ([]model.Obj, error) {
 					Name:     content.ContentName,
 					Size:     content.ContentSize,
 					Modified: getTime(content.UpdateTime),
-					HashInfo: utils.NewHashInfo(utils.MD5, content.Digest),
 				},
 				Thumbnail: model.Thumbnail{Thumbnail: content.ThumbnailURL},
 				//Thumbnail: content.BigthumbnailURL,
@@ -204,7 +202,6 @@ func (d *Yun139) familyGetFiles(catalogID string) ([]model.Obj, error) {
 				Size:     0,
 				IsFolder: true,
 				Modified: getTime(catalog.LastUpdateTime),
-				Ctime:    getTime(catalog.CreateTime),
 			}
 			files = append(files, &f)
 		}
@@ -215,7 +212,6 @@ func (d *Yun139) familyGetFiles(catalogID string) ([]model.Obj, error) {
 					Name:     content.ContentName,
 					Size:     content.ContentSize,
 					Modified: getTime(content.LastUpdateTime),
-					Ctime:    getTime(content.CreateTime),
 				},
 				Thumbnail: model.Thumbnail{Thumbnail: content.ThumbnailURL},
 				//Thumbnail: content.BigthumbnailURL,

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -180,12 +181,13 @@ func (d *MediaTrack) Put(ctx context.Context, dstDir model.Obj, stream model.Fil
 	if err != nil {
 		return err
 	}
-	tempFile, err := stream.CacheFullInTempFile()
+	tempFile, err := utils.CreateTempFile(stream.GetReadCloser(), stream.GetSize())
 	if err != nil {
 		return err
 	}
 	defer func() {
 		_ = tempFile.Close()
+		_ = os.Remove(tempFile.Name())
 	}()
 	uploader := s3manager.NewUploader(s)
 	input := &s3manager.UploadInput{

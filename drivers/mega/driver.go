@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"time"
-
 	"github.com/alist-org/alist/v3/pkg/http_range"
 	"github.com/rclone/rclone/lib/readers"
+	"io"
+	"time"
 
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
@@ -43,7 +42,7 @@ func (d *Mega) Drop(ctx context.Context) error {
 
 func (d *Mega) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
 	if node, ok := dir.(*MegaNode); ok {
-		nodes, err := d.c.FS.GetChildren(node.n)
+		nodes, err := d.c.FS.GetChildren(node.Node)
 		if err != nil {
 			return nil, err
 		}
@@ -57,7 +56,7 @@ func (d *Mega) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]
 		return res, nil
 	}
 	log.Errorf("can't convert: %+v", dir)
-	return nil, fmt.Errorf("unable to convert dir to mega n")
+	return nil, fmt.Errorf("unable to convert dir to mega node")
 }
 
 func (d *Mega) GetRoot(ctx context.Context) (model.Obj, error) {
@@ -69,21 +68,21 @@ func (d *Mega) GetRoot(ctx context.Context) (model.Obj, error) {
 func (d *Mega) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	if node, ok := file.(*MegaNode); ok {
 
-		//down, err := d.c.NewDownload(n.Node)
+		//down, err := d.c.NewDownload(node.Node)
 		//if err != nil {
 		//	return nil, fmt.Errorf("open download file failed: %w", err)
 		//}
 
 		size := file.GetSize()
 		var finalClosers utils.Closers
-		resultRangeReader := func(ctx context.Context, httpRange http_range.Range) (io.ReadCloser, error) {
+		resultRangeReader := func(httpRange http_range.Range) (io.ReadCloser, error) {
 			length := httpRange.Length
 			if httpRange.Length >= 0 && httpRange.Start+httpRange.Length >= size {
 				length = -1
 			}
 			var down *mega.Download
 			err := utils.Retry(3, time.Second, func() (err error) {
-				down, err = d.c.NewDownload(node.n)
+				down, err = d.c.NewDownload(node.Node)
 				return err
 			})
 			if err != nil {
@@ -98,37 +97,37 @@ func (d *Mega) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*
 
 			return readers.NewLimitedReadCloser(oo, length), nil
 		}
-		resultRangeReadCloser := &model.RangeReadCloser{RangeReader: resultRangeReader, Closers: finalClosers}
+		resultRangeReadCloser := &model.RangeReadCloser{RangeReader: resultRangeReader, Closers: &finalClosers}
 		resultLink := &model.Link{
-			RangeReadCloser: resultRangeReadCloser,
+			RangeReadCloser: *resultRangeReadCloser,
 		}
 		return resultLink, nil
 	}
-	return nil, fmt.Errorf("unable to convert dir to mega n")
+	return nil, fmt.Errorf("unable to convert dir to mega node")
 }
 
 func (d *Mega) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) error {
 	if parentNode, ok := parentDir.(*MegaNode); ok {
-		_, err := d.c.CreateDir(dirName, parentNode.n)
+		_, err := d.c.CreateDir(dirName, parentNode.Node)
 		return err
 	}
-	return fmt.Errorf("unable to convert dir to mega n")
+	return fmt.Errorf("unable to convert dir to mega node")
 }
 
 func (d *Mega) Move(ctx context.Context, srcObj, dstDir model.Obj) error {
 	if srcNode, ok := srcObj.(*MegaNode); ok {
 		if dstNode, ok := dstDir.(*MegaNode); ok {
-			return d.c.Move(srcNode.n, dstNode.n)
+			return d.c.Move(srcNode.Node, dstNode.Node)
 		}
 	}
-	return fmt.Errorf("unable to convert dir to mega n")
+	return fmt.Errorf("unable to convert dir to mega node")
 }
 
 func (d *Mega) Rename(ctx context.Context, srcObj model.Obj, newName string) error {
 	if srcNode, ok := srcObj.(*MegaNode); ok {
-		return d.c.Rename(srcNode.n, newName)
+		return d.c.Rename(srcNode.Node, newName)
 	}
-	return fmt.Errorf("unable to convert dir to mega n")
+	return fmt.Errorf("unable to convert dir to mega node")
 }
 
 func (d *Mega) Copy(ctx context.Context, srcObj, dstDir model.Obj) error {
@@ -137,14 +136,14 @@ func (d *Mega) Copy(ctx context.Context, srcObj, dstDir model.Obj) error {
 
 func (d *Mega) Remove(ctx context.Context, obj model.Obj) error {
 	if node, ok := obj.(*MegaNode); ok {
-		return d.c.Delete(node.n, false)
+		return d.c.Delete(node.Node, false)
 	}
-	return fmt.Errorf("unable to convert dir to mega n")
+	return fmt.Errorf("unable to convert dir to mega node")
 }
 
 func (d *Mega) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
 	if dstNode, ok := dstDir.(*MegaNode); ok {
-		u, err := d.c.NewUpload(dstNode.n, stream.GetName(), stream.GetSize())
+		u, err := d.c.NewUpload(dstNode.Node, stream.GetName(), stream.GetSize())
 		if err != nil {
 			return err
 		}
@@ -170,13 +169,13 @@ func (d *Mega) Put(ctx context.Context, dstDir model.Obj, stream model.FileStrea
 			if err != nil {
 				return err
 			}
-			up(float64(id) * 100 / float64(u.Chunks()))
+			up(id * 100 / u.Chunks())
 		}
 
 		_, err = u.Finish()
 		return err
 	}
-	return fmt.Errorf("unable to convert dir to mega n")
+	return fmt.Errorf("unable to convert dir to mega node")
 }
 
 //func (d *Mega) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {

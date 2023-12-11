@@ -31,7 +31,7 @@ var config = driver.Config{
 func init() {
 	op.RegisterDriver(func() driver.Driver {
 		return &AliyundriveShare2Open{
-			base: "https://openapi.alipan.com",
+			base: "https://openapi.aliyundrive.com",
 		}
 	})
 }

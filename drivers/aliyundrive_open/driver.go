@@ -83,7 +83,7 @@ func (d *AliyundriveOpen) link(ctx context.Context, file model.Obj) (*model.Link
 		req.SetBody(base.Json{
 			"drive_id":   d.DriveId,
 			"file_id":    file.GetID(),
-			"expire_sec": 900,
+			"expire_sec": 14400,
 		})
 	})
 	if err != nil {
@@ -96,7 +96,7 @@ func (d *AliyundriveOpen) link(ctx context.Context, file model.Obj) (*model.Link
 		}
 		url = utils.Json.Get(res, "streamsUrl", d.LIVPDownloadFormat).ToString()
 	}
-	exp := time.Minute
+	exp := 895 * time.Second
 	return &model.Link{
 		URL:        url,
 		Expiration: &exp,
@@ -110,9 +110,7 @@ func (d *AliyundriveOpen) Link(ctx context.Context, file model.Obj, args model.L
 	return d.limitLink(ctx, file)
 }
 
-func (d *AliyundriveOpen) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) (model.Obj, error) {
-	nowTime, _ := getNowTime()
-	newDir := File{CreatedAt: nowTime, UpdatedAt: nowTime}
+func (d *AliyundriveOpen) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) error {
 	_, err := d.request("/adrive/v1.0/openFile/create", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id":        d.DriveId,
@@ -120,16 +118,12 @@ func (d *AliyundriveOpen) MakeDir(ctx context.Context, parentDir model.Obj, dirN
 			"name":            dirName,
 			"type":            "folder",
 			"check_name_mode": "refuse",
-		}).SetResult(&newDir)
+		})
 	})
-	if err != nil {
-		return nil, err
-	}
-	return fileToObj(newDir), nil
+	return err
 }
 
-func (d *AliyundriveOpen) Move(ctx context.Context, srcObj, dstDir model.Obj) (model.Obj, error) {
-	var resp MoveOrCopyResp
+func (d *AliyundriveOpen) Move(ctx context.Context, srcObj, dstDir model.Obj) error {
 	_, err := d.request("/adrive/v1.0/openFile/move", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id":          d.DriveId,
@@ -137,36 +131,20 @@ func (d *AliyundriveOpen) Move(ctx context.Context, srcObj, dstDir model.Obj) (m
 			"to_parent_file_id": dstDir.GetID(),
 			"check_name_mode":   "refuse", // optional:ignore,auto_rename,refuse
 			//"new_name":          "newName", // The new name to use when a file of the same name exists
-		}).SetResult(&resp)
+		})
 	})
-	if err != nil {
-		return nil, err
-	}
-	if resp.Exist {
-		return nil, errors.New("existence of files with the same name")
-	}
-
-	if srcObj, ok := srcObj.(*model.ObjThumb); ok {
-		srcObj.ID = resp.FileID
-		srcObj.Modified = time.Now()
-		return srcObj, nil
-	}
-	return nil, nil
+	return err
 }
 
-func (d *AliyundriveOpen) Rename(ctx context.Context, srcObj model.Obj, newName string) (model.Obj, error) {
-	var newFile File
+func (d *AliyundriveOpen) Rename(ctx context.Context, srcObj model.Obj, newName string) error {
 	_, err := d.request("/adrive/v1.0/openFile/update", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id": d.DriveId,
 			"file_id":  srcObj.GetID(),
 			"name":     newName,
-		}).SetResult(&newFile)
+		})
 	})
-	if err != nil {
-		return nil, err
-	}
-	return fileToObj(newFile), nil
+	return err
 }
 
 func (d *AliyundriveOpen) Copy(ctx context.Context, srcObj, dstDir model.Obj) error {
@@ -195,7 +173,7 @@ func (d *AliyundriveOpen) Remove(ctx context.Context, obj model.Obj) error {
 	return err
 }
 
-func (d *AliyundriveOpen) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) (model.Obj, error) {
+func (d *AliyundriveOpen) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
 	return d.upload(ctx, dstDir, stream, up)
 }
 
@@ -210,7 +188,7 @@ func (d *AliyundriveOpen) Other(ctx context.Context, args model.OtherArgs) (inte
 	case "video_preview":
 		uri = "/adrive/v1.0/openFile/getVideoPreviewPlayInfo"
 		data["category"] = "live_transcoding"
-		data["url_expire_sec"] = 900
+		data["url_expire_sec"] = 14400
 	default:
 		return nil, errs.NotSupport
 	}
@@ -224,7 +202,3 @@ func (d *AliyundriveOpen) Other(ctx context.Context, args model.OtherArgs) (inte
 }
 
 var _ driver.Driver = (*AliyundriveOpen)(nil)
-var _ driver.MkdirResult = (*AliyundriveOpen)(nil)
-var _ driver.MoveResult = (*AliyundriveOpen)(nil)
-var _ driver.RenameResult = (*AliyundriveOpen)(nil)
-var _ driver.PutResult = (*AliyundriveOpen)(nil)

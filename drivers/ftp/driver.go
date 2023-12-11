@@ -64,9 +64,9 @@ func (d *FTP) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*m
 		return nil, err
 	}
 
-	r := NewFileReader(d.conn, file.GetPath(), file.GetSize())
+	r := NewFTPFileReader(d.conn, file.GetPath())
 	link := &model.Link{
-		MFile: r,
+		ReadSeekCloser: r,
 	}
 	return link, nil
 }

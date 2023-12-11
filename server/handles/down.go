@@ -40,21 +40,19 @@ func Down(c *gin.Context) {
 			common.ErrorResp(c, err, 500)
 			return
 		}
-		if link.MFile != nil {
+		if link.ReadSeekCloser != nil {
 			defer func(ReadSeekCloser io.ReadCloser) {
 				err := ReadSeekCloser.Close()
 				if err != nil {
 					log.Errorf("close data error: %s", err)
 				}
-			}(link.MFile)
+			}(link.ReadSeekCloser)
 		}
 		c.Header("Referrer-Policy", "no-referrer")
 		c.Header("Cache-Control", "max-age=0, no-cache, no-store, must-revalidate")
 		if setting.GetBool(conf.ForwardDirectLinkParams) {
 			query := c.Request.URL.Query()
-			for _, v := range conf.SlicesMap[conf.IgnoreDirectLinkParams] {
-				query.Del(v)
-			}
+			query.Del("sign")
 			link.URL, err = utils.InjectQuery(link.URL, query)
 			if err != nil {
 				common.ErrorResp(c, err, 500)
@@ -97,9 +95,7 @@ func Proxy(c *gin.Context) {
 		}
 		if link.URL != "" && setting.GetBool(conf.ForwardDirectLinkParams) {
 			query := c.Request.URL.Query()
-			for _, v := range conf.SlicesMap[conf.IgnoreDirectLinkParams] {
-				query.Del(v)
-			}
+			query.Del("sign")
 			link.URL, err = utils.InjectQuery(link.URL, query)
 			if err != nil {
 				common.ErrorResp(c, err, 500)

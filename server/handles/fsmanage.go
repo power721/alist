@@ -2,7 +2,6 @@ package handles
 
 import (
 	"fmt"
-	"github.com/xhofe/tache"
 	"io"
 	stdpath "path"
 
@@ -121,20 +120,22 @@ func FsCopy(c *gin.Context) {
 		common.ErrorResp(c, err, 403)
 		return
 	}
-	var addedTasks []tache.TaskWithInfo
+	var addedTask []string
 	for i, name := range req.Names {
-		t, err := fs.Copy(c, stdpath.Join(srcDir, name), dstDir, len(req.Names) > i+1)
-		if t != nil {
-			addedTasks = append(addedTasks, t)
+		ok, err := fs.Copy(c, stdpath.Join(srcDir, name), dstDir, len(req.Names) > i+1)
+		if ok {
+			addedTask = append(addedTask, name)
 		}
 		if err != nil {
 			common.ErrorResp(c, err, 500)
 			return
 		}
 	}
-	common.SuccessResp(c, gin.H{
-		"tasks": getTaskInfos(addedTasks),
-	})
+	if len(addedTask) > 0 {
+		common.SuccessResp(c, fmt.Sprintf("Added %d tasks", len(addedTask)))
+	} else {
+		common.SuccessResp(c)
+	}
 }
 
 type RenameReq struct {
@@ -330,13 +331,13 @@ func Link(c *gin.Context) {
 		common.ErrorResp(c, err, 500)
 		return
 	}
-	if link.MFile != nil {
+	if link.ReadSeekCloser != nil {
 		defer func(ReadSeekCloser io.ReadCloser) {
 			err := ReadSeekCloser.Close()
 			if err != nil {
 				log.Errorf("close link data error: %v", err)
 			}
-		}(link.MFile)
+		}(link.ReadSeekCloser)
 	}
 	common.SuccessResp(c, link)
 	return

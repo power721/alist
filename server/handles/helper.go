@@ -22,13 +22,13 @@ func Robots(c *gin.Context) {
 }
 
 func QrCode(c *gin.Context) {
-	url := c.Query("url")
-	png, err := qrcode.Encode(url, qrcode.Medium, 256)
-	if err != nil {
-		common.ErrorResp(c, err, 500, true)
-	} else {
-		c.Data(200, "image/png", png)
-	}
+    url := c.Query("url")
+    png, err := qrcode.Encode(url, qrcode.Medium, 256)
+    if err != nil {
+        common.ErrorResp(c, err, 500, true)
+    } else {
+        c.Data(200, "image/png", png)
+    }
 }
 
 func Plist(c *gin.Context) {
@@ -56,8 +56,6 @@ func Plist(c *gin.Context) {
 	}
 	fullName := c.Param("name")
 	Url := link.String()
-	Url = strings.ReplaceAll(Url, "<", "[")
-	Url = strings.ReplaceAll(Url, ">", "]")
 	nameEncode := linkNameSplit[1]
 	fullName, err = url.PathUnescape(nameEncode)
 	if err != nil {

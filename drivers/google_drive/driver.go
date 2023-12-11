@@ -112,7 +112,7 @@ func (d *GoogleDrive) Remove(ctx context.Context, obj model.Obj) error {
 }
 
 func (d *GoogleDrive) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
-	obj := stream.GetExist()
+	obj := stream.GetOld()
 	var (
 		e    Error
 		url  string
@@ -158,7 +158,7 @@ func (d *GoogleDrive) Put(ctx context.Context, dstDir model.Obj, stream model.Fi
 	putUrl := res.Header().Get("location")
 	if stream.GetSize() < d.ChunkSize*1024*1024 {
 		_, err = d.request(putUrl, http.MethodPut, func(req *resty.Request) {
-			req.SetHeader("Content-Length", strconv.FormatInt(stream.GetSize(), 10)).SetBody(stream)
+			req.SetHeader("Content-Length", strconv.FormatInt(stream.GetSize(), 10)).SetBody(stream.GetReadCloser())
 		}, nil)
 	} else {
 		err = d.chunkUpload(ctx, stream, putUrl)

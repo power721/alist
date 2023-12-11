@@ -3,7 +3,6 @@ package alist_v3
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"path"
 	"strconv"
@@ -94,10 +93,8 @@ func (d *AListV3) List(ctx context.Context, dir model.Obj, args model.ListArgs) 
 			Object: model.Object{
 				Name:     f.Name,
 				Modified: f.Modified,
-				Ctime:    f.Created,
 				Size:     f.Size,
 				IsFolder: f.IsDir,
-				HashInfo: utils.FromString(f.HashInfo),
 			},
 			Thumbnail: model.Thumbnail{Thumbnail: f.Thumb},
 		}
@@ -179,7 +176,7 @@ func (d *AListV3) Put(ctx context.Context, dstDir model.Obj, stream model.FileSt
 			SetHeader("Password", d.MetaPassword).
 			SetHeader("Content-Length", strconv.FormatInt(stream.GetSize(), 10)).
 			SetContentLength(true).
-			SetBody(io.ReadCloser(stream))
+			SetBody(stream.GetReadCloser())
 	})
 	return err
 }

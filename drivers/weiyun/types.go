@@ -1,7 +1,6 @@
 package weiyun
 
 import (
-	"github.com/alist-org/alist/v3/pkg/utils"
 	"time"
 
 	weiyunsdkgo "github.com/foxxorcat/weiyun-sdk-go"
@@ -22,25 +21,10 @@ func (f *File) GetPath() string    { return "" }
 func (f *File) GetPKey() string {
 	return f.PFolder.DirKey
 }
-func (f *File) CreateTime() time.Time {
-	return time.Time(f.FileCtime)
-}
-
-func (f *File) GetHash() utils.HashInfo {
-	return utils.NewHashInfo(utils.SHA1, f.FileSha)
-}
 
 type Folder struct {
 	PFolder *Folder
 	weiyunsdkgo.Folder
-}
-
-func (f *Folder) CreateTime() time.Time {
-	return time.Time(f.DirCtime)
-}
-
-func (f *Folder) GetHash() utils.HashInfo {
-	return utils.HashInfo{}
 }
 
 func (f *Folder) GetID() string      { return f.DirKey }
