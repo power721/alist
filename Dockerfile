@@ -1,7 +1,8 @@
-FROM alpine:3.18 as builder
+FROM alpine:edge as builder
 LABEL stage=go-builder
 WORKDIR /app/
 COPY ./ ./
+ENV CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
 RUN apk add --no-cache bash curl gcc git go musl-dev; \
     bash build.sh release docker
 

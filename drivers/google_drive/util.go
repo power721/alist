@@ -5,13 +5,13 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/alist-org/alist/v3/pkg/http_range"
 
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/model"
@@ -43,7 +43,7 @@ func (d *GoogleDrive) refreshToken() error {
 		gdsaFileThis := d.RefreshToken
 		if gdsaFile.IsDir() {
 			if len(d.ServiceAccountFileList) <= 0 {
-				gdsaReadDir, gdsaDirErr := ioutil.ReadDir(d.RefreshToken)
+				gdsaReadDir, gdsaDirErr := os.ReadDir(d.RefreshToken)
 				if gdsaDirErr != nil {
 					log.Error("read dir fail")
 					return gdsaDirErr
@@ -75,7 +75,7 @@ func (d *GoogleDrive) refreshToken() error {
 			}
 		}
 
-		gdsaFileThisContent, err := ioutil.ReadFile(gdsaFileThis)
+		gdsaFileThisContent, err := os.ReadFile(gdsaFileThis)
 		if err != nil {
 			return err
 		}
@@ -195,7 +195,7 @@ func (d *GoogleDrive) getFiles(id string) ([]File, error) {
 		}
 		query := map[string]string{
 			"orderBy":  orderBy,
-			"fields":   "files(id,name,mimeType,size,modifiedTime,thumbnailLink,shortcutDetails),nextPageToken",
+			"fields":   "files(id,name,mimeType,size,modifiedTime,createdTime,thumbnailLink,shortcutDetails,md5Checksum,sha1Checksum,sha256Checksum),nextPageToken",
 			"pageSize": "1000",
 			"q":        fmt.Sprintf("'%s' in parents and trashed = false", id),
 			//"includeItemsFromAllDrives": "true",
@@ -216,25 +216,29 @@ func (d *GoogleDrive) getFiles(id string) ([]File, error) {
 
 func (d *GoogleDrive) chunkUpload(ctx context.Context, stream model.FileStreamer, url string) error {
 	var defaultChunkSize = d.ChunkSize * 1024 * 1024
-	var finish int64 = 0
-	for finish < stream.GetSize() {
+	var offset int64 = 0
+	for offset < stream.GetSize() {
 		if utils.IsCanceled(ctx) {
 			return ctx.Err()
 		}
-		chunkSize := stream.GetSize() - finish
+		chunkSize := stream.GetSize() - offset
 		if chunkSize > defaultChunkSize {
 			chunkSize = defaultChunkSize
 		}
-		_, err := d.request(url, http.MethodPut, func(req *resty.Request) {
+		reader, err := stream.RangeRead(http_range.Range{Start: offset, Length: chunkSize})
+		if err != nil {
+			return err
+		}
+		_, err = d.request(url, http.MethodPut, func(req *resty.Request) {
 			req.SetHeaders(map[string]string{
 				"Content-Length": strconv.FormatInt(chunkSize, 10),
-				"Content-Range":  fmt.Sprintf("bytes %d-%d/%d", finish, finish+chunkSize-1, stream.GetSize()),
-			}).SetBody(io.LimitReader(stream.GetReadCloser(), chunkSize)).SetContext(ctx)
+				"Content-Range":  fmt.Sprintf("bytes %d-%d/%d", offset, offset+chunkSize-1, stream.GetSize()),
+			}).SetBody(reader).SetContext(ctx)
 		}, nil)
 		if err != nil {
 			return err
 		}
-		finish += chunkSize
+		offset += chunkSize
 	}
 	return nil
 }

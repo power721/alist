@@ -2,7 +2,6 @@ package fs
 
 import (
 	"context"
-	"github.com/alist-org/alist/v3/pkg/utils"
 
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
@@ -55,6 +54,5 @@ func other(ctx context.Context, args model.FsOtherArgs) (interface{}, error) {
 		return nil, errors.WithMessage(err, "failed get storage")
 	}
 	args.Path = actualPath
-	utils.Log.Debugf("%v %v", storage, actualPath)
 	return op.Other(ctx, storage, args)
 }
