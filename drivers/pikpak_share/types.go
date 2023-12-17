@@ -13,8 +13,8 @@ type RespErr struct {
 }
 
 type ShareResp struct {
-	ShareStatus		string `json:"share_status"`
-	ShareStatusText	string `json:"share_status_text"`
+	ShareStatus     string `json:"share_status"`
+	ShareStatusText string `json:"share_status_text"`
 	FileInfo        File   `json:"file_info"`
 	Files           []File `json:"files"`
 	NextPageToken   string `json:"next_page_token"`

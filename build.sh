@@ -9,7 +9,7 @@ if [ "$1" = "dev" ]; then
   webVersion="dev"
 else
   version=$(git describe --abbrev=0 --tags)
-  webVersion=3.25.1
+  webVersion=3.29.0
 fi
 
 echo "backend version: $version"
@@ -34,7 +34,7 @@ FetchWebDev() {
 }
 
 FetchWebRelease() {
-  curl -L https://github.com/alist-org/alist-web/releases/download/3.25.1/dist.tar.gz -o dist.tar.gz
+  curl -L https://github.com/alist-org/alist-web/releases/download/3.29.0/dist.tar.gz -o dist.tar.gz
   tar -zxvf dist.tar.gz
   rm -rf public/dist
   mv -f dist public

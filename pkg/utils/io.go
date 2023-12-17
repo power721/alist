@@ -3,9 +3,12 @@ package utils
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
+
+	"golang.org/x/exp/constraints"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -17,9 +20,9 @@ type readerFunc func(p []byte) (n int, err error)
 func (rf readerFunc) Read(p []byte) (n int, err error) { return rf(p) }
 
 // CopyWithCtx slightly modified function signature:
-// - context has been added in order to propagate cancelation
+// - context has been added in order to propagate cancellation
 // - I do not return the number of bytes written, has it is not useful in my use case
-func CopyWithCtx(ctx context.Context, out io.Writer, in io.Reader, size int64, progress func(percentage int)) error {
+func CopyWithCtx(ctx context.Context, out io.Writer, in io.Reader, size int64, progress func(percentage float64)) error {
 	// Copy will call the Reader and Writer interface multiple time, in order
 	// to copy by chunk (avoiding loading the whole file in memory).
 	// I insert the ability to cancel before read time as it is the earliest
@@ -38,7 +41,7 @@ func CopyWithCtx(ctx context.Context, out io.Writer, in io.Reader, size int64, p
 			n, err := in.Read(p)
 			if s > 0 && (err == nil || err == io.EOF) {
 				finish += int64(n)
-				progress(int(finish / s))
+				progress(float64(finish) / float64(s))
 			}
 			return n, err
 		}
@@ -132,16 +135,6 @@ func (mr *MultiReadable) Close() error {
 	return nil
 }
 
-type nopCloser struct {
-	io.ReadSeeker
-}
-
-func (nopCloser) Close() error { return nil }
-
-func ReadSeekerNopCloser(r io.ReadSeeker) io.ReadSeekCloser {
-	return nopCloser{r}
-}
-
 func Retry(attempts int, sleep time.Duration, f func() error) (err error) {
 	for i := 0; i < attempts; i++ {
 		fmt.Println("This is attempt number", i)
@@ -158,23 +151,56 @@ func Retry(attempts int, sleep time.Duration, f func() error) (err error) {
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
 
-type Closers struct {
-	closers []*io.Closer
+type ClosersIF interface {
+	io.Closer
+	Add(closer io.Closer)
+	AddClosers(closers Closers)
+	GetClosers() Closers
 }
 
-func (c *Closers) Close() (err error) {
+type Closers struct {
+	closers []io.Closer
+}
+
+func (c *Closers) GetClosers() Closers {
+	return *c
+}
+
+var _ ClosersIF = (*Closers)(nil)
+
+func (c *Closers) Close() error {
+	var errs []error
 	for _, closer := range c.closers {
 		if closer != nil {
-			_ = (*closer).Close()
+			errs = append(errs, closer.Close())
 		}
 	}
-	return nil
+	return errors.Join(errs...)
 }
 func (c *Closers) Add(closer io.Closer) {
-	if closer != nil {
-		c.closers = append(c.closers, &closer)
-	}
+	c.closers = append(c.closers, closer)
+
 }
-func NewClosers() *Closers {
-	return &Closers{[]*io.Closer{}}
+func (c *Closers) AddClosers(closers Closers) {
+	c.closers = append(c.closers, closers.closers...)
+}
+
+func EmptyClosers() Closers {
+	return Closers{[]io.Closer{}}
+}
+func NewClosers(c ...io.Closer) Closers {
+	return Closers{c}
+}
+
+func Min[T constraints.Ordered](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
+}
+func Max[T constraints.Ordered](a, b T) T {
+	if a < b {
+		return b
+	}
+	return a
 }

@@ -71,8 +71,8 @@ func (d *OnedriveAPP) _accessToken() error {
 		"grant_type":    "client_credentials",
 		"client_id":     d.ClientID,
 		"client_secret": d.ClientSecret,
-		"resource":      "https://graph.microsoft.com/",
-		"scope":         "https://graph.microsoft.com/.default",
+		"resource":      onedriveHostMap[d.Region].Api + "/",
+		"scope":         onedriveHostMap[d.Region].Api + "/.default",
 	}).Post(url)
 	if err != nil {
 		return err
@@ -187,13 +187,14 @@ func (d *OnedriveAPP) upBig(ctx context.Context, dstDir model.Obj, stream model.
 		if err != nil {
 			return err
 		}
-		if res.StatusCode != 201 && res.StatusCode != 202 {
+		// https://learn.microsoft.com/zh-cn/onedrive/developer/rest-api/api/driveitem_createuploadsession
+		if res.StatusCode != 201 && res.StatusCode != 202 && res.StatusCode != 200 {
 			data, _ := io.ReadAll(res.Body)
 			res.Body.Close()
 			return errors.New(string(data))
 		}
 		res.Body.Close()
-		up(int(finish * 100 / stream.GetSize()))
+		up(float64(finish) * 100 / float64(stream.GetSize()))
 	}
 	return nil
 }

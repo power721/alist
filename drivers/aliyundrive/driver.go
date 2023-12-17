@@ -14,6 +14,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/alist-org/alist/v3/internal/stream"
+
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -163,14 +165,14 @@ func (d *AliDrive) Remove(ctx context.Context, obj model.Obj) error {
 	return err
 }
 
-func (d *AliDrive) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
-	file := model.FileStream{
-		Obj:        stream,
-		ReadCloser: stream,
-		Mimetype:   stream.GetMimetype(),
+func (d *AliDrive) Put(ctx context.Context, dstDir model.Obj, streamer model.FileStreamer, up driver.UpdateProgress) error {
+	file := stream.FileStream{
+		Obj:      streamer,
+		Reader:   streamer,
+		Mimetype: streamer.GetMimetype(),
 	}
 	const DEFAULT int64 = 10485760
-	var count = int(math.Ceil(float64(stream.GetSize()) / float64(DEFAULT)))
+	var count = int(math.Ceil(float64(streamer.GetSize()) / float64(DEFAULT)))
 
 	partInfoList := make([]base.Json, 0, count)
 	for i := 1; i <= count; i++ {
@@ -187,8 +189,8 @@ func (d *AliDrive) Put(ctx context.Context, dstDir model.Obj, stream model.FileS
 	}
 
 	var localFile *os.File
-	if fileStream, ok := file.ReadCloser.(*model.FileStream); ok {
-		localFile, _ = fileStream.ReadCloser.(*os.File)
+	if fileStream, ok := file.Reader.(*stream.FileStream); ok {
+		localFile, _ = fileStream.Reader.(*os.File)
 	}
 	if d.RapidUpload {
 		buf := bytes.NewBuffer(make([]byte, 0, 1024))
@@ -200,12 +202,12 @@ func (d *AliDrive) Put(ctx context.Context, dstDir model.Obj, stream model.FileS
 			}
 		} else {
 			// 把头部拼接回去
-			file.ReadCloser = struct {
+			file.Reader = struct {
 				io.Reader
 				io.Closer
 			}{
 				Reader: io.MultiReader(buf, file),
-				Closer: file,
+				Closer: &file,
 			}
 		}
 	} else {
@@ -281,7 +283,7 @@ func (d *AliDrive) Put(ctx context.Context, dstDir model.Obj, stream model.FileS
 		if _, err = localFile.Seek(0, io.SeekStart); err != nil {
 			return err
 		}
-		file.ReadCloser = localFile
+		file.Reader = localFile
 	}
 
 	for i, partInfo := range resp.PartInfoList {
@@ -303,7 +305,7 @@ func (d *AliDrive) Put(ctx context.Context, dstDir model.Obj, stream model.FileS
 		}
 		res.Body.Close()
 		if count > 0 {
-			up(i * 100 / count)
+			up(float64(i) * 100 / float64(count))
 		}
 	}
 	var resp2 base.Json
