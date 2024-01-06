@@ -155,6 +155,8 @@ func (d *AliyundriveShare2Open) getDriveId() {
 			log.Warnf("getDriveId error: %v", err)
 			return
 		}
+		name := utils.Json.Get(res, "name").ToString()
+		log.Printf("昵称： %v", name)
 		d.DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
 		if d.DriveId == "" {
 			d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
