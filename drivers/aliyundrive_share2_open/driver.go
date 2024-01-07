@@ -3,7 +3,7 @@ package aliyundrive_share2_open
 import (
 	"context"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/conf"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"net/http"
 	"time"
 
@@ -63,9 +63,12 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 		return err
 	}
 
-	if d.OauthTokenURL == "" {
-		d.OauthTokenURL = conf.Conf.OpenTokenAuthUrl
-	}
+	//if d.OauthTokenURL == "" {
+	//	d.OauthTokenURL = conf.Conf.OpenTokenAuthUrl
+	//}
+
+	d.ClientID = setting.GetStr("open_api_client_id")
+	d.ClientSecret = setting.GetStr("open_api_client_secret")
 
 	err = d.refreshOpenToken(false)
 	if err != nil {

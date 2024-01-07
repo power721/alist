@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"net/http"
 	"time"
 
@@ -42,6 +43,10 @@ func (d *AliyundriveOpen) Init(ctx context.Context) error {
 	if d.DriveType == "" {
 		d.DriveType = "default"
 	}
+
+	d.ClientID = setting.GetStr("open_api_client_id")
+	d.ClientSecret = setting.GetStr("open_api_client_secret")
+
 	res, err := d.request("/adrive/v1.0/user/getDriveInfo", http.MethodPost, nil)
 	if err != nil {
 		return err
