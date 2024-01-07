@@ -19,6 +19,9 @@ import (
 )
 
 var ParentFileId = ""
+var apiClient = false
+var ClientID = ""
+var ClientSecret = ""
 var DriveId = ""
 var DelayTime int64 = 1500
 var lastTime int64 = 0
@@ -67,8 +70,15 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 	//	d.OauthTokenURL = conf.Conf.OpenTokenAuthUrl
 	//}
 
-	d.ClientID = setting.GetStr("open_api_client_id")
-	d.ClientSecret = setting.GetStr("open_api_client_secret")
+	if !apiClient {
+		d.ClientID = setting.GetStr("open_api_client_id")
+		d.ClientSecret = setting.GetStr("open_api_client_secret")
+		ClientID, ClientSecret = d.ClientID, d.ClientSecret
+		log.Printf("Open API Client ID: %v", ClientID)
+		apiClient = true
+	} else {
+		d.ClientID, d.ClientSecret = ClientID, ClientSecret
+	}
 
 	err = d.refreshOpenToken(false)
 	if err != nil {
