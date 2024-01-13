@@ -37,6 +37,7 @@ const (
 	CustomizeBody           = "customize_body"
 	LinkExpiration          = "link_expiration"
 	DeleteDelayTime         = "delete_delay_time"
+	ExternalPort            = "external_port"
 	SignAll                 = "sign_all"
 	PrivacyRegs             = "privacy_regs"
 	OcrApi                  = "ocr_api"
