@@ -124,7 +124,7 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 	}
 
 	t := time.Now()
-	url := "https://auth.aliyundrive.com/v2/account/token"
+	url := "https://auth.alipan.com/v2/account/token"
 	log.Println("refreshToken", accountId, url)
 	var resp base.TokenResp
 	var e ErrorResp
@@ -240,7 +240,7 @@ func (d *AliyundriveShare2Open) getShareToken() error {
 	var resp ShareTokenResp
 	_, err := base.RestyClient.R().
 		SetResult(&resp).SetError(&e).SetBody(data).
-		Post("https://api.aliyundrive.com/v2/share_link/get_share_token")
+		Post("https://api.alipan.com/v2/share_link/get_share_token")
 	lastTime = time.Now().UnixMilli()
 	if err != nil {
 		return err
@@ -275,7 +275,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 		"resource": "file",
 	}
 
-	res, err := d.request("https://api.aliyundrive.com/adrive/v2/batch", http.MethodPost, func(req *resty.Request) {
+	res, err := d.request("https://api.alipan.com/adrive/v2/batch", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data)
 	})
 	if err != nil {
@@ -392,7 +392,7 @@ func (d *AliyundriveShare2Open) getPreviewLink(file model.Obj) (*model.Link, err
 }
 
 func (d *AliyundriveShare2Open) getLink(file model.Obj) (*model.Link, error) {
-	res, err := d.request("https://api.aliyundrive.com/v2/file/get_video_preview_play_info", http.MethodPost, func(req *resty.Request) {
+	res, err := d.request("https://api.alipan.com/v2/file/get_video_preview_play_info", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id":       d.DriveId,
 			"file_id":        file.GetID(),
@@ -474,7 +474,7 @@ func (d *AliyundriveShare2Open) delete(fileId string) error {
 		"resource": "file",
 	}
 
-	_, err := d.request("https://api.aliyundrive.com/v3/batch", http.MethodPost, func(req *resty.Request) {
+	_, err := d.request("https://api.alipan.com/v3/batch", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data)
 	})
 	if err != nil {
@@ -489,7 +489,7 @@ func (d *AliyundriveShare2Open) request(url, method string, callback base.ReqCal
 	req := base.RestyClient.R().
 		SetError(&e).
 		SetHeader("content-type", "application/json").
-		SetHeader("Referer", "https://www.aliyundrive.com/").
+		SetHeader("Referer", "https://www.alipan.com/").
 		SetHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36").
 		SetHeader("Authorization", "Bearer\t"+d.AccessToken).
 		SetHeader(CanaryHeaderKey, CanaryHeaderValue).
@@ -546,7 +546,7 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 			SetHeader("x-share-token", d.ShareToken).
 			SetHeader(CanaryHeaderKey, CanaryHeaderValue).
 			SetResult(&resp).SetError(&e).SetBody(data).
-			Post("https://api.aliyundrive.com/adrive/v3/file/list")
+			Post("https://api.alipan.com/adrive/v3/file/list")
 		if err != nil {
 			return nil, err
 		}
