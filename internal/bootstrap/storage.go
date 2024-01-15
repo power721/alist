@@ -9,6 +9,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	log "github.com/sirupsen/logrus"
+	"strings"
 )
 
 func LoadStorages() {
@@ -23,9 +24,15 @@ func LoadStorages() {
 		for i := range storages {
 			err := op.LoadStorage(context.Background(), storages[i])
 			if err != nil {
-				failed = append(failed, storages[i])
-				utils.Log.Warnf("[%d] failed get enabled storages [%s], will retry: %+v",
-					i+1, storages[i].MountPath, err)
+				if !strings.Contains(err.Error(), "share_link is cancelled") &&
+					!strings.Contains(err.Error(), "no route to host") {
+					failed = append(failed, storages[i])
+					utils.Log.Warnf("[%d] failed get enabled storages [%s], will retry: %+v",
+						i+1, storages[i].MountPath, err)
+				} else {
+					utils.Log.Warnf("[%d] failed get enabled storages [%s], %+v",
+						i+1, storages[i].MountPath, err)
+				}
 			} else {
 				utils.Log.Infof("[%d] success load storage: [%s], driver: [%s]",
 					i+1, storages[i].MountPath, storages[i].Driver)
