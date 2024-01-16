@@ -281,6 +281,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "share_id doesn't match. share_token") {
+			log.Infof("getShareToken: %v", d.ShareId)
 			d.getShareToken()
 		}
 		log.Errorf("保存文件失败: %v", err)
@@ -290,6 +291,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 	msg := utils.Json.Get(res, "responses", 0, "body", "message").ToString()
 	if msg != "" {
 		if strings.Contains(msg, "share_id doesn't match. share_token") {
+			log.Infof("getShareToken: %v", d.ShareId)
 			d.getShareToken()
 		}
 		log.Errorf("保存文件失败 : %v", msg)
