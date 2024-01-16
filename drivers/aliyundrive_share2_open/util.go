@@ -11,6 +11,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
@@ -279,6 +280,9 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 		req.SetBody(data)
 	})
 	if err != nil {
+		if strings.Contains(err.Error(), "share_id doesn't match. share_token") {
+			d.getShareToken()
+		}
 		log.Errorf("保存文件失败: %v", err)
 		return "", err
 	}
