@@ -289,6 +289,9 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 
 	msg := utils.Json.Get(res, "responses", 0, "body", "message").ToString()
 	if msg != "" {
+		if strings.Contains(msg, "share_id doesn't match. share_token") {
+			d.getShareToken()
+		}
 		log.Errorf("保存文件失败 : %v", msg)
 		return "", errors.New(msg)
 	}
