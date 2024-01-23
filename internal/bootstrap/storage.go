@@ -25,6 +25,7 @@ func LoadStorages() {
 			err := op.LoadStorage(context.Background(), storages[i])
 			if err != nil {
 				if !strings.Contains(err.Error(), "share_link is cancelled") &&
+					!strings.Contains(err.Error(), "invalid") &&
 					!strings.Contains(err.Error(), "no route to host") {
 					failed = append(failed, storages[i])
 					utils.Log.Warnf("[%d] failed get enabled storages [%s], will retry: %+v",
