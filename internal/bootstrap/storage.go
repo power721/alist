@@ -24,10 +24,11 @@ func LoadStorages() {
 		for i := range storages {
 			err := op.LoadStorage(context.Background(), storages[i])
 			if err != nil {
-				if strings.Contains(err.Error(), "share_link is cancelled") ||
-					strings.Contains(err.Error(), "share_link is forbidden") ||
-					strings.Contains(err.Error(), "invalid") ||
-					strings.Contains(err.Error(), "no route to host") {
+				msg := err.Error()
+				if strings.Contains(msg, "share_link is cancelled") ||
+					strings.Contains(msg, "share_link is forbidden") ||
+					strings.Contains(msg, "invalid") ||
+					strings.Contains(msg, "no route to host") {
 					utils.Log.Warnf("[%d] failed get enabled storages [%s], %+v",
 						i+1, storages[i].MountPath, err)
 				} else {
