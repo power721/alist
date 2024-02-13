@@ -205,7 +205,7 @@ func (d *AliyundriveOpen) Put(ctx context.Context, dstDir model.Obj, stream mode
 }
 
 func (d *AliyundriveOpen) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
-	var resp base.Json
+	var resp VideoPreviewResponse
 	var uri string
 	data := base.Json{
 		"drive_id": d.DriveId,
@@ -225,6 +225,18 @@ func (d *AliyundriveOpen) Other(ctx context.Context, args model.OtherArgs) (inte
 	if err != nil {
 		return nil, err
 	}
+
+	if args.Data == "preview" {
+		url, _ := d.getDownloadUrl(args.Obj.GetID())
+		if url != "" {
+			resp.PlayInfo.Videos = append(resp.PlayInfo.Videos, LiveTranscoding{
+				TemplateId: "原画",
+				Status:     "finished",
+				Url:        url,
+			})
+		}
+	}
+
 	return resp, nil
 }
 
