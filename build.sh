@@ -9,7 +9,7 @@ if [ "$1" = "dev" ]; then
   webVersion="dev"
 else
   version=$(git describe --abbrev=0 --tags)
-  webVersion=3.29.0
+  webVersion=3.30.0
 fi
 
 echo "backend version: $version"

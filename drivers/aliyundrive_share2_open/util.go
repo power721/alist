@@ -450,6 +450,7 @@ func (d *AliyundriveShare2Open) deleteDelay(fileId string) {
 	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	d.deleteOpen(fileId)
+	// TODO: delete all expired files in the folder
 }
 
 func (d *AliyundriveShare2Open) deleteOpen(fileId string) {
