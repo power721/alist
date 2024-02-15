@@ -179,7 +179,7 @@ func (d *AliyundriveOpen) getDownloadUrl(fileId string) (string, error) {
 		req.SetBody(base.Json{
 			"drive_id":   d.DriveId,
 			"file_id":    fileId,
-			"expire_sec": 900,
+			"expire_sec": 14400,
 		})
 	})
 	if err != nil {
