@@ -25,6 +25,8 @@ const (
 	CanaryHeaderValue = "client=web,app=share,version=v2.3.1"
 )
 
+var nickname = ""
+
 func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	accountId := setting.GetStr("ali_account_id", "1")
 	accessTokenOpen := token.GetToken("AccessTokenOpen-"+accountId, 7200)
@@ -148,6 +150,19 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 	return nil
 }
 
+func (d *AliyundriveShare2Open) getUser() {
+	if nickname == "" {
+		res, err := d.request("https://user.aliyundrive.com/v2/user/get", http.MethodPost, nil)
+		lastTime = time.Now().UnixMilli()
+		if err != nil {
+			log.Warnf("getUser error: %v", err)
+			return
+		}
+		nickname = utils.Json.Get(res, "nick_name").ToString()
+		log.Printf("阿里token 昵称： %v", nickname)
+	}
+}
+
 func (d *AliyundriveShare2Open) getDriveId() {
 	if DriveId == "" {
 		res, err := d.requestOpen("/adrive/v1.0/user/getDriveInfo", http.MethodPost, nil)
@@ -157,7 +172,7 @@ func (d *AliyundriveShare2Open) getDriveId() {
 			return
 		}
 		name := utils.Json.Get(res, "name").ToString()
-		log.Printf("昵称： %v", name)
+		log.Printf("开放token 昵称： %v", name)
 		d.DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
 		if d.DriveId == "" {
 			d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()

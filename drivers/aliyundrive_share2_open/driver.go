@@ -66,6 +66,8 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 		return err
 	}
 
+	d.getUser()
+
 	//if d.OauthTokenURL == "" {
 	//	d.OauthTokenURL = conf.Conf.OpenTokenAuthUrl
 	//}
