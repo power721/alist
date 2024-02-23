@@ -159,7 +159,7 @@ func (d *AliyundriveShare2Open) getUser() {
 			return
 		}
 		nickname = utils.Json.Get(res, "nick_name").ToString()
-		log.Printf("阿里token 昵称： %v", nickname)
+		log.Printf("阿里token 账号昵称： %v", nickname)
 	}
 }
 
@@ -172,7 +172,7 @@ func (d *AliyundriveShare2Open) getDriveId() {
 			return
 		}
 		name := utils.Json.Get(res, "name").ToString()
-		log.Printf("开放token 昵称： %v", name)
+		log.Printf("开放token 账号昵称： %v", name)
 		d.DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
 		if d.DriveId == "" {
 			d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
