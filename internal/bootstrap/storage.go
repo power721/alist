@@ -27,6 +27,7 @@ func LoadStorages() {
 				msg := err.Error()
 				if strings.Contains(msg, "share_link is cancelled") ||
 					strings.Contains(msg, "share_link is forbidden") ||
+					strings.Contains(msg, "share_link cannot be found") ||
 					strings.Contains(msg, "invalid") ||
 					strings.Contains(msg, "no route to host") {
 					utils.Log.Warnf("[%d] failed get enabled storages [%s], %+v",
