@@ -608,7 +608,7 @@ func (d *AliyundriveShare2Open) clean() {
 	}
 
 	for _, file := range files {
-		log.Infof("删除文件 %v %v 创建于 %v", file.Name, file.FileId, file.CreatedAt)
+		log.Infof("删除文件 %v %v 创建于 %v", file.Name, file.FileId, file.CreatedAt.Local())
 		d.deleteOpen(file.FileId)
 	}
 }
