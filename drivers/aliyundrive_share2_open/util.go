@@ -26,6 +26,7 @@ const (
 )
 
 var nickname = ""
+var cleaned = false
 
 func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	accountId := setting.GetStr("ali_account_id", "1")
@@ -465,7 +466,6 @@ func (d *AliyundriveShare2Open) deleteDelay(fileId string) {
 	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	d.deleteOpen(fileId)
-	// TODO: delete all expired files in the folder
 }
 
 func (d *AliyundriveShare2Open) deleteOpen(fileId string) {
@@ -593,6 +593,52 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 		d.DriveId = files[0].DriveId
 	}
 	return files, nil
+}
+
+func (d *AliyundriveShare2Open) clean() {
+	if cleaned || ParentFileId == "root" {
+		return
+	}
+
+	cleaned = true
+	files, err := d.listFiles(ParentFileId)
+	if err != nil {
+		log.Errorf("获取文件列表失败 %v", err)
+		return
+	}
+
+	for _, file := range files {
+		log.Infof("删除文件 %v %v 创建于 %v", file.Name, file.FileId, file.CreatedAt)
+		d.deleteOpen(file.FileId)
+	}
+}
+
+func (d *AliyundriveShare2Open) listFiles(fileId string) ([]File, error) {
+	marker := "first"
+	res := make([]File, 0)
+	for marker != "" {
+		if marker == "first" {
+			marker = ""
+		}
+		data := base.Json{
+			"drive_id":        d.DriveId,
+			"limit":           200,
+			"marker":          marker,
+			"order_by":        d.OrderBy,
+			"order_direction": d.OrderDirection,
+			"parent_file_id":  fileId,
+		}
+		var resp ListResp
+		_, err := d.requestOpen("/adrive/v1.0/openFile/list", http.MethodPost, func(req *resty.Request) {
+			req.SetBody(data).SetResult(&resp)
+		})
+		if err != nil {
+			return nil, err
+		}
+		marker = resp.NextMarker
+		res = append(res, resp.Items...)
+	}
+	return res, nil
 }
 
 func (d *AliyundriveShare2Open) requestOpen(uri, method string, callback base.ReqCallback, retry ...bool) ([]byte, error) {

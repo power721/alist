@@ -90,6 +90,7 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 
 	d.getDriveId()
 	d.createFolderOpen()
+	d.clean()
 
 	d.limitList = rateg.LimitFnCtx(d.list, rateg.LimitFnOption{
 		Limit:  4,
