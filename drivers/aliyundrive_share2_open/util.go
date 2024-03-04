@@ -624,8 +624,8 @@ func (d *AliyundriveShare2Open) listFiles(fileId string) ([]File, error) {
 			"drive_id":        d.DriveId,
 			"limit":           200,
 			"marker":          marker,
-			"order_by":        d.OrderBy,
-			"order_direction": d.OrderDirection,
+			"order_by":        "created_at",
+			"order_direction": "ASC",
 			"parent_file_id":  fileId,
 		}
 		var resp ListResp
