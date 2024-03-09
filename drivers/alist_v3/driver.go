@@ -54,7 +54,7 @@ func (d *AListV3) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if resp.Data.Role == model.GUEST && d.Addition.Address != "http://alist.xiaoya.pro" {
+	if resp.Data.Role == model.GUEST && d.Addition.Address != "https://alist.xiaoya.pro" {
 		url := d.Address + "/api/public/settings"
 		res, err := base.RestyClient.R().Get(url)
 		if err != nil {
