@@ -33,6 +33,9 @@ func (d *AListV3) GetAddition() driver.Additional {
 
 func (d *AListV3) Init(ctx context.Context) error {
 	d.Addition.Address = strings.TrimSuffix(d.Addition.Address, "/")
+	if d.Addition.Address == "https://alist.xiaoya.pro" {
+		return nil
+	}
 	var resp common.Resp[MeResp]
 	_, err := d.request("/me", http.MethodGet, func(req *resty.Request) {
 		req.SetResult(&resp)
@@ -54,7 +57,7 @@ func (d *AListV3) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if resp.Data.Role == model.GUEST && d.Addition.Address != "https://alist.xiaoya.pro" {
+	if resp.Data.Role == model.GUEST {
 		url := d.Address + "/api/public/settings"
 		res, err := base.RestyClient.R().Get(url)
 		if err != nil {
