@@ -127,6 +127,18 @@ func EnableStorage(ctx context.Context, id uint) error {
 	return nil
 }
 
+func ReloadStorage(ctx context.Context, id uint) error {
+	storage, err := db.GetStorageById(id)
+	if err != nil {
+		return errors.WithMessage(err, "failed get storage")
+	}
+	err = LoadStorage(ctx, *storage)
+	if err != nil {
+		return errors.WithMessage(err, "failed load storage")
+	}
+	return nil
+}
+
 func DisableStorage(ctx context.Context, id uint) error {
 	storage, err := db.GetStorageById(id)
 	if err != nil {
