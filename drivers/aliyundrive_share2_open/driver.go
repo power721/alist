@@ -18,23 +18,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var ParentFileId = ""
-var apiClient = false
-var ClientID = ""
-var ClientSecret = ""
-var DriveId = ""
-var DelayTime int64 = 1500
-var lastTime int64 = 0
-
 type AliyundriveShare2Open struct {
 	base string
 	model.Storage
 	Addition
-	AccessToken     string
-	AccessTokenOpen string
-	ShareToken      string
-	DriveId         string
-	cron            *cron.Cron
+	cron *cron.Cron
 
 	limitList func(ctx context.Context, dir model.Obj) ([]model.Obj, error)
 	limitLink func(ctx context.Context, file model.Obj) (*model.Link, error)
@@ -73,13 +61,10 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 	//}
 
 	if !apiClient {
-		d.ClientID = setting.GetStr("open_api_client_id")
-		d.ClientSecret = setting.GetStr("open_api_client_secret")
-		ClientID, ClientSecret = d.ClientID, d.ClientSecret
+		ClientID = setting.GetStr("open_api_client_id")
+		ClientSecret = setting.GetStr("open_api_client_secret")
 		log.Printf("Open API Client ID: %v", ClientID)
 		apiClient = true
-	} else {
-		d.ClientID, d.ClientSecret = ClientID, ClientSecret
 	}
 
 	err = d.refreshOpenToken(false)
@@ -107,7 +92,7 @@ func (d *AliyundriveShare2Open) Drop(ctx context.Context) error {
 	if d.cron != nil {
 		d.cron.Stop()
 	}
-	d.DriveId = ""
+	DriveId = ""
 	return nil
 }
 
@@ -140,7 +125,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 	// 1. 转存资源
 	// 2. 获取链接
 	// 3. 删除文件
-	log.Infof("获取文件直链 %v %v %v %v", d.DriveId, file.GetName(), file.GetID(), file.GetSize())
+	log.Infof("获取文件直链 %v %v %v %v", DriveId, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(file.GetID())
 	if err != nil {
 		return nil, err
@@ -159,7 +144,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 		return nil, errs.NotSupport
 	}
 
-	log.Infof("获取文件链接 %v %v %v %v", d.DriveId, args.Obj.GetName(), args.Obj.GetID(), args.Obj.GetSize())
+	log.Infof("获取文件链接 %v %v %v %v", DriveId, args.Obj.GetName(), args.Obj.GetID(), args.Obj.GetSize())
 	fileId, err := d.saveFile(args.Obj.GetID())
 	if err != nil {
 		return nil, err
@@ -168,7 +153,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	var resp VideoPreviewResponse
 	var uri string
 	data := base.Json{
-		"drive_id": d.DriveId,
+		"drive_id": DriveId,
 		"file_id":  fileId,
 	}
 	switch args.Method {

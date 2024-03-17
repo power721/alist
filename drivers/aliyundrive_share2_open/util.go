@@ -25,6 +25,20 @@ const (
 	CanaryHeaderValue = "client=web,app=share,version=v2.3.1"
 )
 
+var RefreshTokenOpen = ""
+var AccessTokenOpen = ""
+var RefreshToken = ""
+var AccessToken = ""
+
+var apiClient = false
+var ClientID = ""
+var ClientSecret = ""
+var DriveId = ""
+var ParentFileId = ""
+
+var DelayTime int64 = 1500
+var lastTime int64 = 0
+
 var nickname = ""
 var cleaned = false
 
@@ -34,29 +48,26 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-"+accountId, 0)
 	log.Debugf("force %v accountId %v accessTokenOpen %v refreshTokenOpen: %v", force, accountId, accessTokenOpen, refreshTokenOpen)
 	if !force && accessTokenOpen != "" && refreshTokenOpen != "" {
-		d.RefreshTokenOpen, d.AccessTokenOpen = refreshTokenOpen, accessTokenOpen
+		RefreshTokenOpen, AccessTokenOpen = refreshTokenOpen, accessTokenOpen
 		log.Debugf("RefreshTokenOpen已经存在")
 		return nil
 	}
 	if refreshTokenOpen != "" {
-		d.RefreshTokenOpen = refreshTokenOpen
+		RefreshTokenOpen = refreshTokenOpen
 	}
 
 	t := time.Now()
 	url := setting.GetStr("open_token_url", d.base+"/oauth/access_token")
-	if d.OauthTokenURL != "" && d.ClientID == "" {
-		url = d.OauthTokenURL
-	}
 	log.Println("refreshOpenToken", accountId, url, force)
 	//var resp base.TokenResp
 	var e ErrorResp
 	res, err := base.RestyClient.R().
 		ForceContentType("application/json").
 		SetBody(base.Json{
-			"client_id":     d.ClientID,
-			"client_secret": d.ClientSecret,
+			"client_id":     ClientID,
+			"client_secret": ClientSecret,
 			"grant_type":    "refresh_token",
-			"refresh_token": d.RefreshTokenOpen,
+			"refresh_token": RefreshTokenOpen,
 		}).
 		//SetResult(&resp).
 		SetError(&e).
@@ -72,8 +83,8 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	if refresh == "" {
 		return errors.New("failed to refresh open token: refresh token is empty")
 	}
-	log.Debugf("[ali_share_open] toekn exchange: %s -> %s", d.RefreshToken, refresh)
-	d.RefreshTokenOpen, d.AccessTokenOpen = refresh, access
+	log.Debugf("[ali_share_open] toekn exchange: %s -> %s", RefreshToken, refresh)
+	RefreshTokenOpen, AccessTokenOpen = refresh, access
 
 	d.SaveOpenToken(t)
 
@@ -85,7 +96,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 	accountId := setting.GetInt("ali_account_id", 1)
 	item := &model.Token{
 		Key:       "AccessTokenOpen-" + strconv.Itoa(accountId),
-		Value:     d.AccessTokenOpen,
+		Value:     AccessTokenOpen,
 		AccountId: accountId,
 		Modified:  t,
 	}
@@ -97,7 +108,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 
 	item = &model.Token{
 		Key:       "RefreshTokenOpen-" + strconv.Itoa(accountId),
-		Value:     d.RefreshTokenOpen,
+		Value:     RefreshTokenOpen,
 		AccountId: accountId,
 		Modified:  t,
 	}
@@ -114,12 +125,12 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 	refreshToken := token.GetToken("RefreshToken-"+accountId, 0)
 	log.Debugf("refreshToken: %v %v %v", accountId, accessToken, refreshToken)
 	if !force && accessToken != "" && refreshToken != "" {
-		d.RefreshToken, d.AccessToken = refreshToken, accessToken
+		RefreshToken, AccessToken = refreshToken, accessToken
 		log.Debugf("RefreshToken已经存在")
 		return nil
 	}
 	if refreshToken != "" {
-		d.RefreshToken = refreshToken
+		RefreshToken = refreshToken
 	}
 
 	if lastTime > 0 {
@@ -133,7 +144,7 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 	var resp base.TokenResp
 	var e ErrorResp
 	_, err := base.RestyClient.R().
-		SetBody(base.Json{"refresh_token": d.RefreshToken, "grant_type": "refresh_token"}).
+		SetBody(base.Json{"refresh_token": RefreshToken, "grant_type": "refresh_token"}).
 		SetResult(&resp).
 		SetError(&e).
 		Post(url)
@@ -143,7 +154,7 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 	if e.Code != "" {
 		return fmt.Errorf("failed to refresh token: %s", e.Message)
 	}
-	d.RefreshToken, d.AccessToken = resp.RefreshToken, resp.AccessToken
+	RefreshToken, AccessToken = resp.RefreshToken, resp.AccessToken
 
 	d.SaveToken(t)
 
@@ -174,16 +185,13 @@ func (d *AliyundriveShare2Open) getDriveId() {
 		}
 		name := utils.Json.Get(res, "name").ToString()
 		log.Printf("开放token 账号昵称： %v", name)
-		d.DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
-		if d.DriveId == "" {
-			d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
-			log.Printf("备份盘ID： %v", d.DriveId)
+		DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
+		if DriveId == "" {
+			DriveId = utils.Json.Get(res, "default_drive_id").ToString()
+			log.Printf("备份盘ID： %v", DriveId)
 		} else {
-			log.Printf("资源盘ID： %v", d.DriveId)
+			log.Printf("资源盘ID： %v", DriveId)
 		}
-		DriveId = d.DriveId
-	} else {
-		d.DriveId = DriveId
 	}
 }
 
@@ -195,7 +203,7 @@ func (d *AliyundriveShare2Open) createFolderOpen() {
 	res, err := d.requestOpen("/adrive/v1.0/openFile/create", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"check_name_mode": "refuse",
-			"drive_id":        d.DriveId,
+			"drive_id":        DriveId,
 			"name":            "xiaoya-tvbox-temp",
 			"parent_file_id":  "root",
 			"type":            "folder",
@@ -218,7 +226,7 @@ func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
 	accountId := setting.GetInt("ali_account_id", 1)
 	item := &model.Token{
 		Key:       "AccessToken-" + strconv.Itoa(accountId),
-		Value:     d.AccessToken,
+		Value:     AccessToken,
 		AccountId: accountId,
 		Modified:  t,
 	}
@@ -228,13 +236,13 @@ func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
 		log.Printf("save AccessToken failed: %v", err)
 	}
 
-	if d.RefreshToken == "" {
+	if RefreshToken == "" {
 		return
 	}
 
 	item = &model.Token{
 		Key:       "RefreshToken-" + strconv.Itoa(accountId),
-		Value:     d.RefreshToken,
+		Value:     RefreshToken,
 		AccountId: accountId,
 		Modified:  t,
 	}
@@ -279,7 +287,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 					"share_id":          d.ShareId,
 					"auto_rename":       true,
 					"to_parent_file_id": ParentFileId,
-					"to_drive_id":       d.DriveId,
+					"to_drive_id":       DriveId,
 				},
 				"headers": base.Json{
 					"Content-Type": "application/json",
@@ -321,7 +329,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error) {
 	res, err := d.requestOpen("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
-			"drive_id":   d.DriveId,
+			"drive_id":   DriveId,
 			"file_id":    file.GetID(),
 			"expire_sec": 14400,
 		})
@@ -349,10 +357,10 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, error)
 }
 
 func (d *AliyundriveShare2Open) getDownloadUrl(fileId string) (string, error) {
-	log.Infof("getDownloadUrl %v %v", d.DriveId, fileId)
+	log.Infof("getDownloadUrl %v %v", DriveId, fileId)
 	res, err := d.requestOpen("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
-			"drive_id":   d.DriveId,
+			"drive_id":   DriveId,
 			"file_id":    fileId,
 			"expire_sec": 14400,
 		})
@@ -373,7 +381,7 @@ func (d *AliyundriveShare2Open) getDownloadUrl(fileId string) (string, error) {
 func (d *AliyundriveShare2Open) getPreviewLink(file model.Obj) (*model.Link, error) {
 	res, err := d.requestOpen("/adrive/v1.0/openFile/getVideoPreviewPlayInfo", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
-			"drive_id":       d.DriveId,
+			"drive_id":       DriveId,
 			"file_id":        file.GetID(),
 			"category":       "live_transcoding",
 			"template_id":    "",
@@ -419,7 +427,7 @@ func (d *AliyundriveShare2Open) getPreviewLink(file model.Obj) (*model.Link, err
 func (d *AliyundriveShare2Open) getLink(file model.Obj) (*model.Link, error) {
 	res, err := d.request("https://api.alipan.com/v2/file/get_video_preview_play_info", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
-			"drive_id":       d.DriveId,
+			"drive_id":       DriveId,
 			"file_id":        file.GetID(),
 			"category":       "live_transcoding",
 			"template_id":    "",
@@ -471,7 +479,7 @@ func (d *AliyundriveShare2Open) deleteDelay(fileId string) {
 func (d *AliyundriveShare2Open) deleteOpen(fileId string) {
 	_, err := d.requestOpen("/adrive/v1.0/openFile/delete", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
-			"drive_id": d.DriveId,
+			"drive_id": DriveId,
 			"file_id":  fileId,
 		})
 	})
@@ -485,7 +493,7 @@ func (d *AliyundriveShare2Open) delete(fileId string) error {
 		"requests": []base.Json{
 			{
 				"body": base.Json{
-					"drive_id": d.DriveId,
+					"drive_id": DriveId,
 					"file_id":  fileId,
 				},
 				"headers": base.Json{
@@ -516,7 +524,7 @@ func (d *AliyundriveShare2Open) request(url, method string, callback base.ReqCal
 		SetHeader("content-type", "application/json").
 		SetHeader("Referer", "https://www.alipan.com/").
 		SetHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36").
-		SetHeader("Authorization", "Bearer\t"+d.AccessToken).
+		SetHeader("Authorization", "Bearer\t"+AccessToken).
 		SetHeader(CanaryHeaderKey, CanaryHeaderValue).
 		SetHeader("x-share-token", d.ShareToken)
 	if callback != nil {
@@ -589,9 +597,9 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 		data["marker"] = resp.NextMarker
 		files = append(files, resp.Items...)
 	}
-	if len(files) > 0 && d.DriveId == "" {
-		d.DriveId = files[0].DriveId
-	}
+	//if len(files) > 0 && DriveId == "" {
+	//	DriveId = files[0].DriveId
+	//}
 	return files, nil
 }
 
@@ -621,7 +629,7 @@ func (d *AliyundriveShare2Open) listFiles(fileId string) ([]File, error) {
 			marker = ""
 		}
 		data := base.Json{
-			"drive_id":        d.DriveId,
+			"drive_id":        DriveId,
 			"limit":           200,
 			"marker":          marker,
 			"order_by":        "created_at",
@@ -649,7 +657,7 @@ func (d *AliyundriveShare2Open) requestOpen(uri, method string, callback base.Re
 func (d *AliyundriveShare2Open) requestReturnErrResp(uri, method string, callback base.ReqCallback, retry ...bool) ([]byte, error, *ErrorResp) {
 	req := base.RestyClient.R()
 	// TODO check whether access_token is expired
-	req.SetHeader("Authorization", "Bearer "+d.AccessTokenOpen)
+	req.SetHeader("Authorization", "Bearer "+AccessTokenOpen)
 	if method == http.MethodPost {
 		req.SetHeader("Content-Type", "application/json")
 	}
@@ -667,7 +675,7 @@ func (d *AliyundriveShare2Open) requestReturnErrResp(uri, method string, callbac
 	}
 	isRetry := len(retry) > 0 && retry[0]
 	if e.Code != "" {
-		if !isRetry && (utils.SliceContains([]string{"AccessTokenInvalid", "AccessTokenExpired", "I400JD"}, e.Code) || d.AccessTokenOpen == "") {
+		if !isRetry && (utils.SliceContains([]string{"AccessTokenInvalid", "AccessTokenExpired", "I400JD"}, e.Code) || AccessTokenOpen == "") {
 			err = d.refreshOpenToken(true)
 			if err != nil {
 				return nil, err, nil
