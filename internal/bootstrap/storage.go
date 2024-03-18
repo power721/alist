@@ -26,6 +26,7 @@ func LoadStorages() {
 				msg := err.Error()
 				if strings.Contains(msg, "share_link is cancelled") ||
 					strings.Contains(msg, "share_link is forbidden") ||
+					strings.Contains(msg, "share_link is expired") ||
 					strings.Contains(msg, "share_link cannot be found") ||
 					strings.Contains(msg, "share_pwd is not valid") ||
 					strings.Contains(msg, "invalid") ||
