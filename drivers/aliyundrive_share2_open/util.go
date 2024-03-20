@@ -567,11 +567,13 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 		"parent_file_id":          fileId,
 		"share_id":                d.ShareId,
 		"video_thumbnail_process": "video/snapshot,t_1000,f_jpg,ar_auto,w_300",
-		"marker":                  "first",
+		"marker":                  "",
 	}
-	for data["marker"] != "" {
-		if data["marker"] == "first" {
-			data["marker"] = ""
+	retry := 3
+	for {
+		if lastTime > 0 {
+			diff := lastTime + DelayTime - time.Now().UnixMilli()
+			time.Sleep(time.Duration(diff) * time.Millisecond)
 		}
 		var e ErrorResp
 		var resp ListResp
@@ -580,11 +582,13 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 			SetHeader(CanaryHeaderKey, CanaryHeaderValue).
 			SetResult(&resp).SetError(&e).SetBody(data).
 			Post("https://api.alipan.com/adrive/v3/file/list")
+		lastTime = time.Now().UnixMilli()
 		if err != nil {
 			return nil, err
 		}
 		log.Debugf("aliyundrive share get files: %s", res.String())
 		if e.Code != "" {
+			log.Warnf("aliyundrive share get files error: %v", e)
 			if e.Code == "AccessTokenInvalid" || e.Code == "ShareLinkTokenInvalid" {
 				err = d.getShareToken()
 				if err != nil {
@@ -592,14 +596,21 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 				}
 				return d.getFiles(fileId)
 			}
-			return nil, errors.New(e.Message)
+			if e.Code != "ParamFlowException" || retry == 0 {
+				return nil, errors.New(e.Message)
+			}
 		}
-		data["marker"] = resp.NextMarker
-		files = append(files, resp.Items...)
+		if e.Code == "" {
+			data["marker"] = resp.NextMarker
+			files = append(files, resp.Items...)
+			if resp.NextMarker == "" {
+				break
+			}
+		} else {
+			log.Infof("retry get files: %v", retry)
+			retry--
+		}
 	}
-	//if len(files) > 0 && DriveId == "" {
-	//	DriveId = files[0].DriveId
-	//}
 	return files, nil
 }
 
