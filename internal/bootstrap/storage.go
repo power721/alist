@@ -45,6 +45,7 @@ func LoadStorages() {
 		}
 
 		if len(failed) > 0 {
+			delayTime := aliyundrive_share2_open.DelayTime
 			aliyundrive_share2_open.DelayTime = 2000
 			log.Infof("retry %v failed storages", len(failed))
 			for i := range failed {
@@ -56,6 +57,7 @@ func LoadStorages() {
 						failed[i].MountPath, failed[i].Driver)
 				}
 			}
+			aliyundrive_share2_open.DelayTime = delayTime
 		}
 
 		conf.StoragesLoaded = true

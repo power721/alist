@@ -6,7 +6,6 @@ import (
 	"github.com/alist-org/alist/v3/drivers/alist_v3"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/conf"
-	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/setting"
@@ -83,14 +82,15 @@ func isIgnorePath(path string) bool {
 }
 
 func init() {
-	op.RegisterSettingItemHook(conf.IgnorePaths, func(item *model.SettingItem) error {
-		updateIgnorePaths()
-		return nil
-	})
-	op.RegisterStorageHook(func(typ string, storage driver.Driver) {
-		var skipDrivers = []string{"AList V2", "AList V3", "Virtual"}
-		if utils.SliceContains(skipDrivers, storage.Config().Name) {
-			updateIgnorePaths()
-		}
-	})
+	// TODO:
+	//op.RegisterSettingItemHook(conf.IgnorePaths, func(item *model.SettingItem) error {
+	//	updateIgnorePaths()
+	//	return nil
+	//})
+	//op.RegisterStorageHook(func(typ string, storage driver.Driver) {
+	//	var skipDrivers = []string{"AList V2", "AList V3", "Virtual"}
+	//	if utils.SliceContains(skipDrivers, storage.Config().Name) {
+	//		updateIgnorePaths()
+	//	}
+	//})
 }
