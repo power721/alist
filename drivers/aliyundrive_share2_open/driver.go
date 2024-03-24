@@ -3,19 +3,18 @@ package aliyundrive_share2_open
 import (
 	"context"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/setting"
-	"net/http"
-	"time"
-
 	"github.com/Xhofe/rateg"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/cron"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
+	"net/http"
+	"time"
 )
 
 type AliyundriveShare2Open struct {
@@ -37,45 +36,45 @@ func (d *AliyundriveShare2Open) GetAddition() driver.Additional {
 }
 
 func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
-	err := d.refreshToken(false)
-	if err != nil {
-		log.Errorf("refreshToken error: %v", err)
-		return err
-	}
+	if !initialized {
+		err := d.refreshToken(false)
+		if err != nil {
+			log.Errorf("refreshToken error: %v", err)
+			return err
+		}
 
-	if lastTime > 0 {
-		diff := lastTime + DelayTime - time.Now().UnixMilli()
-		time.Sleep(time.Duration(diff) * time.Millisecond)
-	}
+		d.getUser()
 
-	err = d.getShareToken()
-	if err != nil {
-		log.Errorf("getShareToken error: %v", err)
-		return err
-	}
-
-	d.getUser()
-
-	//if d.OauthTokenURL == "" {
-	//	d.OauthTokenURL = conf.Conf.OpenTokenAuthUrl
-	//}
-
-	if !apiClient {
+		lazyLoad = setting.GetBool("ali_lazy_load")
 		ClientID = setting.GetStr("open_api_client_id")
 		ClientSecret = setting.GetStr("open_api_client_secret")
 		log.Printf("Open API Client ID: %v", ClientID)
-		apiClient = true
+
+		err = d.refreshOpenToken(false)
+		if err != nil {
+			log.Errorf("refreshOpenToken error: %v", err)
+			return err
+		}
+
+		d.getDriveId()
+		d.createFolderOpen()
+		d.clean()
+
+		initialized = true
 	}
 
-	err = d.refreshOpenToken(false)
-	if err != nil {
-		log.Errorf("refreshOpenToken error: %v", err)
-		return err
-	}
+	if !lazyLoad {
+		if lastTime > 0 {
+			diff := lastTime + DelayTime - time.Now().UnixMilli()
+			time.Sleep(time.Duration(diff) * time.Millisecond)
+		}
 
-	d.getDriveId()
-	d.createFolderOpen()
-	d.clean()
+		err := d.getShareToken()
+		if err != nil {
+			log.Errorf("getShareToken error: %v", err)
+			return err
+		}
+	}
 
 	d.limitList = rateg.LimitFnCtx(d.list, rateg.LimitFnOption{
 		Limit:  4,
@@ -104,6 +103,14 @@ func (d *AliyundriveShare2Open) List(ctx context.Context, dir model.Obj, args mo
 }
 
 func (d *AliyundriveShare2Open) list(ctx context.Context, dir model.Obj) ([]model.Obj, error) {
+	if d.ShareToken == "" {
+		err := d.getShareToken()
+		if err != nil {
+			log.Warnf("getShareToken error: %v", err)
+			return nil, err
+		}
+	}
+
 	files, err := d.getFiles(dir.GetID())
 	if err != nil {
 		log.Warnf("list files error: %v", err)

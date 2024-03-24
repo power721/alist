@@ -30,7 +30,8 @@ var AccessTokenOpen = ""
 var RefreshToken = ""
 var AccessToken = ""
 
-var apiClient = false
+var lazyLoad = false
+var initialized = false
 var ClientID = ""
 var ClientSecret = ""
 var DriveId = ""
