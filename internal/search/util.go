@@ -82,7 +82,7 @@ func isIgnorePath(path string) bool {
 }
 
 func init() {
-	// TODO:
+	// TODO: fatal error: concurrent map writes
 	//op.RegisterSettingItemHook(conf.IgnorePaths, func(item *model.SettingItem) error {
 	//	updateIgnorePaths()
 	//	return nil

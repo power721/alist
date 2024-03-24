@@ -569,7 +569,7 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 		"video_thumbnail_process": "video/snapshot,t_1000,f_jpg,ar_auto,w_300",
 		"marker":                  "",
 	}
-	retry := 3
+	retry := 0
 	for {
 		if lastTime > 0 {
 			diff := lastTime + DelayTime - time.Now().UnixMilli()
@@ -596,7 +596,7 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 				}
 				return d.getFiles(fileId)
 			}
-			if e.Code != "ParamFlowException" || retry == 0 {
+			if e.Code != "ParamFlowException" || retry >= 5 {
 				return nil, errors.New(e.Message)
 			}
 		}
@@ -607,8 +607,8 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 				break
 			}
 		} else {
+			retry++
 			log.Infof("retry get files: %v", retry)
-			retry--
 		}
 	}
 	return files, nil
