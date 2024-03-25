@@ -147,6 +147,16 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 }
 
 func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
+	if args.Method == "share_info" {
+		data := base.Json{
+			"shareId":    d.ShareId,
+			"sharePwd":   d.SharePwd,
+			"shareToken": d.ShareToken,
+			"fileId":     args.Obj.GetID(),
+		}
+		return data, nil
+	}
+
 	if args.Method != "video_preview" {
 		return nil, errs.NotSupport
 	}

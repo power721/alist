@@ -560,15 +560,12 @@ func (d *AliyundriveShare2Open) request(url, method string, callback base.ReqCal
 func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 	files := make([]File, 0)
 	data := base.Json{
-		"image_thumbnail_process": "image/resize,w_160/format,jpeg",
-		"image_url_process":       "image/resize,w_1920/format,jpeg",
-		"limit":                   200,
-		"order_by":                d.OrderBy,
-		"order_direction":         d.OrderDirection,
-		"parent_file_id":          fileId,
-		"share_id":                d.ShareId,
-		"video_thumbnail_process": "video/snapshot,t_1000,f_jpg,ar_auto,w_300",
-		"marker":                  "",
+		"limit":           200,
+		"order_by":        d.OrderBy,
+		"order_direction": d.OrderDirection,
+		"parent_file_id":  fileId,
+		"share_id":        d.ShareId,
+		"marker":          "",
 	}
 	retry := 0
 	for {
