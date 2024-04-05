@@ -2,8 +2,9 @@ package aliyundrive_share2_open
 
 import (
 	"errors"
-	"github.com/Xhofe/go-cache"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	"math/rand"
@@ -21,8 +22,6 @@ const Referer = "https://pan.quark.cn"
 
 var Cookie = ""
 var ParentFileId = "0"
-var PreviousShareFileId = ""
-var PreviousFileId = ""
 
 func (d *QuarkShare) request(pathname string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
 	u := "https://drive.quark.cn/1/clouddrive" + pathname
@@ -161,13 +160,7 @@ func (d *QuarkShare) getShareToken() error {
 	return nil
 }
 
-var idCache = cache.NewMemCache(cache.WithShards[string](16))
-
 func (d *QuarkShare) saveFile(id string) (string, error) {
-	fid, found := idCache.Get(id)
-	if found {
-		return fid, nil
-	}
 	s := strings.Split(id, "-")
 	fileId := s[0]
 	fileTokenId := s[1]
@@ -207,20 +200,11 @@ func (d *QuarkShare) saveFile(id string) (string, error) {
 	taskId := resp.Data.TaskId
 	log.Debugf("save file task id: %v", taskId)
 
-	//if PreviousFileId != "" {
-	//	d.deleteFile(PreviousFileId)
-	//	PreviousFileId = ""
-	//	PreviousShareFileId = ""
-	//}
-
 	newFileId, err := getSaveTaskResult(taskId)
 	if err != nil {
 		return "", err
 	}
 	log.Debugf("new file id: %v", newFileId)
-	idCache.Set(id, newFileId, cache.WithEx[string](15*time.Minute))
-	PreviousFileId = newFileId
-	PreviousShareFileId = id
 
 	return newFileId, nil
 }
@@ -318,8 +302,12 @@ func (d *QuarkShare) getDownloadUrl(fileId string) (*model.Link, error) {
 		return nil, err
 	}
 
+	go d.deleteDelay(fileId)
+
+	exp := 8 * time.Hour
 	return &model.Link{
-		URL: resp.Data[0].DownloadUrl,
+		URL:        resp.Data[0].DownloadUrl,
+		Expiration: &exp,
 		Header: http.Header{
 			"Cookie":     []string{Cookie},
 			"Referer":    []string{Referer},
@@ -328,6 +316,17 @@ func (d *QuarkShare) getDownloadUrl(fileId string) (*model.Link, error) {
 		Concurrency: 4,
 		PartSize:    10 * utils.MB,
 	}, nil
+}
+
+func (d *QuarkShare) deleteDelay(fileId string) {
+	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
+	if delayTime == 0 {
+		return
+	}
+
+	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
+	time.Sleep(time.Duration(delayTime) * time.Second)
+	d.deleteFile(fileId)
 }
 
 func (d *QuarkShare) deleteFile(fileId string) error {
