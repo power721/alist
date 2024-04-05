@@ -2,6 +2,7 @@ package aliyundrive_share2_open
 
 import (
 	"errors"
+	"github.com/Xhofe/go-cache"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
@@ -160,9 +161,12 @@ func (d *QuarkShare) getShareToken() error {
 	return nil
 }
 
+var idCache = cache.NewMemCache(cache.WithShards[string](16))
+
 func (d *QuarkShare) saveFile(id string) (string, error) {
-	if id == PreviousShareFileId {
-		return PreviousFileId, nil
+	fid, found := idCache.Get(id)
+	if found {
+		return fid, nil
 	}
 	s := strings.Split(id, "-")
 	fileId := s[0]
@@ -203,16 +207,18 @@ func (d *QuarkShare) saveFile(id string) (string, error) {
 	taskId := resp.Data.TaskId
 	log.Debugf("save file task id: %v", taskId)
 
-	if PreviousFileId != "" {
-		go d.deleteFile(PreviousFileId)
-	}
+	//if PreviousFileId != "" {
+	//	d.deleteFile(PreviousFileId)
+	//	PreviousFileId = ""
+	//	PreviousShareFileId = ""
+	//}
 
 	newFileId, err := getSaveTaskResult(taskId)
 	if err != nil {
 		return "", err
 	}
 	log.Debugf("new file id: %v", newFileId)
-	// TODO: cache
+	idCache.Set(id, newFileId, cache.WithEx[string](15*time.Minute))
 	PreviousFileId = newFileId
 	PreviousShareFileId = id
 
