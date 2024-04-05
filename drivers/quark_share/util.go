@@ -203,13 +203,16 @@ func (d *QuarkShare) saveFile(id string) (string, error) {
 	taskId := resp.Data.TaskId
 	log.Debugf("save file task id: %v", taskId)
 
-	go d.deleteFile(PreviousFileId)
+	if PreviousFileId != "" {
+		go d.deleteFile(PreviousFileId)
+	}
 
 	newFileId, err := getSaveTaskResult(taskId)
 	if err != nil {
 		return "", err
 	}
 	log.Debugf("new file id: %v", newFileId)
+	// TODO: cache
 	PreviousFileId = newFileId
 	PreviousShareFileId = id
 
