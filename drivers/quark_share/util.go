@@ -20,6 +20,7 @@ import (
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) quark-cloud-drive/2.5.20 Chrome/100.0.4896.160 Electron/18.3.5.4-b478491100 Safari/537.36 Channel/pckk_other_ch"
 const Referer = "https://pan.quark.cn"
 
+var initialized = false
 var Cookie = ""
 var ParentFileId = "0"
 
@@ -263,7 +264,7 @@ func (d *QuarkShare) getPlayUrl(fileId string) (*model.Link, error) {
 	headers := map[string]string{
 		"Cookie":     Cookie,
 		"User-Agent": UA,
-		"Referer":    "https://pan.quark.cn",
+		"Referer":    Referer,
 	}
 	var resp PlayResp
 	_, err := base.RestyClient.R().
@@ -313,7 +314,7 @@ func (d *QuarkShare) getDownloadUrl(fileId string) (*model.Link, error) {
 			"Referer":    []string{Referer},
 			"User-Agent": []string{UA},
 		},
-		Concurrency: 4,
+		Concurrency: 8,
 		PartSize:    10 * utils.MB,
 	}, nil
 }

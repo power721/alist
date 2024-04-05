@@ -23,11 +23,12 @@ func (d *QuarkShare) GetAddition() driver.Additional {
 }
 
 func (d *QuarkShare) Init(ctx context.Context) error {
-	if Cookie == "" {
+	if !initialized {
 		Cookie = setting.GetStr("quark_cookie", "")
 		d.getTempFolder()
 		log.Infof("ParentFileId: %v", ParentFileId)
 		d.cleanTempFolder()
+		initialized = true
 	}
 
 	err := d.getShareToken()
