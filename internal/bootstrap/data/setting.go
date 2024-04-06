@@ -132,8 +132,6 @@ func InitialSettings() []model.SettingItem {
 		{Key: conf.CustomizeHead, Value: `<script src="https://polyfill.io/v3/polyfill.min.js?features=String.prototype.replaceAll"></script>`, Type: conf.TypeText, Group: model.GLOBAL, Flag: model.PRIVATE},
 		{Key: conf.CustomizeBody, Type: conf.TypeText, Group: model.GLOBAL, Flag: model.PRIVATE},
 		{Key: conf.LinkExpiration, Value: "0", Type: conf.TypeNumber, Group: model.GLOBAL, Flag: model.PRIVATE},
-		{Key: conf.DeleteDelayTime, Value: "900", Type: conf.TypeNumber, Group: model.GLOBAL, Flag: model.PRIVATE},
-		{Key: conf.ExternalPort, Value: "5344", Type: conf.TypeNumber, Group: model.GLOBAL, Flag: model.PRIVATE},
 		{Key: conf.SignAll, Value: "false", Type: conf.TypeBool, Group: model.GLOBAL, Flag: model.PRIVATE},
 		{Key: conf.PrivacyRegs, Value: `(?:(?:\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(?:\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])
 ([[:xdigit:]]{1,4}(?::[[:xdigit:]]{1,4}){7}|::|:(?::[[:xdigit:]]{1,4}){1,6}|[[:xdigit:]]{1,4}:(?::[[:xdigit:]]{1,4}){1,5}|(?:[[:xdigit:]]{1,4}:){2}(?::[[:xdigit:]]{1,4}){1,4}|(?:[[:xdigit:]]{1,4}:){3}(?::[[:xdigit:]]{1,4}){1,3}|(?:[[:xdigit:]]{1,4}:){4}(?::[[:xdigit:]]{1,4}){1,2}|(?:[[:xdigit:]]{1,4}:){5}:[[:xdigit:]]{1,4}|(?:[[:xdigit:]]{1,4}:){1,6}:)
@@ -168,6 +166,9 @@ func InitialSettings() []model.SettingItem {
 		{Key: conf.SSODefaultPermission, Value: "0", Type: conf.TypeNumber, Group: model.SSO, Flag: model.PRIVATE},
 		{Key: conf.SSOCompatibilityMode, Value: "false", Type: conf.TypeBool, Group: model.SSO, Flag: model.PUBLIC},
 		// customized settings
+		{Key: conf.DeleteDelayTime, Value: "900", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
+		{Key: conf.ExternalPort, Value: "5344", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
+		{Key: conf.QuarkCookie, Value: "", Type: conf.TypeText, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "open_token_url", Value: "https://api.xhofe.top/alist/ali_open/token", Type: conf.TypeString, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "open_api_client_id", Value: "", Type: conf.TypeString, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "open_api_client_secret", Value: "", Type: conf.TypeString, Group: model.SINGLE, Flag: model.PRIVATE},

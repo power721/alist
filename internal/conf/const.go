@@ -36,8 +36,6 @@ const (
 	CustomizeHead           = "customize_head"
 	CustomizeBody           = "customize_body"
 	LinkExpiration          = "link_expiration"
-	DeleteDelayTime         = "delete_delay_time"
-	ExternalPort            = "external_port"
 	SignAll                 = "sign_all"
 	PrivacyRegs             = "privacy_regs"
 	OcrApi                  = "ocr_api"
@@ -57,8 +55,11 @@ const (
 	Aria2Secret = "aria2_secret"
 
 	// single
-	Token         = "token"
-	IndexProgress = "index_progress"
+	Token           = "token"
+	IndexProgress   = "index_progress"
+	DeleteDelayTime = "delete_delay_time"
+	ExternalPort    = "external_port"
+	QuarkCookie     = "quark_cookie"
 
 	//SSO
 	SSOClientId          = "sso_client_id"

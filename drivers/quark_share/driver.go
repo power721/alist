@@ -2,6 +2,7 @@ package quark_share
 
 import (
 	"context"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/setting"
@@ -24,7 +25,7 @@ func (d *QuarkShare) GetAddition() driver.Additional {
 
 func (d *QuarkShare) Init(ctx context.Context) error {
 	if Cookie == "" {
-		Cookie = setting.GetStr("quark_cookie", "")
+		Cookie = setting.GetStr(conf.QuarkCookie, "")
 		d.getTempFolder()
 		log.Infof("ParentFileId: %v", ParentFileId)
 		d.cleanTempFolder()
