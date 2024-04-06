@@ -1,4 +1,4 @@
-package aliyundrive_share2_open
+package quark_share
 
 import (
 	"errors"
