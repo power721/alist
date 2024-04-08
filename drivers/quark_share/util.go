@@ -145,15 +145,16 @@ func (d *QuarkShare) getShareToken() error {
 		"pr": "ucpro",
 		"fr": "pc",
 	}
+	var errRes Resp
 	var resp ShareTokenResp
 	_, err := base.RestyClient.R().
-		SetResult(&resp).SetBody(data).SetQueryParams(query).
+		SetResult(&resp).SetError(&errRes).SetBody(data).SetQueryParams(query).
 		Post("https://drive.quark.cn/1/clouddrive/share/sharepage/token")
 	if err != nil {
 		return err
 	}
-	if resp.Status != 200 {
-		return errors.New(resp.Message)
+	if errRes.Code != 0 {
+		return errors.New(errRes.Message)
 	}
 	d.ShareToken = resp.Data.ShareToken
 	log.Debugf("getShareToken: %v %v", d.ShareId, d.ShareToken)
