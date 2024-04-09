@@ -320,7 +320,7 @@ func (d *QuarkShare) getDownloadUrl(fileId string) (*model.Link, error) {
 			"User-Agent": []string{UA},
 		},
 		Concurrency: 8,
-		PartSize:    10 * utils.MB,
+		PartSize:    4 * utils.MB,
 	}, nil
 }
 
