@@ -293,7 +293,7 @@ func (d *QuarkShare) getDownloadUrl(fileId string) (*model.Link, error) {
 		"fids": []string{fileId},
 	}
 	var resp DownResp
-	_, err := d.request("/file/download", http.MethodPost, func(req *resty.Request) {
+	res, err := d.request("/file/download", http.MethodPost, func(req *resty.Request) {
 		req.SetHeader("User-Agent", UA).
 			SetBody(data)
 	}, &resp)
@@ -305,9 +305,14 @@ func (d *QuarkShare) getDownloadUrl(fileId string) (*model.Link, error) {
 
 	go d.deleteDelay(fileId)
 
+	url := resp.Data[0].DownloadUrl
+	if url == "" {
+		log.Infof("getDownloadUrl: %v", string(res))
+		return nil, errors.New("Cannot get download url!")
+	}
 	exp := 8 * time.Hour
 	return &model.Link{
-		URL:        resp.Data[0].DownloadUrl,
+		URL:        url,
 		Expiration: &exp,
 		Header: http.Header{
 			"Cookie":     []string{Cookie},
