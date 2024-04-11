@@ -87,7 +87,7 @@ func (d *QuarkShare) createTempFolder() {
 	if fid != "" {
 		ParentFileId = fid
 	}
-	log.Infof("create folder: %v", string(res[:]))
+	log.Infof("create folder: %v", string(res))
 	if err != nil {
 		log.Warnf("create folder error: %v", err)
 	}
@@ -143,15 +143,12 @@ func (d *QuarkShare) getShareToken() error {
 		"pwd_id":   d.ShareId,
 		"passcode": d.SharePwd,
 	}
-	query := map[string]string{
-		"pr": "ucpro",
-		"fr": "pc",
-	}
 	var errRes Resp
 	var resp ShareTokenResp
-	_, err := base.RestyClient.R().
-		SetResult(&resp).SetError(&errRes).SetBody(data).SetQueryParams(query).
-		Post("https://drive.quark.cn/1/clouddrive/share/sharepage/token")
+	res, err := d.request("/share/sharepage/token", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(data)
+	}, &resp)
+	log.Debugf("getShareToken: %v %v", d.ShareId, string(res))
 	if err != nil {
 		return err
 	}
@@ -183,16 +180,11 @@ func (d *QuarkShare) saveFile(id string) (string, error) {
 		"__dt":         strconv.Itoa(rand.Int()),
 		"__t":          strconv.FormatInt(time.Now().Unix(), 10),
 	}
-	headers := map[string]string{
-		"Cookie":     Cookie,
-		"User-Agent": UA,
-		"Referer":    "https://pan.quark.cn",
-	}
 	var resp SaveResp
-	_, err := base.RestyClient.R().
-		SetResult(&resp).SetBody(data).SetQueryParams(query).SetHeaders(headers).
-		Post("https://drive.quark.cn/1/clouddrive/share/sharepage/save")
-	log.Debugf("saveFile: %v %v", id, resp)
+	res, err := d.request("/share/sharepage/save", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(data).SetQueryParams(query)
+	}, &resp)
+	log.Debugf("saveFile: %v %v", id, string(res))
 	if err != nil {
 		log.Warnf("save file failed: %v", err)
 		return "", err
@@ -203,7 +195,7 @@ func (d *QuarkShare) saveFile(id string) (string, error) {
 	taskId := resp.Data.TaskId
 	log.Debugf("save file task id: %v", taskId)
 
-	newFileId, err := getSaveTaskResult(taskId)
+	newFileId, err := d.getSaveTaskResult(taskId)
 	if err != nil {
 		return "", err
 	}
@@ -212,14 +204,8 @@ func (d *QuarkShare) saveFile(id string) (string, error) {
 	return newFileId, nil
 }
 
-func getSaveTaskResult(taskId string) (string, error) {
+func (d *QuarkShare) getSaveTaskResult(taskId string) (string, error) {
 	time.Sleep(500 * time.Millisecond)
-	headers := map[string]string{
-		"Cookie":     Cookie,
-		"User-Agent": UA,
-		"Referer":    "https://pan.quark.cn",
-	}
-
 	for retry := 1; retry <= 30; {
 		query := map[string]string{
 			"pr":           "ucpro",
@@ -231,10 +217,10 @@ func getSaveTaskResult(taskId string) (string, error) {
 			"__t":          strconv.FormatInt(time.Now().Unix(), 10),
 		}
 		var resp SaveTaskResp
-		_, err := base.RestyClient.R().
-			SetResult(&resp).SetQueryParams(query).SetHeaders(headers).
-			Get("https://drive-pc.quark.cn/1/clouddrive/task")
-		log.Debugf("getSaveTaskResult: %v %v", taskId, resp)
+		res, err := d.request("/task", http.MethodGet, func(req *resty.Request) {
+			req.SetQueryParams(query)
+		}, &resp)
+		log.Debugf("getSaveTaskResult: %v %v", taskId, string(res))
 		if err != nil {
 			log.Warnf("get save task result failed: %v", err)
 			return "", err
@@ -251,6 +237,48 @@ func getSaveTaskResult(taskId string) (string, error) {
 	return "", errors.New("Get task result failed.")
 }
 
+func (d *QuarkShare) getPreviewUrl(fileId string) (interface{}, error) {
+	log.Infof("get play url: %v", fileId)
+	data := base.Json{
+		"fid":         fileId,
+		"resolutions": "high,super,2k,4k",
+		"supports":    "fmp4,m3u8",
+	}
+	var resp PlayResp
+	res, err := d.request("/file/v2/play", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(data)
+	}, &resp)
+	log.Debugf("getPlayUrl: %v %v", fileId, string(res))
+	if err != nil {
+		return nil, err
+	}
+
+	var result = VideoPreviewResponse{
+		PlayInfo: VideoPreviewPlayInfo{
+			Videos: []LiveTranscoding{},
+		},
+	}
+
+	for _, item := range resp.Data.VideoList {
+		result.PlayInfo.Videos = append(result.PlayInfo.Videos, LiveTranscoding{
+			TemplateId: item.Info.Resolution,
+			Status:     "finished",
+			Url:        item.Info.Url,
+		})
+	}
+
+	link, err := d.getDownloadUrl(fileId)
+	if err == nil {
+		result.PlayInfo.Videos = append(result.PlayInfo.Videos, LiveTranscoding{
+			TemplateId: "原画",
+			Status:     "finished",
+			Url:        link.URL,
+		})
+	}
+
+	return result, nil
+}
+
 func (d *QuarkShare) getPlayUrl(fileId string) (*model.Link, error) {
 	log.Infof("get play url: %v", fileId)
 	data := base.Json{
@@ -258,35 +286,33 @@ func (d *QuarkShare) getPlayUrl(fileId string) (*model.Link, error) {
 		"resolutions": "high,super,2k,4k",
 		"supports":    "fmp4,m3u8",
 	}
-	query := map[string]string{
-		"pr":           "ucpro",
-		"fr":           "pc",
-		"uc_param_str": "",
-	}
-	headers := map[string]string{
-		"Cookie":     Cookie,
-		"User-Agent": UA,
-		"Referer":    Referer,
-	}
 	var resp PlayResp
-	_, err := base.RestyClient.R().
-		SetResult(&resp).SetBody(data).SetQueryParams(query).SetHeaders(headers).
-		Post("https://drive.quark.cn/1/clouddrive/file/v2/play")
+	res, err := d.request("/file/v2/play", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(data)
+	}, &resp)
+	log.Debugf("getPlayUrl: %v %v", fileId, string(res))
 	if err != nil {
 		return nil, err
 	}
-	if resp.Status != 200 {
-		return nil, errors.New(resp.Message)
-	}
-	link := resp.Data.VideoList[0].Info.Url
 
+	go d.deleteDelay(fileId)
+
+	url := resp.Data.VideoList[0].Info.Url
+	if url == "" {
+		log.Infof("getDownloadUrl: %v", string(res))
+		return nil, errors.New("Cannot get download url!")
+	}
+	exp := 8 * time.Hour
 	return &model.Link{
-		URL: link,
+		URL:        url,
+		Expiration: &exp,
 		Header: http.Header{
 			"Cookie":     []string{Cookie},
 			"Referer":    []string{Referer},
 			"User-Agent": []string{UA},
 		},
+		Concurrency: 16,
+		PartSize:    2 * utils.MB,
 	}, nil
 }
 
@@ -296,10 +322,9 @@ func (d *QuarkShare) getDownloadUrl(fileId string) (*model.Link, error) {
 	}
 	var resp DownResp
 	res, err := d.request("/file/download", http.MethodPost, func(req *resty.Request) {
-		req.SetHeader("User-Agent", UA).
-			SetBody(data)
+		req.SetBody(data)
 	}, &resp)
-	log.Debugf("getDownloadUrl: %v %v", fileId, resp)
+	log.Debugf("getDownloadUrl: %v %v", fileId, string(res))
 
 	if err != nil {
 		return nil, err
@@ -343,15 +368,11 @@ func (d *QuarkShare) deleteFile(fileId string) error {
 		"exclude_fids": []string{},
 		"filelist":     []string{fileId},
 	}
-	query := map[string]string{
-		"pr":           "ucpro",
-		"fr":           "pc",
-		"uc_param_str": "",
-	}
 	var resp PlayResp
-	_, err := base.RestyClient.R().
-		SetResult(&resp).SetBody(data).SetQueryParams(query).SetHeader("Cookie", Cookie).
-		Post("https://drive.quark.cn/1/clouddrive/file/delete")
+	res, err := d.request("/file/delete", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(data)
+	}, &resp)
+	log.Debugf("deleteFile: %v %v", fileId, string(res))
 	if err != nil {
 		log.Warnf("Delete file failed: %v %v", fileId, err)
 		return err
@@ -363,7 +384,7 @@ func (d *QuarkShare) deleteFile(fileId string) error {
 	return nil
 }
 
-func (d *QuarkShare) getFiles(id string) ([]File, error) {
+func (d *QuarkShare) getShareFiles(id string) ([]File, error) {
 	s := strings.Split(id, "-")
 	fileId := s[0]
 	files := make([]File, 0)
@@ -384,11 +405,10 @@ func (d *QuarkShare) getFiles(id string) ([]File, error) {
 			"_sort":         "file_type:asc,updated_at:desc",
 		}
 		var resp ListResp
-		res, err := base.RestyClient.R().
-			SetQueryParams(query).
-			SetResult(&resp).
-			Get("https://drive.quark.cn/1/clouddrive/share/sharepage/detail")
-		log.Debugf("quark share get files: %s", res.String())
+		res, err := d.request("/share/sharepage/detail", http.MethodGet, func(req *resty.Request) {
+			req.SetQueryParams(query)
+		}, &resp)
+		log.Debugf("quark share get files: %s", string(res))
 		if err != nil {
 			return nil, err
 		}

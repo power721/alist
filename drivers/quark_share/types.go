@@ -130,6 +130,20 @@ type MyFile struct {
 	UpdateAt time.Time `json:"UpdateAt"`
 }
 
+type VideoPreviewResponse struct {
+	PlayInfo VideoPreviewPlayInfo `json:"video_preview_play_info"`
+}
+
+type VideoPreviewPlayInfo struct {
+	Videos []LiveTranscoding `json:"live_transcoding_task_list"`
+}
+
+type LiveTranscoding struct {
+	TemplateId string `json:"template_id"`
+	Status     string `json:"status"`
+	Url        string `json:"url"`
+}
+
 func (f MyFile) CreateTime() time.Time {
 	return f.UpdateAt
 }

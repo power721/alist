@@ -45,7 +45,7 @@ func (d *QuarkShare) Drop(ctx context.Context) error {
 }
 
 func (d *QuarkShare) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
-	files, err := d.getFiles(dir.GetID())
+	files, err := d.getShareFiles(dir.GetID())
 	if err != nil {
 		log.Warnf("list files error: %v", err)
 		return nil, err
