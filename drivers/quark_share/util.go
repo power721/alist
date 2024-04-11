@@ -5,6 +5,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/setting"
+	"github.com/alist-org/alist/v3/pkg/cookie"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	"math/rand"
@@ -27,9 +28,10 @@ func (d *QuarkShare) request(pathname string, method string, callback base.ReqCa
 	u := "https://drive.quark.cn/1/clouddrive" + pathname
 	req := base.RestyClient.R()
 	req.SetHeaders(map[string]string{
-		"Cookie":  Cookie,
-		"Accept":  "application/json, text/plain, */*",
-		"Referer": Referer,
+		"Cookie":     Cookie,
+		"Accept":     "application/json, text/plain, */*",
+		"User-Agent": UA,
+		"Referer":    Referer,
 	})
 	req.SetQueryParam("pr", "ucpro")
 	req.SetQueryParam("fr", "pc")
@@ -45,10 +47,10 @@ func (d *QuarkShare) request(pathname string, method string, callback base.ReqCa
 	if err != nil {
 		return nil, err
 	}
-	//__puus := cookie.GetCookie(res.Cookies(), "__puus")
-	//if __puus != nil {
-	//	Cookie = cookie.SetStr(Cookie, "__puus", __puus.Value)
-	//}
+	__puus := cookie.GetCookie(res.Cookies(), "__puus")
+	if __puus != nil {
+		Cookie = cookie.SetStr(Cookie, "__puus", __puus.Value)
+	}
 	if e.Status >= 400 || e.Code != 0 {
 		return nil, errors.New(e.Message)
 	}
@@ -319,8 +321,8 @@ func (d *QuarkShare) getDownloadUrl(fileId string) (*model.Link, error) {
 			"Referer":    []string{Referer},
 			"User-Agent": []string{UA},
 		},
-		Concurrency: 8,
-		PartSize:    4 * utils.MB,
+		Concurrency: 16,
+		PartSize:    2 * utils.MB,
 	}, nil
 }
 
