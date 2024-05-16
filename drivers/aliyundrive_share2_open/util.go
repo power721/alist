@@ -315,10 +315,14 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 
 	msg := utils.Json.Get(res, "responses", 0, "body", "message").ToString()
 	if msg != "" {
+		log.Infof("请求结果 : %v", string(res))
 		log.Errorf("保存文件失败 : %v", msg)
 		if strings.Contains(msg, "share_id doesn't match. share_token") {
 			log.Infof("getShareToken: %v", d.ShareId)
 			d.getShareToken()
+		}
+		if strings.Contains(msg, "No Permission to access resource File") {
+			d.refreshToken(true)
 		}
 		return "", errors.New(msg)
 	}
