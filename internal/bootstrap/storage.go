@@ -29,6 +29,7 @@ func LoadStorages() {
 					strings.Contains(msg, "share_link is expired") ||
 					strings.Contains(msg, "share_link cannot be found") ||
 					strings.Contains(msg, "share_pwd is not valid") ||
+					strings.Contains(msg, "captcha_required") ||
 					strings.Contains(msg, "取消") ||
 					strings.Contains(msg, "已失效") ||
 					strings.Contains(msg, "invalid") ||
