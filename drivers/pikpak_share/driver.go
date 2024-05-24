@@ -33,10 +33,6 @@ func (d *PikPakShare) Init(ctx context.Context) error {
 		d.ClientSecret = "dbw2OtmVEeuUvIptb1Coyg"
 	}
 
-	withClient := func(ctx context.Context) context.Context {
-		return context.WithValue(ctx, oauth2.HTTPClient, base.HttpClient)
-	}
-
 	oauth2Config := &oauth2.Config{
 		ClientID:     d.ClientID,
 		ClientSecret: d.ClientSecret,
@@ -47,17 +43,16 @@ func (d *PikPakShare) Init(ctx context.Context) error {
 		},
 	}
 
-	oauth2Token, err := oauth2Config.PasswordCredentialsToken(withClient(ctx), d.Username, d.Password)
-	if err != nil {
-		return err
-	}
-	d.oauth2Token = oauth2Config.TokenSource(withClient(context.Background()), oauth2Token)
+	d.oauth2Token = oauth2.ReuseTokenSource(nil, utils.TokenSource(func() (*oauth2.Token, error) {
+		return oauth2Config.PasswordCredentialsToken(
+			context.WithValue(context.Background(), oauth2.HTTPClient, base.HttpClient),
+			d.Username,
+			d.Password,
+		)
+	}))
 
 	if d.SharePwd != "" {
-		err = d.getSharePassToken()
-		if err != nil {
-			return err
-		}
+		return d.getSharePassToken()
 	}
 	return nil
 }
@@ -89,12 +84,14 @@ func (d *PikPakShare) Link(ctx context.Context, file model.Obj, args model.LinkA
 	if err != nil {
 		return nil, err
 	}
-	url := resp.FileInfo.WebContentLink
-	if url == "" {
-		url = resp.FileInfo.Medias[0].Link.Url
+
+	downloadUrl := resp.FileInfo.WebContentLink
+	if downloadUrl == "" && len(resp.FileInfo.Medias) > 0 {
+		downloadUrl = resp.FileInfo.Medias[0].Link.Url
 	}
+
 	link := model.Link{
-		URL: url,
+		URL: downloadUrl,
 	}
 	return &link, nil
 }
