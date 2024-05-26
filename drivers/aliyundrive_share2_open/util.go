@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
-	"github.com/alist-org/alist/v3/internal/op"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -89,7 +88,6 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 
 	d.SaveOpenToken(t)
 
-	op.MustSaveDriverStorage(d)
 	return nil
 }
 
@@ -159,7 +157,6 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 
 	d.SaveToken(t)
 
-	op.MustSaveDriverStorage(d)
 	return nil
 }
 
@@ -301,7 +298,7 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 		"resource": "file",
 	}
 
-	res, err := d.request("https://api.alipan.com/adrive/v2/batch", http.MethodPost, func(req *resty.Request) {
+	res, err := d.request("https://api.alipan.com/adrive/v4/batch", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data)
 	})
 	if err != nil {
@@ -320,9 +317,6 @@ func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
 		if strings.Contains(msg, "share_id doesn't match. share_token") {
 			log.Infof("getShareToken: %v", d.ShareId)
 			d.getShareToken()
-		}
-		if strings.Contains(msg, "No Permission to access resource File") {
-			d.refreshToken(true)
 		}
 		return "", errors.New(msg)
 	}
@@ -512,7 +506,7 @@ func (d *AliyundriveShare2Open) delete(fileId string) error {
 		"resource": "file",
 	}
 
-	_, err := d.request("https://api.alipan.com/v3/batch", http.MethodPost, func(req *resty.Request) {
+	_, err := d.request("https://api.alipan.com/v4/batch", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data)
 	})
 	if err != nil {
