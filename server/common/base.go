@@ -22,7 +22,11 @@ func GetApiUrl(r *http.Request) string {
 		}
 		host := r.Host
 		if r.Header.Get("X-Forwarded-Host") != "" {
-			host = r.Header.Get("X-Forwarded-Host") + ":" + setting.GetStr(conf.ExternalPort, "5344")
+			port := ":" + setting.GetStr(conf.ExternalPort, "5344")
+			host = r.Header.Get("X-Forwarded-Host")
+			if !strings.Contains(host, port) {
+				host = host + port
+			}
 		}
 		api = fmt.Sprintf("%s://%s", protocol, stdpath.Join(host, api))
 	}
