@@ -30,6 +30,7 @@ type File struct {
 	DomainId     string    `json:"domain_id"`
 	FileId       string    `json:"file_id"`
 	ShareId      string    `json:"share_id"`
+	ContentHash  string    `json:"content_hash"`
 	Name         string    `json:"name"`
 	Type         string    `json:"type"`
 	CreatedAt    time.Time `json:"created_at"`
@@ -66,6 +67,7 @@ type MyFile struct {
 	Name     string    `json:"name"`
 	Size     int64     `json:"size"`
 	UpdateAt time.Time `json:"UpdateAt"`
+	utils.HashInfo
 }
 
 func (f MyFile) CreateTime() time.Time {
@@ -73,7 +75,7 @@ func (f MyFile) CreateTime() time.Time {
 }
 
 func (f MyFile) GetHash() utils.HashInfo {
-	return utils.HashInfo{}
+	return f.HashInfo
 }
 
 type VideoPreviewResponse struct {

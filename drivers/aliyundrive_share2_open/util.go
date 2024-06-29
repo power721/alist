@@ -1,12 +1,16 @@
 package aliyundrive_share2_open
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	_115 "github.com/alist-org/alist/v3/drivers/115"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/setting"
+	"github.com/alist-org/alist/v3/internal/stream"
 	"github.com/alist-org/alist/v3/internal/token"
+	"github.com/alist-org/alist/v3/pkg/http_range"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	"net/http"
@@ -274,6 +278,21 @@ func (d *AliyundriveShare2Open) getShareToken() error {
 	d.ShareToken = resp.ShareToken
 	log.Debug("getShareToken", d.ShareId, d.ShareToken)
 	return nil
+}
+
+func (d *AliyundriveShare2Open) getFullHash(fileId string) string {
+	files, err := d.listFiles(ParentFileId)
+	if err != nil {
+		log.Errorf("获取文件列表失败 %v", err)
+		return ""
+	}
+
+	for _, file := range files {
+		if file.FileId == fileId {
+			return strings.ToUpper(file.ContentHash)
+		}
+	}
+	return ""
 }
 
 func (d *AliyundriveShare2Open) saveFile(fileId string) (string, error) {
@@ -687,4 +706,42 @@ func (d *AliyundriveShare2Open) requestReturnErrResp(uri, method string, callbac
 		return nil, fmt.Errorf("%s:%s", e.Code, e.Message), &e
 	}
 	return res.Body(), nil, nil
+}
+
+func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan115, file model.Obj, link *model.Link) (*model.Link, error) {
+	log.Infof("save file to 115 cloud: %v", file.GetID())
+	fs := stream.FileStream{
+		Obj: file,
+		Ctx: ctx,
+	}
+
+	ss, err := stream.NewSeekableStream(fs, link)
+	if err != nil {
+		log.Warnf("NewSeekableStream failed: %v", err)
+		return link, err
+	}
+	const PreHashSize int64 = 128 * utils.KB
+	hashSize := PreHashSize
+	if ss.GetSize() < PreHashSize {
+		hashSize = ss.GetSize()
+	}
+	reader, err := ss.RangeRead(http_range.Range{Start: 0, Length: hashSize})
+	if err != nil {
+		log.Warnf("RangeRead failed: %v", err)
+		return link, err
+	}
+	preHash, err := utils.HashReader(utils.SHA1, reader)
+	if err != nil {
+		log.Warnf("HashReader failed: %v", err)
+		return link, err
+	}
+	preHash = strings.ToUpper(preHash)
+	log.Infof("%v name=%v size=%v preHash=%v fullHash=%v", fs.GetID(), fs.GetName(), fs.GetSize(), preHash, fs.GetHash().GetHash(utils.SHA1))
+	res, err := pan115.RapidUpload(fs.GetSize(), fs.GetName(), _115.TempDirId, preHash, fs.GetHash().GetHash(utils.SHA1), ss)
+	if err != nil {
+		log.Warnf("115 upload failed: %v", err)
+		return link, nil
+	}
+	log.Infof("115.RapidUpload: %v", res)
+	return link, nil
 }

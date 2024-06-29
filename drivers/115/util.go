@@ -2,6 +2,7 @@ package _115
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/orzogc/fake115uploader/cipher"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"path/filepath"
@@ -55,6 +57,27 @@ func (d *Pan115) login() error {
 	return d.client.LoginCheck()
 }
 
+func (d *Pan115) createTempDir(ctx context.Context) {
+	root := d.Addition.RootID.RootFolderID
+	TempDirId = root
+	dir := &model.Object{
+		ID: root,
+	}
+	name := "xiaoya-tvbox-temp"
+	err := d.MakeDir(ctx, dir, name)
+	if err != nil {
+		utils.Log.Warnf("createTempDir failed: %v", err)
+		return
+	}
+	files, _ := d.getFiles(root)
+	for _, file := range files {
+		if file.Name == name {
+			TempDirId = file.FileID
+			log.Info("Temp folder id: %v", TempDirId)
+		}
+	}
+}
+
 func (d *Pan115) getFiles(fileId string) ([]FileObj, error) {
 	res := make([]FileObj, 0)
 	if d.PageSize <= 0 {
@@ -74,7 +97,7 @@ const (
 	appVer = "2.0.3.6"
 )
 
-func (d *Pan115) rapidUpload(fileSize int64, fileName, dirID, preID, fileID string, stream model.FileStreamer) (*driver115.UploadInitResp, error) {
+func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID string, stream model.FileStreamer) (*driver115.UploadInitResp, error) {
 	var (
 		ecdhCipher   *cipher.EcdhCipher
 		encrypted    []byte
@@ -140,14 +163,18 @@ func (d *Pan115) rapidUpload(fileSize int64, fileName, dirID, preID, fileID stri
 		if decrypted, err = ecdhCipher.Decrypt(bodyBytes); err != nil {
 			return nil, err
 		}
+		log.Infof("response: %v %v", resp.String(), decrypted)
 		if err = driver115.CheckErr(json.Unmarshal(decrypted, &result), &result, resp); err != nil {
 			return nil, err
 		}
+		log.Infof("Result=%v", result)
 		if result.Status == 7 {
 			// Update signKey & signVal
 			signKey = result.SignKey
 			signVal, err = UploadDigestRange(stream, result.SignCheck)
+			log.Infof("signVal=%v SignCheck=%v", signVal, result.SignCheck)
 			if err != nil {
+				log.Warnf("UploadDigestRange failed: %v", err)
 				return nil, err
 			}
 		} else {
