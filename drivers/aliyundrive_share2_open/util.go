@@ -567,10 +567,6 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 	}
 	retry := 0
 	for {
-		if lastTime > 0 {
-			diff := lastTime + DelayTime - time.Now().UnixMilli()
-			time.Sleep(time.Duration(diff) * time.Millisecond)
-		}
 		var e ErrorResp
 		var resp ListResp
 		res, err := base.RestyClient.R().
@@ -578,7 +574,6 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 			SetHeader(CanaryHeaderKey, CanaryHeaderValue).
 			SetResult(&resp).SetError(&e).SetBody(data).
 			Post("https://api.alipan.com/adrive/v3/file/list")
-		lastTime = time.Now().UnixMilli()
 		if err != nil {
 			return nil, err
 		}
@@ -592,7 +587,7 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 				}
 				return d.getFiles(fileId)
 			}
-			if e.Code != "ParamFlowException" || retry >= 5 {
+			if e.Code != "ParamFlowException" || retry > 9 {
 				return nil, errors.New(e.Message)
 			}
 		}
