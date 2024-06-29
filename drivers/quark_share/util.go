@@ -340,6 +340,10 @@ func (d *QuarkShare) getShareFiles(id string) ([]File, error) {
 			}
 			page++
 		} else {
+			if resp.Message == "分享的stoken过期" {
+				d.getShareToken()
+				return d.getShareFiles(id)
+			}
 			return nil, errors.New(resp.Message)
 		}
 	}
