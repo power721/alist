@@ -124,6 +124,9 @@ func (d *Pan115) Remove(ctx context.Context, obj model.Obj) error {
 	}
 	return d.client.Delete(obj.GetID())
 }
+func (d *Pan115) UploadAvailable() (bool, error) {
+	return d.client.UploadAvailable()
+}
 
 func (d *Pan115) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
 	if err := d.WaitLimit(ctx); err != nil {

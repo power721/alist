@@ -64,18 +64,14 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 		ID: root,
 	}
 	name := "xiaoya-tvbox-temp"
-	err := d.MakeDir(ctx, dir, name)
-	if err != nil {
-		utils.Log.Warnf("createTempDir failed: %v", err)
-		return
-	}
+	_ = d.MakeDir(ctx, dir, name)
 	files, _ := d.getFiles(root)
 	for _, file := range files {
 		if file.Name == name {
 			TempDirId = file.FileID
-			log.Info("Temp folder id: %v", TempDirId)
 		}
 	}
+	log.Infof("Temp folder id: %v", TempDirId)
 }
 
 func (d *Pan115) getFiles(fileId string) ([]FileObj, error) {
@@ -163,16 +159,15 @@ func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID stri
 		if decrypted, err = ecdhCipher.Decrypt(bodyBytes); err != nil {
 			return nil, err
 		}
-		log.Infof("response: %v %v", resp.String(), decrypted)
 		if err = driver115.CheckErr(json.Unmarshal(decrypted, &result), &result, resp); err != nil {
 			return nil, err
 		}
-		log.Infof("Result=%v", result)
+		log.Debugf("Result=%v", result)
 		if result.Status == 7 {
 			// Update signKey & signVal
 			signKey = result.SignKey
 			signVal, err = UploadDigestRange(stream, result.SignCheck)
-			log.Infof("signVal=%v SignCheck=%v", signVal, result.SignCheck)
+			log.Debugf("signVal=%v SignCheck=%v", signVal, result.SignCheck)
 			if err != nil {
 				log.Warnf("UploadDigestRange failed: %v", err)
 				return nil, err

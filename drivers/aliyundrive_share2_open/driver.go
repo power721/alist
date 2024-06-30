@@ -145,26 +145,22 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		Name:   "livp",
 	}
 
-	link, err := d.getOpenLink(newFile)
+	link, hash, err := d.getOpenLink(newFile)
 	if err != nil {
 		return nil, err
 	}
 
 	driver115 := op.GetFirst115Driver()
 	if driver115 != nil {
-		fullHash := d.getFullHash(fileId)
-		if fullHash == "" {
-			return link, err
-		}
 		myFile := MyFile{
 			FileId:   fileId,
 			Name:     file.GetName(),
 			Size:     file.GetSize(),
-			HashInfo: utils.NewHashInfo(utils.SHA1, fullHash),
+			HashInfo: utils.NewHashInfo(utils.SHA1, hash),
 		}
-		m, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link)
+		link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link)
 		if err2 == nil {
-			return m, err2
+			return link115, err2
 		}
 	}
 	return link, err
@@ -218,25 +214,25 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	}
 
 	if args.Data == "preview" {
-		url, _ := d.getDownloadUrl(fileId)
+		url, hash, _ := d.getDownloadUrl(fileId)
 		if url != "" {
 			driver115 := op.GetFirst115Driver()
 			if driver115 != nil {
-				fullHash := d.getFullHash(fileId)
-				if fullHash != "" {
-					myFile := MyFile{
-						FileId:   fileId,
-						Name:     args.Obj.GetName(),
-						Size:     args.Obj.GetSize(),
-						HashInfo: utils.NewHashInfo(utils.SHA1, fullHash),
-					}
-					link := &model.Link{
-						URL: url,
-					}
-					m, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link)
-					if err2 == nil {
-						url = m.URL
-					}
+				myFile := MyFile{
+					FileId:   fileId,
+					Name:     args.Obj.GetName(),
+					Size:     args.Obj.GetSize(),
+					HashInfo: utils.NewHashInfo(utils.SHA1, hash),
+				}
+				link := &model.Link{
+					URL: url,
+					Header: http.Header{
+						"Referer": []string{"https://www.aliyundrive.com/"},
+					},
+				}
+				link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link)
+				if err2 == nil {
+					url = link115.URL
 				}
 			}
 			resp.PlayInfo.Videos = append(resp.PlayInfo.Videos, LiveTranscoding{
