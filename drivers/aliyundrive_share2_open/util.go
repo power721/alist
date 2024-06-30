@@ -703,7 +703,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 	if ok, err := pan115.UploadAvailable(); err != nil || !ok {
 		return nil, err
 	}
-	log.Infof("save file to 115 cloud: %v", file.GetID())
+	log.Debugf("save file to 115 cloud: file=%v dir=%v", file.GetID(), _115.TempDirId)
 	fs := stream.FileStream{
 		Obj: file,
 		Ctx: ctx,
@@ -715,22 +715,6 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 		return link, err
 	}
 
-	//const PreHashSize int64 = 128 * utils.KB
-	//hashSize := PreHashSize
-	//if ss.GetSize() < PreHashSize {
-	//	hashSize = ss.GetSize()
-	//}
-	//reader, err := ss.RangeRead(http_range.Range{Start: 0, Length: hashSize})
-	//if err != nil {
-	//	log.Warnf("RangeRead failed: %v", err)
-	//	return link, err
-	//}
-	//preHash, err := utils.HashReader(utils.SHA1, reader)
-	//if err != nil {
-	//	log.Warnf("HashReader failed: %v", err)
-	//	return link, err
-	//}
-	//preHash = strings.ToUpper(preHash)
 	preHash := "2EF7BDE608CE5404E97D5F042F95F89F1C232871"
 	log.Infof("id=%v name=%v size=%v hash=%v", fs.GetID(), fs.GetName(), fs.GetSize(), fs.GetHash().GetHash(utils.SHA1))
 	res, err := pan115.RapidUpload(fs.GetSize(), fs.GetName(), _115.TempDirId, preHash, fs.GetHash().GetHash(utils.SHA1), ss)
@@ -738,6 +722,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 		log.Warnf("115 upload failed: %v", err)
 		return link, nil
 	}
+	go d.deleteDelay115(ctx, pan115, file)
 	log.Debugf("115.RapidUpload: %v", res)
 	for i := 0; i < 5; i++ {
 		var f = &_115.FileObj{
@@ -750,8 +735,28 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 			time.Sleep(200 * time.Millisecond)
 			continue
 		}
-		log.Infof("使用115链接: %v", link115.URL)
-		return link115, nil
+		log.Infof("使用115链接: %v", link115)
+		exp := 900 * time.Second
+		return &model.Link{
+			URL:        link115.URL,
+			Header:     link115.Header,
+			Expiration: &exp,
+		}, nil
 	}
 	return link, nil
+}
+
+func (d *AliyundriveShare2Open) deleteDelay115(ctx context.Context, pan115 *_115.Pan115, file model.Obj) {
+	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
+	if delayTime == 0 {
+		return
+	}
+
+	log.Infof("Delete 115 file %v after %v seconds.", file.GetID(), delayTime)
+	time.Sleep(time.Duration(delayTime) * time.Second)
+	d.delete115(ctx, pan115, file)
+}
+
+func (d *AliyundriveShare2Open) delete115(ctx context.Context, pan115 *_115.Pan115, file model.Obj) {
+	pan115.Remove(ctx, file)
 }

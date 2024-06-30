@@ -150,6 +150,9 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		return nil, err
 	}
 
+	if !setting.GetBool("ali_to_115") {
+		return link, err
+	}
 	driver115 := op.GetFirst115Driver()
 	if driver115 != nil {
 		myFile := MyFile{
@@ -160,7 +163,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		}
 		link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link)
 		if err2 == nil {
-			return link115, err2
+			link = link115
 		}
 	}
 	return link, err
@@ -214,27 +217,8 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	}
 
 	if args.Data == "preview" {
-		url, hash, _ := d.getDownloadUrl(fileId)
+		url, _, _ := d.getDownloadUrl(fileId)
 		if url != "" {
-			driver115 := op.GetFirst115Driver()
-			if driver115 != nil {
-				myFile := MyFile{
-					FileId:   fileId,
-					Name:     args.Obj.GetName(),
-					Size:     args.Obj.GetSize(),
-					HashInfo: utils.NewHashInfo(utils.SHA1, hash),
-				}
-				link := &model.Link{
-					URL: url,
-					Header: http.Header{
-						"Referer": []string{"https://www.aliyundrive.com/"},
-					},
-				}
-				link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link)
-				if err2 == nil {
-					url = link115.URL
-				}
-			}
 			resp.PlayInfo.Videos = append(resp.PlayInfo.Videos, LiveTranscoding{
 				TemplateId: "原画",
 				Status:     "finished",
