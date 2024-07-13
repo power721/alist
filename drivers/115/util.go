@@ -83,7 +83,7 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 func (d *Pan115) cleanTempDir() {
 	files, _ := d.getFiles(TempDirId)
 	for _, file := range files {
-		log.Infof("删除115缓存文件: %v", file.GetName())
+		log.Infof("删除文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
 		d.client.Delete(file.GetID())
 	}
 }

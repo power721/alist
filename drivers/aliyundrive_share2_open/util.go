@@ -722,7 +722,6 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 		log.Warnf("115 upload failed: %v", err)
 		return link, nil
 	}
-	go d.deleteDelay115(ctx, pan115, file)
 	log.Debugf("115.RapidUpload: %v", res)
 	for i := 0; i < 5; i++ {
 		var f = &_115.FileObj{
@@ -744,19 +743,4 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 		}, nil
 	}
 	return link, nil
-}
-
-func (d *AliyundriveShare2Open) deleteDelay115(ctx context.Context, pan115 *_115.Pan115, file model.Obj) {
-	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
-	if delayTime == 0 {
-		return
-	}
-
-	log.Infof("Delete 115 file %v after %v seconds.", file.GetID(), delayTime)
-	time.Sleep(time.Duration(delayTime) * time.Second)
-	d.delete115(ctx, pan115, file)
-}
-
-func (d *AliyundriveShare2Open) delete115(ctx context.Context, pan115 *_115.Pan115, file model.Obj) {
-	pan115.Remove(ctx, file)
 }
