@@ -6,6 +6,7 @@ import (
 	"github.com/Xhofe/rateg"
 	_115 "github.com/alist-org/alist/v3/drivers/115"
 	"github.com/alist-org/alist/v3/drivers/base"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
@@ -150,7 +151,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		return nil, err
 	}
 
-	if !setting.GetBool("ali_to_115") {
+	if !setting.GetBool(conf.AliTo115) {
 		return link, err
 	}
 	driver115 := op.GetFirst115Driver()
