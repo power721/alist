@@ -63,15 +63,29 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 	dir := &model.Object{
 		ID: root,
 	}
+	var clean = false
 	name := "xiaoya-tvbox-temp"
 	_ = d.MakeDir(ctx, dir, name)
 	files, _ := d.getFiles(root)
 	for _, file := range files {
 		if file.Name == name {
 			TempDirId = file.FileID
+			clean = true
+			break
 		}
 	}
 	log.Infof("Temp folder id: %v", TempDirId)
+	if clean {
+		d.cleanTempDir()
+	}
+}
+
+func (d *Pan115) cleanTempDir() {
+	files, _ := d.getFiles(TempDirId)
+	for _, file := range files {
+		log.Infof("删除115缓存文件: %v", file.GetName())
+		d.client.Delete(file.GetID())
+	}
 }
 
 func (d *Pan115) getFiles(fileId string) ([]FileObj, error) {

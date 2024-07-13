@@ -735,7 +735,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 			time.Sleep(200 * time.Millisecond)
 			continue
 		}
-		log.Infof("使用115链接: %v", link115)
+		log.Infof("使用115链接: %v", link115.URL)
 		exp := 900 * time.Second
 		return &model.Link{
 			URL:        link115.URL,
