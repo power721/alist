@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/Xhofe/rateg"
+	_115 "github.com/alist-org/alist/v3/drivers/115"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/cron"
 	"github.com/alist-org/alist/v3/pkg/utils"
@@ -143,7 +145,28 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 		Name:   "livp",
 	}
 
-	return d.getOpenLink(newFile)
+	link, hash, err := d.getOpenLink(newFile)
+	if err != nil {
+		return nil, err
+	}
+
+	if !setting.GetBool("ali_to_115") {
+		return link, err
+	}
+	driver115 := op.GetFirst115Driver()
+	if driver115 != nil {
+		myFile := MyFile{
+			FileId:   fileId,
+			Name:     file.GetName(),
+			Size:     file.GetSize(),
+			HashInfo: utils.NewHashInfo(utils.SHA1, hash),
+		}
+		link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link)
+		if err2 == nil {
+			link = link115
+		}
+	}
+	return link, err
 }
 
 func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
@@ -194,7 +217,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	}
 
 	if args.Data == "preview" {
-		url, _ := d.getDownloadUrl(fileId)
+		url, _, _ := d.getDownloadUrl(fileId)
 		if url != "" {
 			resp.PlayInfo.Videos = append(resp.PlayInfo.Videos, LiveTranscoding{
 				TemplateId: "原画",

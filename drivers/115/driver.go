@@ -13,6 +13,8 @@ import (
 	"golang.org/x/time/rate"
 )
 
+var TempDirId = "0"
+
 type Pan115 struct {
 	model.Storage
 	Addition
@@ -32,7 +34,12 @@ func (d *Pan115) Init(ctx context.Context) error {
 	if d.LimitRate > 0 {
 		d.limiter = rate.NewLimiter(rate.Limit(d.LimitRate), 1)
 	}
-	return d.login()
+	err := d.login()
+	if err != nil {
+		return err
+	}
+	d.createTempDir(ctx)
+	return nil
 }
 
 func (d *Pan115) WaitLimit(ctx context.Context) error {
@@ -117,6 +124,9 @@ func (d *Pan115) Remove(ctx context.Context, obj model.Obj) error {
 	}
 	return d.client.Delete(obj.GetID())
 }
+func (d *Pan115) UploadAvailable() (bool, error) {
+	return d.client.UploadAvailable()
+}
 
 func (d *Pan115) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
 	if err := d.WaitLimit(ctx); err != nil {
@@ -168,7 +178,7 @@ func (d *Pan115) Put(ctx context.Context, dstDir model.Obj, stream model.FileStr
 	// rapid-upload
 	// note that 115 add timeout for rapid-upload,
 	// and "sig invalid" err is thrown even when the hash is correct after timeout.
-	if fastInfo, err = d.rapidUpload(stream.GetSize(), stream.GetName(), dirID, preHash, fullHash, stream); err != nil {
+	if fastInfo, err = d.RapidUpload(stream.GetSize(), stream.GetName(), dirID, preHash, fullHash, stream); err != nil {
 		return err
 	}
 	if matched, err := fastInfo.Ok(); err != nil {

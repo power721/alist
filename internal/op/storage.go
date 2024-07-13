@@ -25,6 +25,16 @@ func GetAllStorages() []driver.Driver {
 	return storagesMap.Values()
 }
 
+func GetFirst115Driver() driver.Driver {
+	storages := storagesMap.Values()
+	for _, storage := range storages {
+		if storage.Config().Name == "115 Cloud" {
+			return storage
+		}
+	}
+	return nil
+}
+
 func HasStorage(mountPath string) bool {
 	return storagesMap.Has(utils.FixAndCleanPath(mountPath))
 }
