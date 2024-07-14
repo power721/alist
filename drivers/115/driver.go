@@ -2,6 +2,7 @@ package _115
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
@@ -84,6 +85,7 @@ func (d *Pan115) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 		URL:    downloadInfo.Url.Url,
 		Header: downloadInfo.Header,
 	}
+	log.Debugf("Link: %v", link)
 	return link, nil
 }
 

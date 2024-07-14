@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/http_range"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -75,7 +76,7 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 		}
 	}
 	log.Infof("Temp folder id: %v", TempDirId)
-	if clean {
+	if clean && setting.GetBool("clean_115") {
 		d.cleanTempDir()
 	}
 }
