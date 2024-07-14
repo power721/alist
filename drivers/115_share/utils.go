@@ -2,6 +2,8 @@ package _115_share
 
 import (
 	"fmt"
+	_115 "github.com/alist-org/alist/v3/drivers/115"
+	"github.com/alist-org/alist/v3/internal/op"
 	"strconv"
 	"time"
 
@@ -89,6 +91,11 @@ func (d *Pan115Share) login() error {
 		return errors.Wrap(err, "failed to get share snap")
 	}
 	cr := &driver115.Credential{}
+	pan115 := op.GetFirst115Driver()
+	if pan115 != nil {
+		d.QRCodeToken = pan115.(*_115.Pan115).QRCodeToken
+		d.Cookie = pan115.(*_115.Pan115).Cookie
+	}
 	if d.QRCodeToken != "" {
 		s := &driver115.QRCodeSession{
 			UID: d.QRCodeToken,
