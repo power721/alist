@@ -48,9 +48,9 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	__puus := cookie.GetCookie(res.Cookies(), "__puus")
 	if __puus != nil {
 		d.Cookie = cookie.SetStr(d.Cookie, "__puus", __puus.Value)
-		var key = "quark_cookie"
+		var key = conf.QuarkCookie
 		if d.config.Name == "UC" {
-			key = "uc_cookie"
+			key = conf.UcCookie
 		}
 		op.SaveSettingItem(&model.SettingItem{
 			Key:   key,
