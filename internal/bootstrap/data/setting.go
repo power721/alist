@@ -168,6 +168,8 @@ func InitialSettings() []model.SettingItem {
 		// customized settings
 		{Key: conf.DeleteDelayTime, Value: "900", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: conf.ExternalPort, Value: "5344", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
+		{Key: conf.QuarkCookie, Value: "", Type: conf.TypeText, Group: model.SINGLE, Flag: model.PRIVATE},
+		{Key: conf.UcCookie, Value: "", Type: conf.TypeText, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: conf.AliTo115, Value: "false", Type: conf.TypeBool, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "open_token_url", Value: "https://api.xhofe.top/alist/ali_open/token", Type: conf.TypeString, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "open_api_client_id", Value: "", Type: conf.TypeString, Group: model.SINGLE, Flag: model.PRIVATE},
