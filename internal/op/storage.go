@@ -26,9 +26,13 @@ func GetAllStorages() []driver.Driver {
 }
 
 func GetFirst115Driver() driver.Driver {
+	return GetFirstDriver("115 Cloud")
+}
+
+func GetFirstDriver(name string) driver.Driver {
 	storages := storagesMap.Values()
 	for _, storage := range storages {
-		if storage.Config().Name == "115 Cloud" {
+		if storage.Config().Name == name {
 			return storage
 		}
 	}
