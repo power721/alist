@@ -59,8 +59,6 @@ const (
 	IndexProgress   = "index_progress"
 	DeleteDelayTime = "delete_delay_time"
 	ExternalPort    = "external_port"
-	QuarkCookie     = "quark_cookie"
-	UcCookie        = "uc_cookie"
 	AliTo115        = "ali_to_115"
 
 	//SSO

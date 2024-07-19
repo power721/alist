@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"net/http"
 	"strconv"
 	"strings"
@@ -47,6 +48,17 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	__puus := cookie.GetCookie(res.Cookies(), "__puus")
 	if __puus != nil {
 		d.Cookie = cookie.SetStr(d.Cookie, "__puus", __puus.Value)
+		var key = "quark_cookie"
+		if d.config.Name == "UC" {
+			key = "uc_cookie"
+		}
+		op.SaveSettingItem(&model.SettingItem{
+			Key:   key,
+			Value: d.Cookie,
+			Type:  conf.TypeText,
+			Group: model.SINGLE,
+			Flag:  model.PRIVATE,
+		})
 		op.MustSaveDriverStorage(d)
 	}
 	if e.Status >= 400 || e.Code != 0 {
