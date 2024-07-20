@@ -716,8 +716,9 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 	}
 
 	preHash := "2EF7BDE608CE5404E97D5F042F95F89F1C232871"
-	log.Infof("id=%v name=%v size=%v hash=%v", fs.GetID(), fs.GetName(), fs.GetSize(), fs.GetHash().GetHash(utils.SHA1))
-	res, err := pan115.RapidUpload(fs.GetSize(), fs.GetName(), _115.TempDirId, preHash, fs.GetHash().GetHash(utils.SHA1), ss)
+	fullHash := fs.GetHash().GetHash(utils.SHA1)
+	log.Infof("id=%v name=%v size=%v hash=%v", fs.GetID(), fs.GetName(), fs.GetSize(), fullHash)
+	res, err := pan115.RapidUpload(fs.GetSize(), fs.GetName(), _115.TempDirId, preHash, fullHash, ss)
 	if err != nil {
 		log.Warnf("115 upload failed: %v", err)
 		return link, nil
@@ -734,6 +735,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 			time.Sleep(200 * time.Millisecond)
 			continue
 		}
+		go d.delayDelete115(pan115, fullHash)
 		log.Infof("使用115链接: %v", link115.URL)
 		exp := 4 * time.Hour
 		return &model.Link{
@@ -743,4 +745,15 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 		}, nil
 	}
 	return link, nil
+}
+
+func (d *AliyundriveShare2Open) delayDelete115(pan115 *_115.Pan115, fileId string) {
+	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
+	if delayTime == 0 {
+		return
+	}
+
+	log.Infof("Delete 115 file %v after %v seconds.", fileId, delayTime)
+	time.Sleep(time.Duration(delayTime) * time.Second)
+	pan115.DeleteTempFile(fileId)
 }
