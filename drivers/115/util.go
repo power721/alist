@@ -83,8 +83,18 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 func (d *Pan115) cleanTempDir() {
 	files, _ := d.getFiles(TempDirId)
 	for _, file := range files {
-		log.Infof("删除文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
+		log.Infof("删除115文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
 		d.client.Delete(file.GetID())
+	}
+}
+
+func (d *Pan115) DeleteTempFile(fullHash string) {
+	files, _ := d.getFiles(TempDirId)
+	for _, file := range files {
+		if file.Sha1 == fullHash {
+			log.Infof("删除115文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
+			d.client.Delete(file.GetID())
+		}
 	}
 }
 
