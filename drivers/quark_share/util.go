@@ -331,6 +331,10 @@ func (d *QuarkShare) getShareFiles(id string) ([]File, error) {
 		}, &resp)
 		log.Debugf("quark share get files: %s", string(res))
 		if err != nil {
+			if err.Error() == "分享的stoken过期" {
+				d.getShareToken()
+				return d.getShareFiles(id)
+			}
 			return nil, err
 		}
 		if resp.Message == "ok" {
