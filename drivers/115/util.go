@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/http_range"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -85,6 +86,7 @@ func (d *Pan115) cleanTempDir() {
 	for _, file := range files {
 		log.Infof("删除115文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
 		d.client.Delete(file.GetID())
+		d.DeleteFile(file.Sha1)
 	}
 }
 
@@ -94,8 +96,28 @@ func (d *Pan115) DeleteTempFile(fullHash string) {
 		if file.Sha1 == fullHash {
 			log.Infof("删除115文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
 			d.client.Delete(file.GetID())
+			d.DeleteFile(file.Sha1)
 		}
 	}
+}
+
+func (d *Pan115) DeleteFile(id string) error {
+	code := setting.GetStr("delete_code_115")
+	if code == "" {
+		return nil
+	}
+	time.Sleep(200 * time.Millisecond)
+
+	form := map[string]string{}
+	form["rid[0]"] = id
+	form["password"] = code
+
+	req := d.client.NewRequest().
+		SetFormData(form).
+		ForceContentType("application/x-www-form-urlencoded")
+	response, err := req.Post("https://webapi.115.com/rb/clean")
+	log.Debugf("115 clean response: %v", response)
+	return err
 }
 
 func (d *Pan115) getFiles(fileId string) ([]FileObj, error) {
