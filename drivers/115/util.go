@@ -106,7 +106,6 @@ func (d *Pan115) DeleteFile(id string) error {
 	if code == "" {
 		return nil
 	}
-	//time.Sleep(200 * time.Millisecond)
 
 	form := map[string]string{}
 	form["rid[0]"] = id
