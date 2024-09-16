@@ -107,16 +107,7 @@ func (d *Pan115) DeleteFile(id string) error {
 		return nil
 	}
 
-	form := map[string]string{}
-	form["rid[0]"] = id
-	form["password"] = code
-
-	req := d.client.NewRequest().
-		SetFormData(form).
-		ForceContentType("application/x-www-form-urlencoded")
-	response, err := req.Post("https://webapi.115.com/rb/clean")
-	log.Debugf("115 clean response: %v", response)
-	return err
+	return d.client.CleanRecycleBin(code, id)
 }
 
 func (d *Pan115) getFiles(fileId string) ([]FileObj, error) {
