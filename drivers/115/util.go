@@ -3,7 +3,9 @@ package _115
 import (
 	"bytes"
 	"context"
+	"crypto/md5"
 	"crypto/tls"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/model"
@@ -126,7 +128,8 @@ func (d *Pan115) getFiles(fileId string) ([]FileObj, error) {
 }
 
 const (
-	appVer = "27.0.3.7"
+	md5Salt = "Qclm8MGWUv59TnrR0XPg"
+	appVer  = "27.0.3.7"
 )
 
 func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID string, stream model.FileStreamer) (*driver115.UploadInitResp, error) {
@@ -169,7 +172,7 @@ func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID stri
 		}
 
 		form.Set("t", t.String())
-		form.Set("token", d.client.GenerateToken(fileID, preID, t.String(), fileSizeStr, signKey, signVal))
+		form.Set("token", d.GenerateToken(fileID, preID, t.String(), fileSizeStr, signKey, signVal))
 		if signKey != "" && signVal != "" {
 			form.Set("sign_key", signKey)
 			form.Set("sign_val", signVal)
@@ -215,6 +218,13 @@ func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID stri
 	}
 
 	return &result, nil
+}
+
+func (d *Pan115) GenerateToken(fileID, preID, timeStamp, fileSize, signKey, signVal string) string {
+	userID := strconv.FormatInt(d.client.UserID, 10)
+	userIDMd5 := md5.Sum([]byte(userID))
+	tokenMd5 := md5.Sum([]byte(md5Salt + fileID + fileSize + signKey + signVal + userID + timeStamp + hex.EncodeToString(userIDMd5[:]) + appVer))
+	return hex.EncodeToString(tokenMd5[:])
 }
 
 func UploadDigestRange(stream model.FileStreamer, rangeSpec string) (result string, err error) {
