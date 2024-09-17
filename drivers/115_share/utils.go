@@ -3,6 +3,7 @@ package _115_share
 import (
 	"fmt"
 	_115 "github.com/alist-org/alist/v3/drivers/115"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/op"
 	"strconv"
 	"time"
@@ -79,7 +80,7 @@ func transFunc(sf driver115.ShareFile) (model.Obj, error) {
 	}, nil
 }
 
-var UserAgent = driver115.UA115Browser
+var UserAgent = conf.UA115Browser
 
 func (d *Pan115Share) login() error {
 	var err error

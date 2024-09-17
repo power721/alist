@@ -9,6 +9,7 @@ const (
 )
 
 const (
+	UA115Browser = "Mozilla/5.0 115Browser/27.0.3.7"
 	// site
 	VERSION      = "version"
 	SiteTitle    = "site_title"

@@ -2,6 +2,7 @@ package _115
 
 import (
 	"context"
+	"github.com/alist-org/alist/v3/internal/conf"
 	log "github.com/sirupsen/logrus"
 	"strings"
 
@@ -73,7 +74,7 @@ func (d *Pan115) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 	}
 	var userAgent = args.Header.Get("User-Agent")
 	if userAgent == "" {
-		userAgent = driver115.UA115Browser
+		userAgent = conf.UA115Browser
 	}
 
 	downloadInfo, err := d.client.
