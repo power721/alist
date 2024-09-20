@@ -132,6 +132,25 @@ const (
 	appVer  = "27.0.3.7"
 )
 
+var appVerWin = ""
+
+func (c *Pan115) getAppVer() string {
+	if appVerWin != "" {
+		return appVerWin
+	}
+	vers, err := c.client.GetAppVersion()
+	if err != nil {
+		return appVer
+	}
+	for _, ver := range vers {
+		if ver.AppName == "win" {
+			appVerWin = ver.Version
+			return ver.Version
+		}
+	}
+	return appVer
+}
+
 func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID string, stream model.FileStreamer) (*driver115.UploadInitResp, error) {
 	var (
 		ecdhCipher   *cipher.EcdhCipher
@@ -151,7 +170,7 @@ func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID stri
 	userID := strconv.FormatInt(d.client.UserID, 10)
 	form := url.Values{}
 	form.Set("appid", "0")
-	form.Set("appversion", appVer)
+	form.Set("appversion", d.getAppVer())
 	form.Set("userid", userID)
 	form.Set("filename", fileName)
 	form.Set("filesize", fileSizeStr)
@@ -223,7 +242,7 @@ func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID stri
 func (d *Pan115) GenerateToken(fileID, preID, timeStamp, fileSize, signKey, signVal string) string {
 	userID := strconv.FormatInt(d.client.UserID, 10)
 	userIDMd5 := md5.Sum([]byte(userID))
-	tokenMd5 := md5.Sum([]byte(md5Salt + fileID + fileSize + signKey + signVal + userID + timeStamp + hex.EncodeToString(userIDMd5[:]) + appVer))
+	tokenMd5 := md5.Sum([]byte(md5Salt + fileID + fileSize + signKey + signVal + userID + timeStamp + hex.EncodeToString(userIDMd5[:]) + d.getAppVer()))
 	return hex.EncodeToString(tokenMd5[:])
 }
 
