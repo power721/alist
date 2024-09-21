@@ -83,10 +83,6 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 		Limit:  4,
 		Bucket: 1,
 	})
-	d.limitLink = rateg.LimitFnCtx(d.link, rateg.LimitFnOption{
-		Limit:  1,
-		Bucket: 1,
-	})
 	return nil
 }
 
@@ -125,13 +121,6 @@ func (d *AliyundriveShare2Open) list(ctx context.Context, dir model.Obj) ([]mode
 }
 
 func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	if d.limitLink == nil {
-		return nil, fmt.Errorf("driver not init")
-	}
-	return d.limitLink(ctx, file)
-}
-
-func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*model.Link, error) {
 	// 1. 转存资源
 	// 2. 获取链接
 	// 3. 删除文件
@@ -162,7 +151,7 @@ func (d *AliyundriveShare2Open) link(ctx context.Context, file model.Obj) (*mode
 			Size:     file.GetSize(),
 			HashInfo: utils.NewHashInfo(utils.SHA1, hash),
 		}
-		link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link)
+		link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link, args)
 		if err2 == nil {
 			link = link115
 		}

@@ -532,7 +532,7 @@ func (d *AliyundriveShare2Open) request(url, method string, callback base.ReqCal
 		SetError(&e).
 		SetHeader("content-type", "application/json").
 		SetHeader("Referer", "https://www.alipan.com/").
-		SetHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36").
+		SetHeader("User-Agent", conf.UserAgent).
 		SetHeader("Authorization", "Bearer\t"+AccessToken).
 		SetHeader(CanaryHeaderKey, CanaryHeaderValue).
 		SetHeader("x-share-token", d.ShareToken)
@@ -699,7 +699,7 @@ func (d *AliyundriveShare2Open) requestReturnErrResp(uri, method string, callbac
 	return res.Body(), nil, nil
 }
 
-func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan115, file model.Obj, link *model.Link) (*model.Link, error) {
+func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan115, file model.Obj, link *model.Link, args model.LinkArgs) (*model.Link, error) {
 	if ok, err := pan115.UploadAvailable(); err != nil || !ok {
 		return nil, err
 	}
@@ -730,7 +730,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 				PickCode: res.PickCode,
 			},
 		}
-		link115, err := pan115.Link(ctx, f, model.LinkArgs{Header: http.Header{}})
+		link115, err := pan115.Link(ctx, f, args)
 		if err != nil {
 			time.Sleep(200 * time.Millisecond)
 			continue
