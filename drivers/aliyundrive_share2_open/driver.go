@@ -17,6 +17,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -140,9 +141,10 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 		return nil, err
 	}
 
-	if !setting.GetBool(conf.AliTo115) {
+	if strings.HasSuffix(file.GetName(), ".md") || !setting.GetBool(conf.AliTo115) {
 		return link, err
 	}
+
 	driver115 := op.GetFirst115Driver()
 	if driver115 != nil {
 		myFile := MyFile{

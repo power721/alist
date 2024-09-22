@@ -3,6 +3,7 @@ package uc_share
 import (
 	"context"
 	quark "github.com/alist-org/alist/v3/drivers/quark_uc"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
@@ -28,6 +29,11 @@ func (d *UcShare) Init(ctx context.Context) error {
 		uc := op.GetFirstDriver("UC")
 		if uc != nil {
 			Cookie = uc.(*quark.QuarkOrUC).Cookie
+		} else {
+			setting, err := op.GetSettingItemByKey(conf.UcCookie)
+			if err == nil {
+				Cookie = setting.Value
+			}
 		}
 		d.getTempFolder()
 		log.Infof("ParentFileId: %v", ParentFileId)
