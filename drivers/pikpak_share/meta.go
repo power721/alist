@@ -9,7 +9,7 @@ type Addition struct {
 	driver.RootID
 	ShareId                 string `json:"share_id" required:"true"`
 	SharePwd                string `json:"share_pwd"`
-	Platform                string `json:"platform" required:"true" type:"select" options:"android,web,pc"`
+	Platform                string `json:"platform" required:"true" type:"select" options:"android,web,pc" default:"pc"`
 	DeviceID                string `json:"device_id"  required:"false" default:""`
 	UseTransCodingAddress   bool   `json:"use_transcoding_address" required:"true" default:"false"`
 	UseLowLatencyAddress    bool   `json:"use_low_latency_address" default:"false"`
