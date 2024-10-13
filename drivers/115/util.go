@@ -28,12 +28,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-var UserAgent = conf.UA115Browser
-
 func (d *Pan115) login() error {
 	var err error
 	opts := []driver115.Option{
-		driver115.UA(UserAgent),
+		driver115.UA(d.getUA()),
 		func(c *driver115.Pan115Client) {
 			c.Client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: conf.Conf.TlsInsecureSkipVerify})
 		},
@@ -77,7 +75,7 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 			break
 		}
 	}
-	log.Infof("Temp folder id: %v", TempDirId)
+	log.Infof("115 temp folder id: %v", TempDirId)
 	if clean {
 		d.cleanTempDir()
 	}
@@ -127,28 +125,8 @@ func (d *Pan115) getFiles(fileId string) ([]FileObj, error) {
 	return res, nil
 }
 
-const (
-	md5Salt = "Qclm8MGWUv59TnrR0XPg"
-	appVer  = "27.0.3.7"
-)
-
-var appVerWin = ""
-
-func (c *Pan115) getAppVer() string {
-	if appVerWin != "" {
-		return appVerWin
-	}
-	vers, err := c.client.GetAppVersion()
-	if err != nil {
-		return appVer
-	}
-	for _, ver := range vers {
-		if ver.AppName == "win" {
-			appVerWin = ver.Version
-			return ver.Version
-		}
-	}
-	return appVer
+func (d *Pan115) getUA() string {
+	return fmt.Sprintf("Mozilla/5.0 115Browser/%s", appVer)
 }
 
 func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID string, stream model.FileStreamer) (*driver115.UploadInitResp, error) {
@@ -239,10 +217,10 @@ func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID stri
 	return &result, nil
 }
 
-func (d *Pan115) GenerateToken(fileID, preID, timeStamp, fileSize, signKey, signVal string) string {
-	userID := strconv.FormatInt(d.client.UserID, 10)
+func (c *Pan115) GenerateToken(fileID, preID, timeStamp, fileSize, signKey, signVal string) string {
+	userID := strconv.FormatInt(c.client.UserID, 10)
 	userIDMd5 := md5.Sum([]byte(userID))
-	tokenMd5 := md5.Sum([]byte(md5Salt + fileID + fileSize + signKey + signVal + userID + timeStamp + hex.EncodeToString(userIDMd5[:]) + d.getAppVer()))
+	tokenMd5 := md5.Sum([]byte(md5Salt + fileID + fileSize + signKey + signVal + userID + timeStamp + hex.EncodeToString(userIDMd5[:]) + appVer))
 	return hex.EncodeToString(tokenMd5[:])
 }
 

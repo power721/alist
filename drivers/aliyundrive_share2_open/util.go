@@ -155,7 +155,7 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 		return err
 	}
 	if e.Code != "" {
-		return fmt.Errorf("failed to refresh token: %s", e.Message)
+		return fmt.Errorf("failed to refresh ali token: %s", e.Message)
 	}
 	RefreshToken, AccessToken = resp.RefreshToken, resp.AccessToken
 
