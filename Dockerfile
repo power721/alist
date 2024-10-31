@@ -10,4 +10,6 @@ FROM xiaoyaliu/alist:latest
 
 LABEL MAINTAINER="Har01d"
 
+RUN apk add --no-cache wget
+
 COPY --from=builder /app/bin/alist ./
