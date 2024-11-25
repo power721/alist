@@ -90,6 +90,12 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	log.Debugf("[ali_share_open] toekn exchange: %s -> %s", RefreshToken, refresh)
 	RefreshTokenOpen, AccessTokenOpen = refresh, access
 
+	if err = d.checkNickname(); err != nil {
+		RefreshTokenOpen = refreshTokenOpen
+		AccessTokenOpen = accessTokenOpen
+		return err
+	}
+
 	d.SaveOpenToken(t)
 
 	return nil
@@ -175,6 +181,22 @@ func (d *AliyundriveShare2Open) getUser() {
 		nickname = utils.Json.Get(res, "nick_name").ToString()
 		log.Printf("阿里token 账号昵称： %v", nickname)
 	}
+}
+
+func (d *AliyundriveShare2Open) checkNickname() error {
+	res, err := d.requestOpen("/adrive/v1.0/user/getDriveInfo", http.MethodPost, nil)
+	lastTime = time.Now().UnixMilli()
+	if err != nil {
+		log.Warnf("getDriveInfo error: %v", err)
+		return err
+	}
+	name := utils.Json.Get(res, "name").ToString()
+	log.Printf("开放token 账号昵称： %v", name)
+	if name != nickname {
+		return errors.New("账号不匹配！")
+	}
+	DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
+	return nil
 }
 
 func (d *AliyundriveShare2Open) getDriveId() {
