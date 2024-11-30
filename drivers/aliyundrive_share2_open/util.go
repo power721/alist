@@ -43,6 +43,7 @@ var ParentFileId = ""
 var DelayTime int64 = 1500
 var lastTime int64 = 0
 
+var userid = ""
 var nickname = ""
 var cleaned = false
 
@@ -90,7 +91,7 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	log.Debugf("[ali_share_open] toekn exchange: %s -> %s", RefreshToken, refresh)
 	RefreshTokenOpen, AccessTokenOpen = refresh, access
 
-	if err = d.checkNickname(); err != nil {
+	if err = d.checkUserId(); err != nil {
 		RefreshTokenOpen = refreshTokenOpen
 		AccessTokenOpen = accessTokenOpen
 		return err
@@ -170,30 +171,38 @@ func (d *AliyundriveShare2Open) refreshToken(force bool) error {
 	return nil
 }
 
+func (d *AliyundriveShare2Open) reloadUser() {
+	userid = ""
+	d.getUser()
+}
+
 func (d *AliyundriveShare2Open) getUser() {
-	if nickname == "" {
+	if userid == "" {
 		res, err := d.request("https://user.aliyundrive.com/v2/user/get", http.MethodPost, nil)
 		lastTime = time.Now().UnixMilli()
 		if err != nil {
 			log.Warnf("getUser error: %v", err)
 			return
 		}
+		userid = utils.Json.Get(res, "user_id").ToString()
 		nickname = utils.Json.Get(res, "nick_name").ToString()
-		log.Printf("阿里token 账号昵称： %v", nickname)
+		log.Printf("阿里token 账号(%v) 昵称： %v", userid, nickname)
 	}
 }
 
-func (d *AliyundriveShare2Open) checkNickname() error {
+func (d *AliyundriveShare2Open) checkUserId() error {
 	res, err := d.requestOpen("/adrive/v1.0/user/getDriveInfo", http.MethodPost, nil)
 	lastTime = time.Now().UnixMilli()
 	if err != nil {
 		log.Warnf("getDriveInfo error: %v", err)
 		return err
 	}
+	uid := utils.Json.Get(res, "user_id").ToString()
 	name := utils.Json.Get(res, "name").ToString()
-	log.Printf("开放token 账号昵称： %v", name)
-	if name != nickname {
-		return errors.New("账号不匹配！")
+	log.Printf("开放token 账号(%v) 昵称： %v", uid, name)
+	if uid != userid {
+		log.Printf("阿里token 账号(%v) 昵称： %v", userid, nickname)
+		return errors.New("阿里Token与开放Token账号不匹配！")
 	}
 	DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
 	return nil
@@ -207,8 +216,9 @@ func (d *AliyundriveShare2Open) getDriveId() {
 			log.Warnf("getDriveId error: %v", err)
 			return
 		}
+		uid := utils.Json.Get(res, "user_id").ToString()
 		name := utils.Json.Get(res, "name").ToString()
-		log.Printf("开放token 账号昵称： %v", name)
+		log.Printf("开放token 账号(%v) 昵称： %v", uid, name)
 		DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
 		if DriveId == "" {
 			DriveId = utils.Json.Get(res, "default_drive_id").ToString()
