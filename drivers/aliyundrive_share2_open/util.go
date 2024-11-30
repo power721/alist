@@ -201,7 +201,7 @@ func (d *AliyundriveShare2Open) checkUserId() error {
 	name := utils.Json.Get(res, "name").ToString()
 	log.Printf("开放token 账号(%v) 昵称： %v", uid, name)
 	if uid != userid {
-		log.Printf("阿里token 账号(%v) 昵称： %v", userid, nickname)
+		d.reloadUser()
 		return errors.New("阿里Token与开放Token账号不匹配！")
 	}
 	DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
