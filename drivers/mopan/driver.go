@@ -76,8 +76,12 @@ func (d *MoPan) Init(ctx context.Context) error {
 				op.MustSaveDriverStorage(d)
 			}
 			return err
-		}).SetDeviceInfo(d.DeviceInfo)
-	d.DeviceInfo = d.client.GetDeviceInfo()
+		})
+	var deviceInfo mopan.DeviceInfo
+	if strings.TrimSpace(d.DeviceInfo) != "" && utils.Json.UnmarshalFromString(d.DeviceInfo, &deviceInfo) == nil {
+		d.client.SetDeviceInfo(&deviceInfo)
+	}
+	d.DeviceInfo, _ = utils.Json.MarshalToString(d.client.GetDeviceInfo())
 	return login()
 }
 
