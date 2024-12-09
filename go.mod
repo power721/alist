@@ -3,11 +3,11 @@ module github.com/alist-org/alist/v3
 go 1.21
 
 require (
-	github.com/SheltonZhu/115driver v1.0.29
+	github.com/SheltonZhu/115driver v1.0.32
 	github.com/Xhofe/go-cache v0.0.0-20220723083548-714439c8af9a
 	github.com/Xhofe/rateg v0.0.0-20230728072201-251a4e1adad4
 	github.com/Xhofe/wopan-sdk-go v0.1.2
-	github.com/aliyun/aliyun-oss-go-sdk v2.2.9+incompatible
+	github.com/aliyun/aliyun-oss-go-sdk v3.0.2+incompatible
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-sdk-go v1.46.7
 	github.com/blevesearch/bleve/v2 v2.3.10
@@ -54,7 +54,7 @@ require (
 	golang.org/x/image v0.11.0
 	golang.org/x/net v0.17.0
 	golang.org/x/oauth2 v0.12.0
-	golang.org/x/time v0.3.0
+	golang.org/x/time v0.8.0
 	google.golang.org/appengine v1.6.7
 	gorm.io/driver/mysql v1.4.7
 	gorm.io/driver/postgres v1.4.8
