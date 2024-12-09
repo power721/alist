@@ -8,7 +8,7 @@ import (
 
 var (
 	md5Salt = "Qclm8MGWUv59TnrR0XPg"
-	appVer  = "27.0.5.7"
+	appVer  = "27.0.7.5"
 )
 
 func (d *Pan115) getAppVersion() ([]driver115.AppVersion, error) {
