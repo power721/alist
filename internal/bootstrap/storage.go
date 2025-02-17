@@ -33,6 +33,7 @@ func LoadStorages() {
 					strings.Contains(msg, "取消") ||
 					strings.Contains(msg, "已失效") ||
 					strings.Contains(msg, "invalid") ||
+					strings.Contains(msg, "bad cookie") ||
 					strings.Contains(msg, "no route to host") {
 					log.Warnf("[%d] failed get enabled storages [%s], %+v",
 						i+1, storages[i].MountPath, err)
