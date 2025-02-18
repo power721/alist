@@ -38,4 +38,5 @@ func (d *Pan115) getAppVer() string {
 
 func (d *Pan115) initAppVer() {
 	appVer = d.getAppVer()
+	log.Infof("use app version: %v", appVer)
 }
