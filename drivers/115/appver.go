@@ -1,6 +1,7 @@
 package _115
 
 import (
+	"errors"
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/drivers/base"
 	log "github.com/sirupsen/logrus"
@@ -11,27 +12,26 @@ var (
 	appVer  = "35.6.0.3"
 )
 
-func (d *Pan115) getAppVersion() ([]driver115.AppVersion, error) {
-	result := driver115.VersionResp{}
-	resp, err := base.RestyClient.R().Get(driver115.ApiGetVersion)
-	err = driver115.CheckErr(err, &result, resp)
+func (d *Pan115) getAppVersion() (string, error) {
+	result := VersionResp{}
+	_, err := base.RestyClient.R().SetResult(&result).Get(driver115.ApiGetVersion)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return result.Data.GetAppVersions(), nil
+	if len(result.Error) > 0 {
+		return "", errors.New(result.Error)
+	}
+	return result.Data.Win.Version, nil
 }
 
 func (d *Pan115) getAppVer() string {
-	// todo add some cache？
-	vers, err := d.getAppVersion()
+	ver, err := d.getAppVersion()
 	if err != nil {
 		log.Warnf("[115] get app version failed: %v", err)
 		return appVer
 	}
-	for _, ver := range vers {
-		if ver.AppName == "win" {
-			return ver.Version
-		}
+	if len(ver) > 0 {
+		return ver
 	}
 	return appVer
 }
@@ -39,4 +39,17 @@ func (d *Pan115) getAppVer() string {
 func (d *Pan115) initAppVer() {
 	appVer = d.getAppVer()
 	log.Infof("use app version: %v", appVer)
+}
+
+type VersionResp struct {
+	Error string   `json:"error,omitempty"`
+	Data  Versions `json:"data"`
+}
+
+type Versions struct {
+	Win Version `json:"win"`
+}
+
+type Version struct {
+	Version string `json:"version_code"`
 }
