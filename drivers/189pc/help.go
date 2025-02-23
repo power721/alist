@@ -192,3 +192,10 @@ func partSize(size int64) int64 {
 	}
 	return DEFAULT
 }
+
+func IF[V any](o bool, t V, f V) V {
+	if o {
+		return t
+	}
+	return f
+}
