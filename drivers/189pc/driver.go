@@ -2,6 +2,7 @@ package _189pc
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -331,4 +332,66 @@ func (y *Cloud189PC) Put(ctx context.Context, dstDir model.Obj, stream model.Fil
 	default:
 		return y.StreamUpload(ctx, dstDir, stream, up)
 	}
+}
+
+func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, fileName string) (*model.Link, error) {
+
+	isFamily := y.isFamily()
+	other := map[string]string{"shareId": strconv.Itoa(shareId)}
+
+	resp, err := y.CreateBatchTask("SHARE_SAVE", IF(isFamily, y.FamilyID, ""), TransferPath, other, BatchTaskInfo{
+		FileId:   fileId,
+		FileName: fileName,
+		IsFolder: 0,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = y.WaitBatchTask("SHARE_SAVE", resp.TaskID, time.Second)
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := y.getFiles(ctx, TransferPath)
+	if err != nil {
+		return nil, err
+	}
+
+	var transferFile model.Obj
+	for _, file := range files {
+		if file.GetName() == fileName {
+			transferFile = file
+			break
+		}
+	}
+
+	if transferFile == nil || transferFile.GetID() == "" {
+		return nil, errors.New("文件转存失败")
+	}
+
+	link, err := y.Link(ctx, transferFile, model.LinkArgs{})
+
+	go func() {
+		removeErr := y.Remove(ctx, transferFile)
+		if removeErr != nil {
+			utils.Log.Infof("天翼云盘删除文件:%s失败:%v", fileName, removeErr)
+			return
+		}
+		utils.Log.Infof("已删除天翼云盘下的文件:%s", fileName)
+		_, removeErr = y.CreateBatchTask("CLEAR_RECYCLE", "", "", nil, BatchTaskInfo{
+			FileId:   transferFile.GetID(),
+			FileName: transferFile.GetName(),
+			IsFolder: 0,
+		})
+		if removeErr != nil {
+			utils.Log.Info("天翼云盘清除回收站失败", removeErr)
+		}
+		utils.Log.Info("天翼云盘清除回收站完成")
+
+	}()
+
+	return link, err
+
 }
