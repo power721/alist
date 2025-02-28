@@ -55,6 +55,8 @@ const (
 	TransferPath = "xiaoya-tvbox-temp"
 )
 
+var tempDirId = "-11"
+
 func (y *Cloud189PC) SignatureHeader(url, method, params string) map[string]string {
 	dateOfGmt := getHttpDateStr()
 	sessionKey := y.tokenInfo.SessionKey

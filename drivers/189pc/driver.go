@@ -3,6 +3,7 @@ package _189pc
 import (
 	"context"
 	"errors"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 	"strings"
@@ -85,7 +86,29 @@ func (y *Cloud189PC) Init(ctx context.Context) (err error) {
 			return err
 		}
 	}
-	return
+
+	dir := &Cloud189File{
+		ID: "-11",
+	}
+	_, err = y.MakeDir(ctx, dir, TransferPath)
+	if err != nil {
+		log.Warnf("create temp dir failed: %v", err)
+	}
+
+	files, err := y.getFiles(ctx, tempDirId)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		if file.GetName() == TransferPath {
+			tempDirId = file.GetID()
+			break
+		}
+	}
+
+	log.Info("189Cloud tempDirId: ", tempDirId)
+	return nil
 }
 
 func (y *Cloud189PC) Drop(ctx context.Context) error {
@@ -339,26 +362,30 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 	isFamily := y.isFamily()
 	other := map[string]string{"shareId": strconv.Itoa(shareId)}
 
-	resp, err := y.CreateBatchTask("SHARE_SAVE", IF(isFamily, y.FamilyID, ""), TransferPath, other, BatchTaskInfo{
+	log.Debug("create share save task")
+	resp, err := y.CreateBatchTask("SHARE_SAVE", IF(isFamily, y.FamilyID, ""), tempDirId, other, BatchTaskInfo{
 		FileId:   fileId,
 		FileName: fileName,
 		IsFolder: 0,
 	})
 
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "there is a conflict with the target object") {
 		return nil, err
 	}
 
+	log.Debug("wait task")
 	err = y.WaitBatchTask("SHARE_SAVE", resp.TaskID, time.Second)
+	if err != nil && !strings.Contains(err.Error(), "there is a conflict with the target object") {
+		return nil, err
+	}
+
+	log.Debug("get files")
+	files, err := y.getFiles(ctx, tempDirId)
 	if err != nil {
 		return nil, err
 	}
 
-	files, err := y.getFiles(ctx, TransferPath)
-	if err != nil {
-		return nil, err
-	}
-
+	log.Debug("get new file")
 	var transferFile model.Obj
 	for _, file := range files {
 		if file.GetName() == fileName {
@@ -371,25 +398,26 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 		return nil, errors.New("文件转存失败")
 	}
 
+	log.Debug("get new file link")
 	link, err := y.Link(ctx, transferFile, model.LinkArgs{})
 
 	go func() {
 		removeErr := y.Remove(ctx, transferFile)
 		if removeErr != nil {
-			utils.Log.Infof("天翼云盘删除文件:%s失败:%v", fileName, removeErr)
+			log.Infof("天翼云盘删除文件:%s失败:%v", fileName, removeErr)
 			return
 		}
-		utils.Log.Infof("已删除天翼云盘下的文件:%s", fileName)
+		log.Infof("已删除天翼云盘下的文件:%s", fileName)
 		_, removeErr = y.CreateBatchTask("CLEAR_RECYCLE", "", "", nil, BatchTaskInfo{
 			FileId:   transferFile.GetID(),
 			FileName: transferFile.GetName(),
 			IsFolder: 0,
 		})
 		if removeErr != nil {
-			utils.Log.Info("天翼云盘清除回收站失败", removeErr)
+			log.Info("天翼云盘清除回收站失败", removeErr)
+		} else {
+			log.Info("天翼云盘清除回收站完成")
 		}
-		utils.Log.Info("天翼云盘清除回收站完成")
-
 	}()
 
 	return link, err

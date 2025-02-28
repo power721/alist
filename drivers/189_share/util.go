@@ -5,9 +5,8 @@ import (
 	"errors"
 	"github.com/Xhofe/go-cache"
 	"github.com/alist-org/alist/v3/internal/model"
-	"github.com/alist-org/alist/v3/pkg/utils"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/time/rate"
-	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -17,55 +16,55 @@ import (
 var shareTokenCache = cache.NewMemCache(cache.WithShards[ShareInfo](128))
 var limiter = rate.NewLimiter(rate.Every(3000*time.Millisecond), 1)
 
-func (d *Cloud189Share) getShareInfo(shareId, pwd string) (ShareInfo, error) {
-
-	tempShareInfo, exist := shareTokenCache.Get(shareId)
+func (d *Cloud189Share) getShareInfo() (ShareInfo, error) {
+	tempShareInfo, exist := shareTokenCache.Get(d.ShareId)
 	if exist {
 		return tempShareInfo, nil
 	}
 
 	var shareInfo ShareInfo
-	_, err := d.client.R().SetQueryParam("shareCode", shareId).SetResult(&shareInfo).Get("https://cloud.189.cn/api/open/share/getShareInfoByCodeV2.action")
+	_, err := d.client.R().SetQueryParam("shareCode", d.ShareId).SetResult(&shareInfo).Get("https://cloud.189.cn/api/open/share/getShareInfoByCodeV2.action")
 
 	if err != nil {
-		utils.Log.Info("获取天翼网盘分享信息失败", err)
+		log.Info("获取天翼网盘分享信息失败", err)
 		return shareInfo, err
 	}
 
 	if shareInfo.ShareId == 0 {
 		var checkShareInfo ShareInfo
 		_, err = d.client.R().SetQueryParams(map[string]string{
-			"shareCode":  shareId,
-			"accessCode": pwd,
+			"shareCode":  d.ShareId,
+			"accessCode": d.SharePwd,
 		}).SetResult(&checkShareInfo).Get("https://cloud.189.cn/api/open/share/checkAccessCode.action")
 		if err != nil {
-			utils.Log.Info("获取天翼网盘分享ID失败", err)
+			log.Info("获取天翼网盘分享ID失败", err)
 			return shareInfo, err
 		}
 		shareInfo.ShareId = checkShareInfo.ShareId
 	}
 
 	if shareInfo.FileId != "" {
-		shareTokenCache.Set(shareId, shareInfo, cache.WithEx[ShareInfo](time.Minute*time.Duration(d.CacheExpiration)))
+		shareTokenCache.Set(d.ShareId, shareInfo, cache.WithEx[ShareInfo](time.Minute*time.Duration(d.CacheExpiration)))
 		return shareInfo, nil
 	} else {
-		utils.Log.Infof("获取天翼网盘分享信息为空:%v", shareInfo)
+		log.Infof("获取天翼网盘分享信息为空:%v", shareInfo)
 		return shareInfo, errors.New("获取天翼网盘分享信息为空")
 	}
-
 }
 
-func (d *Cloud189Share) getShareFiles(ctx context.Context, virtualFile model.VirtualFile, dir model.Obj) ([]FileObj, error) {
-
-	shareInfo, err := d.getShareInfo(virtualFile.ShareID, virtualFile.SharePwd)
+func (d *Cloud189Share) getShareFiles(ctx context.Context, dir model.Obj) ([]FileObj, error) {
+	shareInfo, err := d.getShareInfo()
 	if err != nil {
 		return nil, err
 	}
 
-	fileId := filepath.Base(dir.GetPath())
+	fileId := dir.GetID()
 	if fileId == "0" {
 		fileId = shareInfo.FileId
 	}
+
+	log.Infof("shareInfo=%v", shareInfo)
+	log.Infof("fileId=%v", fileId)
 
 	var res []FileObj
 	for pageNum := 1; ; pageNum++ {
@@ -82,11 +81,11 @@ func (d *Cloud189Share) getShareFiles(ctx context.Context, virtualFile model.Vir
 			"iconOption":     "5",
 			"orderBy":        "filename",
 			"descending":     "false",
-			"accessCode":     virtualFile.SharePwd,
+			"accessCode":     d.SharePwd,
 		}).SetResult(&resp).Get("https://cloud.189.cn/api/open/share/listShareDir.action")
 
 		if err != nil {
-			utils.Log.Infof("获取天翼云分享文件:%s失败: %v", dir.GetName(), err)
+			log.Infof("获取天翼云分享文件:%s失败: %v", dir.GetName(), err)
 			return nil, err
 		}
 

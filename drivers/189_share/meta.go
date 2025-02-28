@@ -6,21 +6,18 @@ import (
 )
 
 type Addition struct {
-	driver.RootPath
-	Cloud189DriverPath string `json:"189DriverPath"`
+	ShareId    string `json:"share_id" required:"true"`
+	SharePwd   string `json:"share_pwd"`
+	ShareToken string
+	driver.RootID
 }
 
 var config = driver.Config{
-	Name:              "Cloud189Share",
-	LocalSort:         true,
+	Name:              "189Share",
 	OnlyLocal:         false,
 	OnlyProxy:         false,
-	NoCache:           false,
-	NoUpload:          true,
-	NeedMs:            false,
-	DefaultRoot:       "/",
+	DefaultRoot:       "0",
 	CheckStatus:       false,
-	Alert:             "",
 	NoOverwriteUpload: false,
 }
 
