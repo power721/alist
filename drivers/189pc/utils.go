@@ -51,8 +51,11 @@ const (
 	PC  = "TELEPC"
 	MAC = "TELEMAC"
 
-	CHANNEL_ID = "web_cloud.189.cn"
+	CHANNEL_ID   = "web_cloud.189.cn"
+	TransferPath = "xiaoya-tvbox-temp"
 )
+
+var tempDirId = "-11"
 
 func (y *Cloud189PC) SignatureHeader(url, method, params string) map[string]string {
 	dateOfGmt := getHttpDateStr()
@@ -950,4 +953,25 @@ func (y *Cloud189PC) WaitBatchTask(aType string, taskID string, t time.Duration)
 		}
 		time.Sleep(t)
 	}
+}
+
+func (y *Cloud189PC) CreateBatchTask(aType string, familyID string, targetFolderId string, other map[string]string, taskInfos ...BatchTaskInfo) (*CreateBatchTaskResp, error) {
+	var resp CreateBatchTaskResp
+	_, err := y.post(API_URL+"/batch/createBatchTask.action", func(req *resty.Request) {
+		req.SetFormData(map[string]string{
+			"type":      aType,
+			"taskInfos": MustString(utils.Json.MarshalToString(taskInfos)),
+		})
+		if targetFolderId != "" {
+			req.SetFormData(map[string]string{"targetFolderId": targetFolderId})
+		}
+		if familyID != "" {
+			req.SetFormData(map[string]string{"familyId": familyID})
+		}
+		req.SetFormData(other)
+	}, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp, nil
 }
