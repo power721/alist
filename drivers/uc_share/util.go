@@ -176,11 +176,9 @@ func (d *UcShare) saveFile(id string) (string, error) {
 		"scene":          "link",
 	}
 	query := map[string]string{
-		"pr":           "UCBrowser",
-		"fr":           "pc",
-		"uc_param_str": "",
-		"__dt":         strconv.Itoa(rand.Int()),
-		"__t":          strconv.FormatInt(time.Now().Unix(), 10),
+		"pr":    "UCBrowser",
+		"fr":    "pc",
+		"entry": "ft",
 	}
 	var resp SaveResp
 	res, err := d.request("/share/sharepage/save", http.MethodPost, func(req *resty.Request) {
