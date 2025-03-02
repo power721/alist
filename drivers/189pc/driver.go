@@ -407,7 +407,7 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 			log.Infof("天翼云盘删除文件:%s失败:%v", fileName, removeErr)
 			return
 		}
-		log.Infof("已删除天翼云盘下的文件:%s", fileName)
+		log.Debugf("已删除天翼云盘下的文件:%s", fileName)
 		_, removeErr = y.CreateBatchTask("CLEAR_RECYCLE", "", "", nil, BatchTaskInfo{
 			FileId:   transferFile.GetID(),
 			FileName: transferFile.GetName(),
@@ -415,11 +415,8 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 		})
 		if removeErr != nil {
 			log.Info("天翼云盘清除回收站失败", removeErr)
-		} else {
-			log.Info("天翼云盘清除回收站完成")
 		}
 	}()
 
 	return link, err
-
 }

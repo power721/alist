@@ -63,6 +63,7 @@ func LoadStorages() {
 			aliyundrive_share2_open.DelayTime = delayTime
 		}
 
+		log.Infof("load storages completed")
 		conf.StoragesLoaded = true
 	}(storages)
 }

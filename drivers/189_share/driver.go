@@ -85,8 +85,4 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 	return transfer, err
 }
 
-//func (d *Template) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
-//	return nil, errs.NotSupport
-//}
-
 var _ driver.Driver = (*Cloud189Share)(nil)
