@@ -103,7 +103,7 @@ func (t *ThunderShare) listShareFiles(ctx context.Context, dir model.Obj) ([]mod
 	files := make([]model.Obj, 0)
 
 	parentId := dir.GetID()
-	if parentId == "0" || parentId == "" {
+	if parentId == "" {
 		share, err := t.getShareInfo(ctx, thunder)
 		if err != nil {
 			return nil, err
