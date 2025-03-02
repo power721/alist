@@ -41,6 +41,7 @@ func (d *ThunderShare) Link(ctx context.Context, file model.Obj, args model.Link
 	log.Infof("获取文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(ctx, file)
 	if err != nil {
+		log.Warnf("保存文件失败: %v", err)
 		return nil, err
 	}
 
