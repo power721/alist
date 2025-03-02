@@ -28,10 +28,6 @@ func (d *ThunderShare) saveFile(ctx context.Context, file model.Obj) (string, er
 	if !ok {
 		return "", errors.New("ThunderBrowser storage error")
 	}
-	_, err := d.getShareInfo(ctx, thunder)
-	if err != nil {
-		return "", err
-	}
 
 	data := base.Json{
 		"file_ids":          []string{file.GetID()},
@@ -43,7 +39,7 @@ func (d *ThunderShare) saveFile(ctx context.Context, file model.Obj) (string, er
 	}
 
 	log.Debugf("save file to folder %v", ParentFileId)
-	_, err = thunder.Request(SHARE_RESTORE_API_URL, http.MethodPost, func(r *resty.Request) {
+	_, err := thunder.Request(SHARE_RESTORE_API_URL, http.MethodPost, func(r *resty.Request) {
 		r.SetBody(data)
 	}, nil)
 	if err != nil {
@@ -156,10 +152,6 @@ func (t *ThunderShare) listShareFiles(ctx context.Context, dir model.Obj) ([]mod
 
 func (t *ThunderShare) getShareInfo(ctx context.Context, thunder *thunder_browser.ThunderBrowser) (ShareInfo, error) {
 	var share ShareInfo
-	if t.ShareToken != "" {
-		return share, nil
-	}
-
 	err := thunder.GetShareCaptchaToken()
 	if err != nil {
 		return share, err
