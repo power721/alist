@@ -29,7 +29,7 @@ func (d *ThunderShare) Drop(ctx context.Context) error {
 }
 
 func (d *ThunderShare) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
-	files, err := d.ListShareFiles(ctx, dir)
+	files, err := d.listShareFiles(ctx, dir)
 	if err != nil {
 		log.Warnf("list files error: %v", err)
 		return nil, err
