@@ -101,13 +101,13 @@ func (t *ThunderShare) listShareFiles(ctx context.Context, dir model.Obj) ([]mod
 		return nil, errors.New("ThunderBrowser storage error")
 	}
 	files := make([]model.Obj, 0)
-	share, err := t.getShareInfo(ctx, thunder)
-	if err != nil {
-		return nil, err
-	}
 
 	parentId := dir.GetID()
-	if parentId == "0" || parentId == "" {
+	if parentId == "" {
+		share, err := t.getShareInfo(ctx, thunder)
+		if err != nil {
+			return nil, err
+		}
 		for i := range share.Files {
 			files = append(files, &share.Files[i])
 		}
