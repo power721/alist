@@ -48,6 +48,7 @@ import (
 	_ "github.com/alist-org/alist/v3/drivers/terabox"
 	_ "github.com/alist-org/alist/v3/drivers/thunder"
 	_ "github.com/alist-org/alist/v3/drivers/thunder_browser"
+	_ "github.com/alist-org/alist/v3/drivers/thunder_share"
 	_ "github.com/alist-org/alist/v3/drivers/trainbit"
 	_ "github.com/alist-org/alist/v3/drivers/uc_share"
 	_ "github.com/alist-org/alist/v3/drivers/url_tree"

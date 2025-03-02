@@ -1,0 +1,65 @@
+package thunder_share
+
+import (
+	"context"
+	"errors"
+	"github.com/alist-org/alist/v3/drivers/thunder_browser"
+	"github.com/alist-org/alist/v3/internal/driver"
+	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/op"
+	log "github.com/sirupsen/logrus"
+)
+
+type ThunderShare struct {
+	model.Storage
+	Addition
+}
+
+func (d *ThunderShare) Config() driver.Config {
+	return config
+}
+
+func (d *ThunderShare) GetAddition() driver.Additional {
+	return &d.Addition
+}
+
+func (d *ThunderShare) Init(ctx context.Context) error {
+	if initialized {
+		return nil
+	}
+
+	storage := op.GetFirstDriver("ThunderBrowser")
+	thunder, ok := storage.(*thunder_browser.ThunderBrowser)
+	if !ok {
+		return errors.New("ThunderBrowser storage not init")
+	}
+
+	d.createTempFolder(ctx, thunder)
+	initialized = true
+	return nil
+}
+
+func (d *ThunderShare) Drop(ctx context.Context) error {
+	return nil
+}
+
+func (d *ThunderShare) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
+	files, err := d.ListShareFiles(ctx, dir)
+	if err != nil {
+		log.Warnf("list files error: %v", err)
+		return nil, err
+	}
+	return files, err
+}
+
+func (d *ThunderShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	log.Infof("获取文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
+	fileId, err := d.saveFile(ctx, file)
+	if err != nil {
+		return nil, err
+	}
+
+	return d.getDownloadUrl(ctx, fileId)
+}
+
+var _ driver.Driver = (*ThunderShare)(nil)

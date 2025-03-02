@@ -181,6 +181,19 @@ func (c *Common) refreshCaptchaToken(action string, metas map[string]string) err
 	return nil
 }
 
+func (c *Common) GetShareCaptchaToken() error {
+	metas := map[string]string{
+		"client_version": c.ClientVersion,
+		"package_name":   c.PackageName,
+		"user_id":        "0",
+		"username":       "",
+		"email":          "",
+		"phone_number":   "",
+	}
+	metas["timestamp"], metas["captcha_sign"] = c.GetCaptchaSign()
+	return c.refreshCaptchaToken("get:/drive/v1/share", metas)
+}
+
 // Request 只有基础信息的请求
 func (c *Common) Request(url, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
 	req := c.client.R().SetHeaders(map[string]string{

@@ -107,7 +107,7 @@ func (y *Cloud189PC) Init(ctx context.Context) (err error) {
 		}
 	}
 
-	log.Info("189Cloud tempDirId: ", tempDirId)
+	log.Info("189Cloud temp folder id: ", tempDirId)
 	return nil
 }
 

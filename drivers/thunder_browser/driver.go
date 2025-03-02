@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/go-resty/resty/v2"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"strings"
@@ -357,10 +358,12 @@ func (xc *XunLeiBrowserCommon) MakeDir(ctx context.Context, parentDir model.Obj,
 		"space":     parentDir.(*Files).GetSpace(),
 	}
 
-	_, err := xc.Request(FILE_API_URL, http.MethodPost, func(r *resty.Request) {
+	log.Infof("MakeDir: %v", js)
+	response, err := xc.Request(FILE_API_URL, http.MethodPost, func(r *resty.Request) {
 		r.SetContext(ctx)
 		r.SetBody(&js)
 	}, nil)
+	log.Infof("response: %v", string(response))
 	return err
 }
 
@@ -418,26 +421,26 @@ func (xc *XunLeiBrowserCommon) Copy(ctx context.Context, srcObj, dstDir model.Ob
 }
 
 func (xc *XunLeiBrowserCommon) Remove(ctx context.Context, obj model.Obj) error {
-
 	js := base.Json{
 		"ids":   []string{obj.GetID()},
 		"space": obj.(*Files).GetSpace(),
 	}
 	// 先判断是否是特殊情况
-	if obj.(*Files).GetSpace() == ThunderDriveSpace {
-		_, err := xc.Request(FILE_API_URL+"/{fileID}/trash", http.MethodPatch, func(r *resty.Request) {
-			r.SetContext(ctx)
-			r.SetPathParam("fileID", obj.GetID())
-			r.SetBody("{}")
-		}, nil)
-		return err
-	} else if obj.(*Files).GetSpace() == ThunderBrowserDriveSafeSpace || obj.(*Files).GetSpace() == ThunderDriveSafeSpace {
-		_, err := xc.Request(FILE_API_URL+":batchDelete", http.MethodPost, func(r *resty.Request) {
-			r.SetContext(ctx)
-			r.SetBody(&js)
-		}, nil)
-		return err
-	}
+	//if obj.(*Files).GetSpace() == ThunderDriveSpace {
+	//	res, err := xc.Request(FILE_API_URL+"/{fileID}/trash", http.MethodPatch, func(r *resty.Request) {
+	//		r.SetContext(ctx)
+	//		r.SetPathParam("fileID", obj.GetID())
+	//		r.SetBody("{}")
+	//	}, nil)
+	//	log.Infof("trash: %v", string(res))
+	//	return err
+	//} else if obj.(*Files).GetSpace() == ThunderBrowserDriveSafeSpace || obj.(*Files).GetSpace() == ThunderDriveSafeSpace {
+	//	_, err := xc.Request(FILE_API_URL+":batchDelete", http.MethodPost, func(r *resty.Request) {
+	//		r.SetContext(ctx)
+	//		r.SetBody(&js)
+	//	}, nil)
+	//	return err
+	//}
 
 	// 根据用户选择的删除方式进行删除
 	if xc.RemoveWay == "delete" {

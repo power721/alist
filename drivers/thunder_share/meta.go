@@ -1,4 +1,4 @@
-package _189_share
+package thunder_share
 
 import (
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -13,7 +13,7 @@ type Addition struct {
 }
 
 var config = driver.Config{
-	Name:              "189Share",
+	Name:              "ThunderShare",
 	OnlyLocal:         false,
 	OnlyProxy:         false,
 	DefaultRoot:       "",
@@ -23,6 +23,6 @@ var config = driver.Config{
 
 func init() {
 	op.RegisterDriver(func() driver.Driver {
-		return &Cloud189Share{}
+		return &ThunderShare{}
 	})
 }

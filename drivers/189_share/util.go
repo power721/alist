@@ -59,7 +59,7 @@ func (d *Cloud189Share) getShareFiles(ctx context.Context, dir model.Obj) ([]Fil
 	}
 
 	fileId := dir.GetID()
-	if fileId == "0" {
+	if fileId == "0" || fileId == "" {
 		fileId = shareInfo.FileId
 	}
 
