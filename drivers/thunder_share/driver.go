@@ -2,11 +2,8 @@ package thunder_share
 
 import (
 	"context"
-	"errors"
-	"github.com/alist-org/alist/v3/drivers/thunder_browser"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
-	"github.com/alist-org/alist/v3/internal/op"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,18 +21,6 @@ func (d *ThunderShare) GetAddition() driver.Additional {
 }
 
 func (d *ThunderShare) Init(ctx context.Context) error {
-	if initialized {
-		return nil
-	}
-
-	storage := op.GetFirstDriver("ThunderBrowser")
-	thunder, ok := storage.(*thunder_browser.ThunderBrowser)
-	if !ok {
-		return errors.New("ThunderBrowser storage not init")
-	}
-
-	d.createTempFolder(ctx, thunder)
-	initialized = true
 	return nil
 }
 

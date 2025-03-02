@@ -20,60 +20,7 @@ const (
 	SHARE_RESTORE_API_URL = API_URL + "/share/restore"
 )
 
-var initialized = false
 var ParentFileId = ""
-
-func (d *ThunderShare) createTempFolder(ctx context.Context, thunder *thunder_browser.ThunderBrowser) {
-	var dir model.Obj = &thunder_browser.Files{
-		ID:    "",
-		Space: "",
-	}
-	err := thunder.MakeDir(ctx, dir, "xiaoya-tvbox-temp")
-	if err != nil {
-		log.Warnf("create temp folder error: %v", err)
-	}
-
-	var args = model.ListArgs{
-		ReqPath: "",
-	}
-	files, err := thunder.List(ctx, dir, args)
-	if err != nil {
-		log.Warnf("list temp folder error: %v", err)
-	}
-
-	for _, file := range files {
-		if file.GetName() == "alist-tvbox-temp" {
-			ParentFileId = file.GetID()
-			break
-		}
-	}
-
-	log.Infof("ThunderShare temp folder id: %v", ParentFileId)
-	d.cleanTempFolder(ctx, thunder)
-}
-
-func (d *ThunderShare) cleanTempFolder(ctx context.Context, thunder *thunder_browser.ThunderBrowser) {
-	if ParentFileId == "" {
-		return
-	}
-
-	var dir model.Obj = &thunder_browser.Files{
-		ID:    ParentFileId,
-		Space: "",
-	}
-	var args = model.ListArgs{
-		ReqPath: "",
-	}
-	files, err := thunder.List(ctx, dir, args)
-	if err != nil {
-		log.Warnf("list temp file error: %v", err)
-	}
-
-	for _, file := range files {
-		log.Info("delete temp file: %v %v", file.GetID(), file.GetName())
-		d.deleteFile(ctx, thunder, file)
-	}
-}
 
 func (d *ThunderShare) saveFile(ctx context.Context, file model.Obj) (string, error) {
 	storage := op.GetFirstDriver("ThunderBrowser")
@@ -227,7 +174,7 @@ func (t *ThunderShare) getShareInfo(ctx context.Context, thunder *thunder_browse
 		return share, err
 	}
 
-	log.Infof("get share token: %v", share.Token)
+	log.Debugf("get share token: %v", share.Token)
 	t.ShareToken = share.Token
 	return share, nil
 }
