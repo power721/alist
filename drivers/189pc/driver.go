@@ -415,6 +415,8 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 		})
 		if removeErr != nil {
 			log.Info("天翼云盘清除回收站失败", removeErr)
+		} else {
+			log.Debug("天翼云盘清除回收站完成")
 		}
 	}()
 
