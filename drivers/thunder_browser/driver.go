@@ -15,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/go-resty/resty/v2"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"strings"
@@ -358,12 +357,10 @@ func (xc *XunLeiBrowserCommon) MakeDir(ctx context.Context, parentDir model.Obj,
 		"space":     parentDir.(*Files).GetSpace(),
 	}
 
-	log.Infof("MakeDir: %v", js)
-	response, err := xc.Request(FILE_API_URL, http.MethodPost, func(r *resty.Request) {
+	_, err := xc.Request(FILE_API_URL, http.MethodPost, func(r *resty.Request) {
 		r.SetContext(ctx)
 		r.SetBody(&js)
 	}, nil)
-	log.Infof("response: %v", string(response))
 	return err
 }
 
