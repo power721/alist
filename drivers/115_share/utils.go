@@ -16,6 +16,11 @@ import (
 
 var _ model.Obj = (*FileObj)(nil)
 
+var initialized = false
+var Cookie = ""
+var QRCodeToken = ""
+var client *driver115.Pan115Client
+
 type FileObj struct {
 	Size     int64
 	Sha1     string
@@ -87,33 +92,35 @@ func (d *Pan115Share) login() error {
 	opts := []driver115.Option{
 		driver115.UA(UserAgent),
 	}
-	d.client = driver115.New(opts...)
-	if _, err := d.client.GetShareSnap(d.ShareCode, d.ReceiveCode, ""); err != nil {
+	client = driver115.New(opts...)
+	if _, err := client.GetShareSnap(d.ShareCode, d.ReceiveCode, ""); err != nil {
 		return errors.Wrap(err, "failed to get share snap")
 	}
 	cr := &driver115.Credential{}
 	pan115 := op.GetFirst115Driver()
 	if pan115 != nil {
-		d.QRCodeToken = pan115.(*_115.Pan115).QRCodeToken
-		d.Cookie = pan115.(*_115.Pan115).Cookie
+		QRCodeToken = pan115.(*_115.Pan115).QRCodeToken
+		Cookie = pan115.(*_115.Pan115).Cookie
+	} else {
+		return errors.New("115 Cloud not init")
 	}
-	if d.QRCodeToken != "" {
+	if QRCodeToken != "" {
 		s := &driver115.QRCodeSession{
-			UID: d.QRCodeToken,
+			UID: QRCodeToken,
 		}
-		if cr, err = d.client.QRCodeLogin(s); err != nil {
+		if cr, err = client.QRCodeLogin(s); err != nil {
 			return errors.Wrap(err, "failed to login by qrcode")
 		}
-		d.Cookie = fmt.Sprintf("UID=%s;CID=%s;SEID=%s;KID=%s", cr.UID, cr.CID, cr.SEID, cr.KID)
-		d.QRCodeToken = ""
-	} else if d.Cookie != "" {
-		if err = cr.FromCookie(d.Cookie); err != nil {
+		Cookie = fmt.Sprintf("UID=%s;CID=%s;SEID=%s;KID=%s", cr.UID, cr.CID, cr.SEID, cr.KID)
+		QRCodeToken = ""
+	} else if Cookie != "" {
+		if err = cr.FromCookie(Cookie); err != nil {
 			return errors.Wrap(err, "failed to login by cookies")
 		}
-		d.client.ImportCredential(cr)
+		client.ImportCredential(cr)
 	} else {
 		return errors.New("missing cookie or qrcode account")
 	}
 
-	return d.client.LoginCheck()
+	return client.LoginCheck()
 }
