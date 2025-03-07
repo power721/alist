@@ -23,7 +23,6 @@ var config = driver.Config{
 func init() {
 	op.RegisterDriver(func() driver.Driver {
 		d := &Yun139{}
-		d.ProxyRange = true
 		return d
 	})
 }
