@@ -4,9 +4,15 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/op"
 	"net/http"
 	"net/url"
+	"sync"
+	"time"
 
+	"golang.org/x/time/rate"
+
+	_123 "github.com/alist-org/alist/v3/drivers/123"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
@@ -19,6 +25,8 @@ import (
 type Pan123Share struct {
 	model.Storage
 	Addition
+	apiRateLimit sync.Map
+	ref          *_123.Pan123
 }
 
 func (d *Pan123Share) Config() driver.Config {
@@ -30,18 +38,30 @@ func (d *Pan123Share) GetAddition() driver.Additional {
 }
 
 func (d *Pan123Share) Init(ctx context.Context) error {
-	// TODO login / refresh token
-	//op.MustSaveDriverStorage(d)
-	return nil
+	pan123 := op.GetFirstDriver("123Pan")
+	if pan123 != nil {
+		return d.InitReference(pan123)
+	}
+	return fmt.Errorf("cannot find 123Pan")
+}
+
+func (d *Pan123Share) InitReference(storage driver.Driver) error {
+	refStorage, ok := storage.(*_123.Pan123)
+	if ok {
+		d.ref = refStorage
+		return nil
+	}
+	return fmt.Errorf("ref: storage is not 123Pan")
 }
 
 func (d *Pan123Share) Drop(ctx context.Context) error {
+	d.ref = nil
 	return nil
 }
 
 func (d *Pan123Share) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
 	// TODO return the files list, required
-	files, err := d.getFiles(dir.GetID())
+	files, err := d.getFiles(ctx, dir.GetID())
 	if err != nil {
 		return nil, err
 	}
@@ -62,11 +82,13 @@ func (d *Pan123Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 			}
 		}
 		data := base.Json{
+			"driveId":   "0",
 			"shareKey":  d.ShareKey,
 			"SharePwd":  d.SharePwd,
 			"etag":      f.Etag,
 			"fileId":    f.FileId,
 			"s3keyFlag": f.S3KeyFlag,
+			"FileName":  f.FileName,
 			"size":      f.Size,
 		}
 		resp, err := d.request(DownloadInfo, http.MethodPost, func(req *resty.Request) {
@@ -145,5 +167,13 @@ func (d *Pan123Share) Put(ctx context.Context, dstDir model.Obj, stream model.Fi
 //func (d *Pan123Share) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
 //	return nil, errs.NotSupport
 //}
+
+func (d *Pan123Share) APIRateLimit(ctx context.Context, api string) error {
+	value, _ := d.apiRateLimit.LoadOrStore(api,
+		rate.NewLimiter(rate.Every(800*time.Millisecond), 1))
+	limiter := value.(*rate.Limiter)
+
+	return limiter.Wait(ctx)
+}
 
 var _ driver.Driver = (*Pan123Share)(nil)

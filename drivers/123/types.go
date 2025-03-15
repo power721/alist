@@ -87,8 +87,9 @@ var _ model.Thumb = (*File)(nil)
 type Files struct {
 	//BaseResp
 	Data struct {
-		InfoList []File `json:"InfoList"`
 		Next     string `json:"Next"`
+		Total    int    `json:"Total"`
+		InfoList []File `json:"InfoList"`
 	} `json:"data"`
 }
 
@@ -118,5 +119,23 @@ type UploadResp struct {
 type S3PreSignedURLs struct {
 	Data struct {
 		PreSignedUrls map[string]string `json:"presignedUrls"`
+	} `json:"data"`
+}
+
+type QrCodeGenerateResp struct {
+	Data struct {
+		UniID string `json:"uniID"`
+		Url   string `json:"url"`
+	} `json:"data"`
+}
+
+type QrCodeResultResp struct {
+	Data struct {
+		Expire                 time.Time `json:"expire"`
+		LoginType              int       `json:"login_type"`
+		RefreshTokenExpireTime int       `json:"refresh_token_expire_time"`
+		Token                  string    `json:"token"`
+		LoginStatus            int       `json:"loginStatus"`
+		ScanPlatform           int       `json:"scanPlatform"`
 	} `json:"data"`
 }
