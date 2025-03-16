@@ -1,9 +1,12 @@
 package uc_share
 
 import (
+	"context"
 	"errors"
+	"github.com/alist-org/alist/v3/drivers/quark_uc_tv"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/cookie"
 	"github.com/alist-org/alist/v3/pkg/utils"
@@ -237,27 +240,42 @@ func (d *UcShare) getSaveTaskResult(taskId string) (string, error) {
 	return "", errors.New("Get task result failed.")
 }
 
-func (d *UcShare) getDownloadUrl(fileId string) (*model.Link, error) {
-	data := base.Json{
-		"fids": []string{fileId},
-	}
-	var resp DownResp
-	res, err := d.request("/file/download", http.MethodPost, func(req *resty.Request) {
-		req.SetBody(data)
-	}, &resp)
-	log.Debugf("getDownloadUrl: %v %v", fileId, string(res))
+func (d *UcShare) getDownloadUrl(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	url := ""
+	fileId := file.GetID()
+	driver := op.GetFirstDriver("UCTV")
+	if driver != nil {
+		uc := driver.(*quark_uc_tv.QuarkUCTV)
+		link, err := uc.Link(ctx, file, args)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+
+		url = link.URL
+	} else {
+		data := base.Json{
+			"fids": []string{fileId},
+		}
+		var resp DownResp
+		res, err := d.request("/file/download", http.MethodPost, func(req *resty.Request) {
+			req.SetBody(data)
+		}, &resp)
+		log.Debugf("getDownloadUrl: %v %v", fileId, string(res))
+
+		if err != nil {
+			return nil, err
+		}
+
+		url := resp.Data[0].DownloadUrl
+		if url == "" {
+			log.Infof("getDownloadUrl: %v", string(res))
+			return nil, errors.New("Cannot get download url!")
+		}
 	}
 
 	go d.deleteDelay(fileId)
 
-	url := resp.Data[0].DownloadUrl
-	if url == "" {
-		log.Infof("getDownloadUrl: %v", string(res))
-		return nil, errors.New("Cannot get download url!")
-	}
 	exp := 8 * time.Hour
 	return &model.Link{
 		URL:        url,
@@ -278,6 +296,7 @@ func (d *UcShare) deleteDelay(fileId string) {
 		return
 	}
 
+	delayTime += 5
 	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	d.deleteFile(fileId)
