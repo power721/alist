@@ -241,9 +241,9 @@ func (d *QuarkShare) getSaveTaskResult(taskId string) (string, error) {
 }
 
 func (d *QuarkShare) getDownloadUrl(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	url := ""
 	fileId := file.GetID()
 	driver := op.GetFirstDriver("QuarkTV")
-	url := ""
 	if driver != nil {
 		uc := driver.(*quark_uc_tv.QuarkUCTV)
 		link, err := uc.Link(ctx, file, args)
