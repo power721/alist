@@ -71,7 +71,7 @@ func (d *QuarkShare) Link(ctx context.Context, file model.Obj, args model.LinkAr
 		return nil, err
 	}
 
-	return d.getDownloadUrl(fileId)
+	return d.getDownloadUrl(ctx, MyFile{FileId: fileId}, args)
 }
 
 var _ driver.Driver = (*QuarkShare)(nil)

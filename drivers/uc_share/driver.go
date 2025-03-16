@@ -71,7 +71,7 @@ func (d *UcShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 		return nil, err
 	}
 
-	return d.getDownloadUrl(fileId)
+	return d.getDownloadUrl(ctx, MyFile{FileId: fileId}, args)
 }
 
 var _ driver.Driver = (*UcShare)(nil)
