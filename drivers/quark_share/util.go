@@ -21,7 +21,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) quark-cloud-drive/2.5.20 Chrome/100.0.4896.160 Electron/18.3.5.4-b478491100 Safari/537.36 Channel/pckk_other_ch"
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) quark-cloud-drive/3.14.2 Chrome/112.0.5615.165 Electron/24.1.3.8 Safari/537.36 Channel/pckk_other_ch"
 const Referer = "https://pan.quark.cn"
 
 var Cookie = ""
@@ -285,7 +285,7 @@ func (d *QuarkShare) getDownloadUrl(ctx context.Context, file model.Obj, args mo
 			"Referer":    []string{Referer},
 			"User-Agent": []string{UA},
 		},
-		Concurrency: 16,
+		Concurrency: 8,
 		PartSize:    2 * utils.MB,
 	}, nil
 }
