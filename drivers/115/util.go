@@ -115,7 +115,7 @@ func (d *Pan115) getFiles(fileId string) ([]FileObj, error) {
 	if d.PageSize <= 0 {
 		d.PageSize = driver115.FileListLimit
 	}
-	files, err := d.client.ListWithLimit(fileId, d.PageSize)
+	files, err := d.client.ListWithLimit(fileId, d.PageSize, driver115.WithMultiUrls())
 	if err != nil {
 		return nil, err
 	}
