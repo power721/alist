@@ -1,8 +1,8 @@
 module github.com/alist-org/alist/v3
 
-go 1.23
+go 1.23.4
 
-toolchain go1.23.0
+toolchain go1.23.7
 
 require (
 	github.com/SheltonZhu/115driver v1.0.36
@@ -50,11 +50,12 @@ require (
 	github.com/u2takey/ffmpeg-go v0.5.0
 	github.com/upyun/go-sdk/v3 v3.0.4
 	github.com/winfsp/cgofuse v1.5.1-0.20230130140708-f87f5db493b5
+	github.com/xhofe/115-sdk-go v0.1.4
 	github.com/xhofe/tache v0.1.3
-	golang.org/x/crypto v0.30.0
+	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d
 	golang.org/x/image v0.23.0
-	golang.org/x/net v0.32.0
+	golang.org/x/net v0.33.0
 	golang.org/x/oauth2 v0.24.0
 	golang.org/x/time v0.8.0
 	google.golang.org/appengine v1.6.8
@@ -217,4 +218,5 @@ require (
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.3.0 // indirect
+	resty.dev/v3 v3.0.0-beta.1 // indirect
 )
