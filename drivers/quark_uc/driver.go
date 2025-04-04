@@ -73,7 +73,7 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 			"Referer":    []string{d.conf.referer},
 			"User-Agent": []string{ua},
 		},
-		Concurrency: 16,
+		Concurrency: 8,
 		PartSize:    2 * utils.MB,
 	}, nil
 }
