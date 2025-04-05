@@ -252,6 +252,7 @@ func (d *QuarkShare) getDownloadUrl(ctx context.Context, file model.Obj, args mo
 			return nil, err
 		}
 
+		log.Infof("use QuarkTV")
 		url = link.URL
 	} else {
 		data := base.Json{
@@ -272,6 +273,7 @@ func (d *QuarkShare) getDownloadUrl(ctx context.Context, file model.Obj, args mo
 			log.Infof("getDownloadUrl: %v", string(res))
 			return nil, errors.New("Cannot get download url!")
 		}
+		log.Infof("use Quark cookie")
 	}
 
 	go d.deleteDelay(fileId)
