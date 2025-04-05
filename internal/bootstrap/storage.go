@@ -34,6 +34,8 @@ func LoadStorages() {
 					strings.Contains(msg, "operation is too frequent") ||
 					strings.Contains(msg, "取消") ||
 					strings.Contains(msg, "已失效") ||
+					strings.Contains(msg, "authorization has expired") ||
+					strings.Contains(msg, "refresh token error") ||
 					strings.Contains(msg, "invalid") ||
 					strings.Contains(msg, "no route to host") {
 					log.Warnf("[%d] failed get enabled storages [%s], %+v",
