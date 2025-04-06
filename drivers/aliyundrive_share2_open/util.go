@@ -390,8 +390,10 @@ func (d *AliyundriveShare2Open) getOpenLink(file model.Obj) (*model.Link, string
 		URL:        url,
 		Expiration: &exp,
 		Header: http.Header{
-			"Referer": []string{"https://www.aliyundrive.com/"},
+			"Referer": []string{"https://www.alipan.com/"},
 		},
+		Concurrency: conf.AliThreads,
+		PartSize:    conf.AliChunkSize * utils.KB,
 	}, hash, nil
 }
 
