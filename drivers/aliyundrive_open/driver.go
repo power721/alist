@@ -107,7 +107,8 @@ func (d *AliyundriveOpen) link(ctx context.Context, file model.Obj) (*model.Link
 		URL:        url,
 		Expiration: &exp,
 		Header: http.Header{
-			"Referer": []string{"https://www.alipan.com/"},
+			"Referer":    []string{"https://www.alipan.com/"},
+			"User-Agent": []string{conf.UserAgent},
 		},
 		Concurrency: conf.AliThreads,
 		PartSize:    conf.AliChunkSize * utils.KB,
