@@ -99,3 +99,10 @@ const (
 const (
 	NoTaskKey = "no_task"
 )
+
+const (
+	UcThreads      = 10
+	UcChunkSize    = 1024
+	QuarkThreads   = 10
+	QuarkChunkSize = 1024
+)
