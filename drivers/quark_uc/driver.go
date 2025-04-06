@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"crypto/sha1"
 	"encoding/hex"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"io"
 	"net/http"
 	"time"
@@ -66,6 +67,14 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 		return nil, err
 	}
 
+	threads := conf.QuarkThreads
+	chunkSize := conf.QuarkChunkSize
+
+	if d.config.Name == "UC" {
+		threads = conf.UcThreads
+		chunkSize = conf.UcChunkSize
+	}
+
 	return &model.Link{
 		URL: resp.Data[0].DownloadUrl,
 		Header: http.Header{
@@ -73,8 +82,8 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 			"Referer":    []string{d.conf.referer},
 			"User-Agent": []string{ua},
 		},
-		Concurrency: 8,
-		PartSize:    2 * utils.MB,
+		Concurrency: threads,
+		PartSize:    chunkSize * utils.KB,
 	}, nil
 }
 

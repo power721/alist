@@ -285,8 +285,8 @@ func (d *UcShare) getDownloadUrl(ctx context.Context, file model.Obj, args model
 			"Referer":    []string{Referer},
 			"User-Agent": []string{UA},
 		},
-		Concurrency: 8,
-		PartSize:    2 * utils.MB,
+		Concurrency: conf.UcThreads,
+		PartSize:    conf.UcChunkSize * utils.KB,
 	}, nil
 }
 

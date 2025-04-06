@@ -287,8 +287,8 @@ func (d *QuarkShare) getDownloadUrl(ctx context.Context, file model.Obj, args mo
 			"Referer":    []string{Referer},
 			"User-Agent": []string{UA},
 		},
-		Concurrency: 8,
-		PartSize:    2 * utils.MB,
+		Concurrency: conf.QuarkThreads,
+		PartSize:    conf.QuarkChunkSize * utils.KB,
 	}, nil
 }
 
