@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"net/http"
 	"time"
@@ -101,10 +102,12 @@ func (d *AliyundriveOpen) link(ctx context.Context, file model.Obj) (*model.Link
 		}
 		url = utils.Json.Get(res, "streamsUrl", d.LIVPDownloadFormat).ToString()
 	}
-	exp := time.Minute
+	exp := 895 * time.Second
 	return &model.Link{
-		URL:        url,
-		Expiration: &exp,
+		URL:         url,
+		Expiration:  &exp,
+		Concurrency: conf.AliThreads,
+		PartSize:    conf.AliChunkSize * utils.KB,
 	}, nil
 }
 

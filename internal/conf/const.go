@@ -101,6 +101,8 @@ const (
 )
 
 const (
+	AliThreads     = 8
+	AliChunkSize   = 256
 	UcThreads      = 10
 	UcChunkSize    = 1024
 	QuarkThreads   = 10
