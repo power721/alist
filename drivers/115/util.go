@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/http_range"
 	"github.com/alist-org/alist/v3/pkg/utils"
@@ -46,6 +47,13 @@ func (d *Pan115) login() error {
 			return errors.Wrap(err, "failed to login by qrcode")
 		}
 		d.Cookie = fmt.Sprintf("UID=%s;CID=%s;SEID=%s;KID=%s", cr.UID, cr.CID, cr.SEID, cr.KID)
+		op.SaveSettingItem(&model.SettingItem{
+			Key:   conf.Cookie115,
+			Value: d.Cookie,
+			Type:  conf.TypeText,
+			Group: model.SINGLE,
+			Flag:  model.PRIVATE,
+		})
 		d.Addition.QRCodeToken = ""
 	} else if d.Addition.Cookie != "" {
 		if err = cr.FromCookie(d.Addition.Cookie); err != nil {

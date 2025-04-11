@@ -3,6 +3,7 @@ package _115_open
 import (
 	"context"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"io"
 	"net/http"
 	"strconv"
@@ -38,6 +39,13 @@ func (d *Open115) Init(ctx context.Context) error {
 		sdk.WithOnRefreshToken(func(s1, s2 string) {
 			d.Addition.AccessToken = s1
 			d.Addition.RefreshToken = s2
+			op.SaveSettingItem(&model.SettingItem{
+				Key:   conf.Token115,
+				Value: d.RefreshToken,
+				Type:  conf.TypeText,
+				Group: model.SINGLE,
+				Flag:  model.PRIVATE,
+			})
 			op.MustSaveDriverStorage(d)
 		}))
 	if flags.Debug || flags.Dev {
