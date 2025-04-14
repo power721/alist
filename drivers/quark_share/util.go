@@ -3,6 +3,7 @@ package quark_share
 import (
 	"context"
 	"errors"
+	quark "github.com/alist-org/alist/v3/drivers/quark_uc"
 	"github.com/alist-org/alist/v3/drivers/quark_uc_tv"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
@@ -21,8 +22,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) quark-cloud-drive/3.14.2 Chrome/112.0.5615.165 Electron/24.1.3.8 Safari/537.36 Channel/pckk_other_ch"
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) quark-cloud-drive/2.5.20 Chrome/100.0.4896.160 Electron/18.3.5.4-b478491100 Safari/537.36 Channel/pckk_other_ch"
 const Referer = "https://pan.quark.cn"
+const Accept = "application/json, text/plain, */*"
 
 var Cookie = ""
 var ParentFileId = "0"
@@ -32,7 +34,7 @@ func (d *QuarkShare) request(pathname string, method string, callback base.ReqCa
 	req := base.RestyClient.R()
 	req.SetHeaders(map[string]string{
 		"Cookie":     Cookie,
-		"Accept":     "application/json, text/plain, */*",
+		"Accept":     Accept,
 		"User-Agent": UA,
 		"Referer":    Referer,
 	})
@@ -241,55 +243,23 @@ func (d *QuarkShare) getSaveTaskResult(taskId string) (string, error) {
 }
 
 func (d *QuarkShare) getDownloadUrl(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	url := ""
-	fileId := file.GetID()
+	go d.deleteDelay(file.GetID())
+
 	driver := op.GetFirstDriver("QuarkTV")
 	if driver != nil {
+		log.Infof("use Quark TV")
 		uc := driver.(*quark_uc_tv.QuarkUCTV)
-		link, err := uc.Link(ctx, file, args)
-
-		if err != nil {
-			return nil, err
-		}
-
-		log.Infof("use QuarkTV")
-		url = link.URL
+		return uc.Link(ctx, file, args)
 	} else {
-		data := base.Json{
-			"fids": []string{fileId},
-		}
-		var resp DownResp
-		res, err := d.request("/file/download", http.MethodPost, func(req *resty.Request) {
-			req.SetBody(data)
-		}, &resp)
-		log.Debugf("getDownloadUrl: %v %v", fileId, string(res))
-
-		if err != nil {
-			return nil, err
-		}
-
-		url := resp.Data[0].DownloadUrl
-		if url == "" {
-			log.Infof("getDownloadUrl: %v", string(res))
-			return nil, errors.New("Cannot get download url!")
-		}
 		log.Infof("use Quark cookie")
+		driver := op.GetFirstDriver("Quark")
+		if driver != nil {
+			uc := driver.(*quark.QuarkOrUC)
+			return uc.Link(ctx, file, args)
+		}
 	}
 
-	go d.deleteDelay(fileId)
-
-	exp := 8 * time.Hour
-	return &model.Link{
-		URL:        url,
-		Expiration: &exp,
-		Header: http.Header{
-			"Cookie":     []string{Cookie},
-			"Referer":    []string{Referer},
-			"User-Agent": []string{UA},
-		},
-		Concurrency: conf.QuarkThreads,
-		PartSize:    conf.QuarkChunkSize * utils.KB,
-	}, nil
+	return nil, errors.New("no quark driver")
 }
 
 func (d *QuarkShare) deleteDelay(fileId string) {
