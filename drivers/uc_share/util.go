@@ -3,6 +3,7 @@ package uc_share
 import (
 	"context"
 	"errors"
+	quark "github.com/alist-org/alist/v3/drivers/quark_uc"
 	"github.com/alist-org/alist/v3/drivers/quark_uc_tv"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
@@ -241,53 +242,23 @@ func (d *UcShare) getSaveTaskResult(taskId string) (string, error) {
 }
 
 func (d *UcShare) getDownloadUrl(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	url := ""
-	fileId := file.GetID()
+	go d.deleteDelay(file.GetID())
+
 	driver := op.GetFirstDriver("UCTV")
 	if driver != nil {
+		log.Infof("use UC TV")
 		uc := driver.(*quark_uc_tv.QuarkUCTV)
-		link, err := uc.Link(ctx, file, args)
-
-		if err != nil {
-			return nil, err
-		}
-
-		url = link.URL
+		return uc.Link(ctx, file, args)
 	} else {
-		data := base.Json{
-			"fids": []string{fileId},
-		}
-		var resp DownResp
-		res, err := d.request("/file/download", http.MethodPost, func(req *resty.Request) {
-			req.SetBody(data)
-		}, &resp)
-		log.Debugf("getDownloadUrl: %v %v", fileId, string(res))
-
-		if err != nil {
-			return nil, err
-		}
-
-		url := resp.Data[0].DownloadUrl
-		if url == "" {
-			log.Infof("getDownloadUrl: %v", string(res))
-			return nil, errors.New("Cannot get download url!")
+		log.Infof("use UC cookie")
+		driver := op.GetFirstDriver("UC")
+		if driver != nil {
+			uc := driver.(*quark.QuarkOrUC)
+			return uc.Link(ctx, file, args)
 		}
 	}
 
-	go d.deleteDelay(fileId)
-
-	exp := 8 * time.Hour
-	return &model.Link{
-		URL:        url,
-		Expiration: &exp,
-		Header: http.Header{
-			"Cookie":     []string{Cookie},
-			"Referer":    []string{Referer},
-			"User-Agent": []string{UA},
-		},
-		Concurrency: conf.UcThreads,
-		PartSize:    conf.UcChunkSize * utils.KB,
-	}, nil
+	return nil, errors.New("no UC driver")
 }
 
 func (d *UcShare) deleteDelay(fileId string) {
