@@ -1,10 +1,8 @@
 package _115_share
 
 import (
-	"fmt"
-	_115 "github.com/alist-org/alist/v3/drivers/115"
 	"github.com/alist-org/alist/v3/internal/conf"
-	"github.com/alist-org/alist/v3/internal/op"
+	"github.com/alist-org/alist/v3/internal/token"
 	"strconv"
 	"time"
 
@@ -97,23 +95,8 @@ func (d *Pan115Share) login() error {
 		return errors.Wrap(err, "failed to get share snap")
 	}
 	cr := &driver115.Credential{}
-	pan115 := op.GetFirst115Driver()
-	if pan115 != nil {
-		QRCodeToken = pan115.(*_115.Pan115).QRCodeToken
-		Cookie = pan115.(*_115.Pan115).Cookie
-	} else {
-		return errors.New("115 Cloud not init")
-	}
-	if QRCodeToken != "" {
-		s := &driver115.QRCodeSession{
-			UID: QRCodeToken,
-		}
-		if cr, err = client.QRCodeLogin(s); err != nil {
-			return errors.Wrap(err, "failed to login by qrcode")
-		}
-		Cookie = fmt.Sprintf("UID=%s;CID=%s;SEID=%s;KID=%s", cr.UID, cr.CID, cr.SEID, cr.KID)
-		QRCodeToken = ""
-	} else if Cookie != "" {
+	Cookie = token.GetAccountToken(conf.Cookie115)
+	if Cookie != "" {
 		if err = cr.FromCookie(Cookie); err != nil {
 			return errors.Wrap(err, "failed to login by cookies")
 		}

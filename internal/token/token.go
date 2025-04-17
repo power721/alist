@@ -3,7 +3,10 @@ package token
 import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/utils"
+	log "github.com/sirupsen/logrus"
+	"strconv"
 	"time"
 )
 
@@ -29,4 +32,25 @@ func GetToken(key string, expire float64, defaultValue ...string) string {
 
 func SaveToken(item *model.Token) (err error) {
 	return op.SaveToken(item)
+}
+
+func SaveAccountToken(prefix, value string) {
+	accountId := setting.GetInt(prefix+"_id", 1)
+	key := prefix + "_" + strconv.Itoa(accountId)
+	item := &model.Token{
+		Key:       key,
+		Value:     value,
+		AccountId: accountId,
+		Modified:  time.Now(),
+	}
+	err := SaveToken(item)
+	if err != nil {
+		log.Warnf("save Token failed: %v %v", key, err)
+	}
+}
+
+func GetAccountToken(prefix string) string {
+	accountId := setting.GetInt(prefix+"_id", 1)
+	key := prefix + "_" + strconv.Itoa(accountId)
+	return GetToken(key, 0)
 }
