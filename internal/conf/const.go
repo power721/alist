@@ -65,6 +65,7 @@ const (
 	UcCookie        = "uc_cookie"
 	Cookie115       = "115_cookie"
 	Token115        = "115_token"
+	Token139        = "139_token"
 	AliTo115        = "ali_to_115"
 
 	//SSO
@@ -103,9 +104,9 @@ const (
 )
 
 const (
-	AliThreads     = 8
-	AliChunkSize   = 256
-	UcThreads      = 10
+	AliThreads     = 4
+	AliChunkSize   = 512
+	UcThreads      = 8
 	UcChunkSize    = 1024
 	QuarkThreads   = 10
 	QuarkChunkSize = 1024

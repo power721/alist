@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/conf"
+	"github.com/alist-org/alist/v3/internal/token"
 	"net/http"
 	"strconv"
 	"strings"
@@ -52,13 +53,7 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 		if d.config.Name == "UC" {
 			key = conf.UcCookie
 		}
-		op.SaveSettingItem(&model.SettingItem{
-			Key:   key,
-			Value: d.Cookie,
-			Type:  conf.TypeText,
-			Group: model.SINGLE,
-			Flag:  model.PRIVATE,
-		})
+		token.SaveAccountToken(key, d.Cookie)
 		op.MustSaveDriverStorage(d)
 	}
 	if e.Status >= 400 || e.Code != 0 {
