@@ -244,16 +244,16 @@ func (d *UcShare) getSaveTaskResult(taskId string) (string, error) {
 func (d *UcShare) getDownloadUrl(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	go d.deleteDelay(file.GetID())
 
-	driver := op.GetFirstDriver("UCTV")
+	driver := op.GetFirstDriver("UC")
 	if driver != nil {
-		log.Infof("use UC TV")
-		uc := driver.(*quark_uc_tv.QuarkUCTV)
+		log.Infof("use UC cookie")
+		uc := driver.(*quark.QuarkOrUC)
 		return uc.Link(ctx, file, args)
 	} else {
-		log.Infof("use UC cookie")
-		driver := op.GetFirstDriver("UC")
+		driver := op.GetFirstDriver("UCTV")
 		if driver != nil {
-			uc := driver.(*quark.QuarkOrUC)
+			log.Infof("use UC TV")
+			uc := driver.(*quark_uc_tv.QuarkUCTV)
 			return uc.Link(ctx, file, args)
 		}
 	}
