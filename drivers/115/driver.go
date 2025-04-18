@@ -30,6 +30,10 @@ func (d *Pan115) Config() driver.Config {
 	return config
 }
 
+func (d *Pan115) GetClient() *driver115.Pan115Client {
+	return d.client
+}
+
 func (d *Pan115) GetAddition() driver.Additional {
 	return &d.Addition
 }

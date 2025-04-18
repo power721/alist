@@ -2,7 +2,9 @@ package op
 
 import (
 	"context"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,12 +27,43 @@ func GetAllStorages() []driver.Driver {
 	return storagesMap.Values()
 }
 
-func GetFirst115Driver() driver.Driver {
-	return GetFirstDriver("115 Cloud")
+func Get115Driver() driver.Driver {
+	return GetMasterDriver("115 Cloud", conf.PAN115)
+}
+
+func GetQuarkDriver() driver.Driver {
+	return GetMasterDriver("Quark", conf.QUARK)
+}
+
+func GetUcDriver() driver.Driver {
+	return GetMasterDriver("UC", conf.UC)
 }
 
 func GetFirstDriver(name string) driver.Driver {
 	storages := storagesMap.Values()
+	for _, storage := range storages {
+		if storage.Config().Name == name {
+			return storage
+		}
+	}
+	return nil
+}
+
+func GetMasterDriver(name, prefix string) driver.Driver {
+	val, err := GetSettingItemByKey(prefix + "_id")
+	if err != nil {
+		return nil
+	}
+	id, err := strconv.Atoi(val.Value)
+	if err != nil {
+		return nil
+	}
+	storages := storagesMap.Values()
+	for _, storage := range storages {
+		if storage.Config().Name == name && storage.GetStorage().ID == uint(id) {
+			return storage
+		}
+	}
 	for _, storage := range storages {
 		if storage.Config().Name == name {
 			return storage

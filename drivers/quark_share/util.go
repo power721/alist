@@ -252,7 +252,7 @@ func (d *QuarkShare) getDownloadUrl(ctx context.Context, file model.Obj, args mo
 		return uc.Link(ctx, file, args)
 	} else {
 		log.Infof("use Quark cookie")
-		driver := op.GetFirstDriver("Quark")
+		driver := op.GetQuarkDriver()
 		if driver != nil {
 			uc := driver.(*quark.QuarkOrUC)
 			return uc.Link(ctx, file, args)

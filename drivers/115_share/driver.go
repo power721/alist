@@ -2,6 +2,9 @@ package _115_share
 
 import (
 	"context"
+	"errors"
+	_115 "github.com/alist-org/alist/v3/drivers/115"
+	"github.com/alist-org/alist/v3/internal/op"
 
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -29,14 +32,6 @@ func (d *Pan115Share) Init(ctx context.Context) error {
 		d.limiter = rate.NewLimiter(rate.Limit(d.LimitRate), 1)
 	}
 
-	if !initialized {
-		err := d.login()
-		if err != nil {
-			return err
-		}
-		initialized = true
-	}
-
 	return nil
 }
 
@@ -55,6 +50,12 @@ func (d *Pan115Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 	if err := d.WaitLimit(ctx); err != nil {
 		return nil, err
 	}
+
+	pan115 := op.Get115Driver()
+	if pan115 == nil {
+		return []model.Obj{}, errors.New("no 115 driver found")
+	}
+	client := pan115.(*_115.Pan115).GetClient()
 
 	files := make([]driver115.ShareFile, 0)
 	fileResp, err := client.GetShareSnap(d.ShareCode, d.ReceiveCode, dir.GetID(), driver115.QueryLimit(int(d.PageSize)))
@@ -83,6 +84,13 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	if err := d.WaitLimit(ctx); err != nil {
 		return nil, err
 	}
+
+	pan115 := op.Get115Driver()
+	if pan115 == nil {
+		return nil, errors.New("no 115 driver found")
+	}
+	client := pan115.(*_115.Pan115).GetClient()
+
 	downloadInfo, err := client.DownloadByShareCode(d.ShareCode, d.ReceiveCode, file.GetID())
 	if err != nil {
 		return nil, err

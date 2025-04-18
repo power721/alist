@@ -50,9 +50,9 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	__puus := cookie.GetCookie(res.Cookies(), "__puus")
 	if __puus != nil {
 		d.Cookie = cookie.SetStr(d.Cookie, "__puus", __puus.Value)
-		var key = conf.QuarkCookie
+		var key = conf.QUARK
 		if d.config.Name == "UC" {
-			key = conf.UcCookie
+			key = conf.UC
 		}
 		token.SaveAccountToken(key, d.Cookie, int(d.ID))
 		op.MustSaveDriverStorage(d)
