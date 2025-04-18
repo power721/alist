@@ -28,19 +28,49 @@ func GetAllStorages() []driver.Driver {
 }
 
 func Get115Driver() driver.Driver {
-	return GetMasterDriver("115 Cloud", conf.PAN115)
-}
-
-func GetQuarkDriver() driver.Driver {
-	return GetMasterDriver("Quark", conf.QUARK)
-}
-
-func GetUcDriver() driver.Driver {
-	return GetMasterDriver("UC", conf.UC)
+	return GetFirstDriver("115 Cloud")
 }
 
 func GetFirstDriver(name string) driver.Driver {
+	prefix := ""
+	if name == "115 Cloud" {
+		prefix = conf.PAN115
+	} else if name == "Quark" {
+		prefix = conf.QUARK
+	} else if name == "UC" {
+		prefix = conf.UC
+	} else if name == "QuarkTV" {
+		prefix = "QUARK_TV"
+	} else if name == "UCTV" {
+		prefix = "UC_TV"
+	} else if name == "ThunderBrowser" {
+		prefix = "THUNDER"
+	} else if name == "189CloudPC" {
+		prefix = "CLOUD189"
+	} else if name == "139Yun" {
+		prefix = conf.PAN139
+	} else if name == "115 Open" {
+		prefix = conf.OPEN115
+	} else if name == "123Pan" {
+		prefix = "PAN123"
+	}
+	return GetMasterDriver(name, prefix)
+}
+
+func GetMasterDriver(name, prefix string) driver.Driver {
 	storages := storagesMap.Values()
+
+	if prefix != "" {
+		id := getMasterId(prefix)
+		if id > 0 {
+			for _, storage := range storages {
+				if storage.Config().Name == name && storage.GetStorage().ID == id {
+					return storage
+				}
+			}
+		}
+	}
+
 	for _, storage := range storages {
 		if storage.Config().Name == name {
 			return storage
@@ -49,27 +79,16 @@ func GetFirstDriver(name string) driver.Driver {
 	return nil
 }
 
-func GetMasterDriver(name, prefix string) driver.Driver {
+func getMasterId(prefix string) uint {
 	val, err := GetSettingItemByKey(prefix + "_id")
 	if err != nil {
-		return nil
+		return 0
 	}
 	id, err := strconv.Atoi(val.Value)
 	if err != nil {
-		return nil
+		return 0
 	}
-	storages := storagesMap.Values()
-	for _, storage := range storages {
-		if storage.Config().Name == name && storage.GetStorage().ID == uint(id) {
-			return storage
-		}
-	}
-	for _, storage := range storages {
-		if storage.Config().Name == name {
-			return storage
-		}
-	}
-	return nil
+	return uint(id)
 }
 
 func HasStorage(mountPath string) bool {

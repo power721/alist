@@ -251,7 +251,7 @@ func (d *UcShare) getDownloadUrl(ctx context.Context, file model.Obj, args model
 		return uc.Link(ctx, file, args)
 	} else {
 		log.Infof("use UC cookie")
-		driver := op.GetUcDriver()
+		driver := op.GetFirstDriver("UC")
 		if driver != nil {
 			uc := driver.(*quark.QuarkOrUC)
 			return uc.Link(ctx, file, args)
