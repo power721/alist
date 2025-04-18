@@ -3,13 +3,14 @@ package _115_open
 import (
 	"context"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/conf"
-	"github.com/alist-org/alist/v3/internal/token"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/alist-org/alist/v3/internal/conf"
+	"github.com/alist-org/alist/v3/internal/token"
 
 	"github.com/alist-org/alist/v3/cmd/flags"
 	"github.com/alist-org/alist/v3/drivers/base"
@@ -40,7 +41,7 @@ func (d *Open115) Init(ctx context.Context) error {
 		sdk.WithOnRefreshToken(func(s1, s2 string) {
 			d.Addition.AccessToken = s1
 			d.Addition.RefreshToken = s2
-			token.SaveAccountToken(conf.Token115, d.RefreshToken)
+			token.SaveAccountToken(conf.Token115, d.RefreshToken, int(d.ID))
 			op.MustSaveDriverStorage(d)
 		}))
 	if flags.Debug || flags.Dev {

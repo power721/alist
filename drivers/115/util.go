@@ -8,6 +8,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/url"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/internal/token"
@@ -16,13 +24,6 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/orzogc/fake115uploader/cipher"
 	log "github.com/sirupsen/logrus"
-	"io"
-	"net/url"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/internal/conf"
@@ -47,7 +48,7 @@ func (d *Pan115) login() error {
 			return errors.Wrap(err, "failed to login by qrcode")
 		}
 		d.Cookie = fmt.Sprintf("UID=%s;CID=%s;SEID=%s;KID=%s", cr.UID, cr.CID, cr.SEID, cr.KID)
-		token.SaveAccountToken(conf.Cookie115, d.Cookie)
+		token.SaveAccountToken(conf.Cookie115, d.Cookie, int(d.ID))
 		d.Addition.QRCodeToken = ""
 	} else if d.Addition.Cookie != "" {
 		if err = cr.FromCookie(d.Addition.Cookie); err != nil {
