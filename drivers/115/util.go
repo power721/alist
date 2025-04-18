@@ -48,7 +48,7 @@ func (d *Pan115) login() error {
 			return errors.Wrap(err, "failed to login by qrcode")
 		}
 		d.Cookie = fmt.Sprintf("UID=%s;CID=%s;SEID=%s;KID=%s", cr.UID, cr.CID, cr.SEID, cr.KID)
-		token.SaveAccountToken(conf.Cookie115, d.Cookie, int(d.ID))
+		token.SaveAccountToken(conf.PAN115, d.Cookie, int(d.ID))
 		d.Addition.QRCodeToken = ""
 	} else if d.Addition.Cookie != "" {
 		if err = cr.FromCookie(d.Addition.Cookie); err != nil {

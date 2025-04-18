@@ -245,16 +245,16 @@ func (d *QuarkShare) getSaveTaskResult(taskId string) (string, error) {
 func (d *QuarkShare) getDownloadUrl(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	go d.deleteDelay(file.GetID())
 
-	driver := op.GetFirstDriver("QuarkTV")
+	driver := op.GetFirstDriver("Quark")
 	if driver != nil {
-		log.Infof("use Quark TV")
-		uc := driver.(*quark_uc_tv.QuarkUCTV)
+		log.Infof("use Quark cookie")
+		uc := driver.(*quark.QuarkOrUC)
 		return uc.Link(ctx, file, args)
 	} else {
-		log.Infof("use Quark cookie")
-		driver := op.GetFirstDriver("Quark")
+		driver := op.GetFirstDriver("QuarkTV")
 		if driver != nil {
-			uc := driver.(*quark.QuarkOrUC)
+			log.Infof("use Quark TV")
+			uc := driver.(*quark_uc_tv.QuarkUCTV)
 			return uc.Link(ctx, file, args)
 		}
 	}

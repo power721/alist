@@ -41,7 +41,7 @@ func (d *Open115) Init(ctx context.Context) error {
 		sdk.WithOnRefreshToken(func(s1, s2 string) {
 			d.Addition.AccessToken = s1
 			d.Addition.RefreshToken = s2
-			token.SaveAccountToken(conf.Token115, d.RefreshToken, int(d.ID))
+			token.SaveAccountToken(conf.OPEN115, d.RefreshToken, int(d.ID))
 			op.MustSaveDriverStorage(d)
 		}))
 	if flags.Debug || flags.Dev {

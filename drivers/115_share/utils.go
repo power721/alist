@@ -1,23 +1,15 @@
 package _115_share
 
 import (
-	"github.com/alist-org/alist/v3/internal/conf"
-	"github.com/alist-org/alist/v3/internal/token"
 	"strconv"
 	"time"
 
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/utils"
-	"github.com/pkg/errors"
 )
 
 var _ model.Obj = (*FileObj)(nil)
-
-var initialized = false
-var Cookie = ""
-var QRCodeToken = ""
-var client *driver115.Pan115Client
 
 type FileObj struct {
 	Size     int64
@@ -81,29 +73,4 @@ func transFunc(sf driver115.ShareFile) (model.Obj, error) {
 		isDir:    isDir,
 		FileID:   fileID,
 	}, nil
-}
-
-var UserAgent = conf.UA115Browser
-
-func (d *Pan115Share) login() error {
-	var err error
-	opts := []driver115.Option{
-		driver115.UA(UserAgent),
-	}
-	client = driver115.New(opts...)
-	if _, err := client.GetShareSnap(d.ShareCode, d.ReceiveCode, ""); err != nil {
-		return errors.Wrap(err, "failed to get share snap")
-	}
-	cr := &driver115.Credential{}
-	Cookie = token.GetAccountToken(conf.Cookie115)
-	if Cookie != "" {
-		if err = cr.FromCookie(Cookie); err != nil {
-			return errors.Wrap(err, "failed to login by cookies")
-		}
-		client.ImportCredential(cr)
-	} else {
-		return errors.New("missing cookie or qrcode account")
-	}
-
-	return client.LoginCheck()
 }
