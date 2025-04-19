@@ -8,7 +8,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
 	log "github.com/sirupsen/logrus"
-	"strings"
 )
 
 func LoadStorages() {
@@ -23,28 +22,30 @@ func LoadStorages() {
 		for i := range storages {
 			err := op.LoadStorage(context.Background(), storages[i])
 			if err != nil {
-				msg := err.Error()
-				if strings.Contains(msg, "share_link is cancelled") ||
-					strings.Contains(msg, "share_link is forbidden") ||
-					strings.Contains(msg, "share_link is expired") ||
-					strings.Contains(msg, "share_link cannot be found") ||
-					strings.Contains(msg, "share_pwd is not valid") ||
-					strings.Contains(msg, "captcha_required") ||
-					strings.Contains(msg, "refresh frequently") ||
-					strings.Contains(msg, "operation is too frequent") ||
-					strings.Contains(msg, "取消") ||
-					strings.Contains(msg, "已失效") ||
-					strings.Contains(msg, "authorization has expired") ||
-					strings.Contains(msg, "refresh token error") ||
-					strings.Contains(msg, "invalid") ||
-					strings.Contains(msg, "no route to host") {
-					log.Warnf("[%d] failed get enabled storages [%s], %+v",
-						i+1, storages[i].MountPath, err)
-				} else {
-					failed = append(failed, storages[i])
-					log.Warnf("[%d] failed get enabled storages [%s], will retry: %+v",
-						i+1, storages[i].MountPath, err)
-				}
+				log.Warnf("[%d] failed get enabled storages [%s], %+v",
+					i+1, storages[i].MountPath, err)
+				//if strings.Contains(msg, "share_link is cancelled") ||
+				//	strings.Contains(msg, "share_link is forbidden") ||
+				//	strings.Contains(msg, "share_link is expired") ||
+				//	strings.Contains(msg, "share_link cannot be found") ||
+				//	strings.Contains(msg, "share_pwd is not valid") ||
+				//	strings.Contains(msg, "captcha_required") ||
+				//	strings.Contains(msg, "refresh frequently") ||
+				//	strings.Contains(msg, "operation is too frequent") ||
+				//	strings.Contains(msg, "取消") ||
+				//	strings.Contains(msg, "已失效") ||
+				//	strings.Contains(msg, "authorization has expired") ||
+				//	strings.Contains(msg, "refresh token error") ||
+				//	strings.Contains(msg, "refresh token is empty") ||
+				//	strings.Contains(msg, "invalid") ||
+				//	strings.Contains(msg, "no route to host") {
+				//	log.Warnf("[%d] failed get enabled storages [%s], %+v",
+				//		i+1, storages[i].MountPath, err)
+				//} else {
+				//	failed = append(failed, storages[i])
+				//	log.Warnf("[%d] failed get enabled storages [%s], will retry: %+v",
+				//		i+1, storages[i].MountPath, err)
+				//}
 			} else {
 				log.Infof("[%d] success load storage: [%s], driver: [%s]",
 					i+1, storages[i].MountPath, storages[i].Driver)
