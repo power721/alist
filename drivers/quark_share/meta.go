@@ -10,7 +10,7 @@ type Addition struct {
 	SharePwd   string `json:"share_pwd"`
 	ShareToken string
 	driver.RootID
-	OrderBy        string `json:"order_by" type:"select" options:"none,file_type,file_name,updated_at" default:"none"`
+	OrderBy        string `json:"order_by" type:"select" options:"file_type,file_name,updated_at" default:"file_name"`
 	OrderDirection string `json:"order_direction" type:"select" options:"asc,desc" default:"asc"`
 }
 
