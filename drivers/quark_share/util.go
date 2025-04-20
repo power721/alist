@@ -313,8 +313,9 @@ func (d *QuarkShare) getShareFiles(id string) ([]File, error) {
 			"_fetch_banner": "0",
 			"_fetch_share":  "0",
 			"_fetch_total":  "1",
-			"_sort":         "file_type:asc,updated_at:desc",
+			"_sort":         "file_type:asc," + d.OrderBy + ":" + d.OrderDirection,
 		}
+		log.Infof("query: %v", query)
 		var resp ListResp
 		res, err := d.request("/share/sharepage/detail", http.MethodGet, func(req *resty.Request) {
 			req.SetQueryParams(query)
