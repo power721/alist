@@ -49,13 +49,14 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	}
 	__puus := cookie.GetCookie(res.Cookies(), "__puus")
 	if __puus != nil {
+		log.Infof("update Quark cookie: %v", __puus)
 		d.Cookie = cookie.SetStr(d.Cookie, "__puus", __puus.Value)
 		var key = conf.QUARK
 		if d.config.Name == "UC" {
 			key = conf.UC
 		}
-		token.SaveAccountToken(key, d.Cookie, int(d.ID))
 		op.MustSaveDriverStorage(d)
+		token.SaveAccountToken(key, d.Cookie, int(d.ID))
 	}
 	if e.Status >= 400 || e.Code != 0 {
 		return nil, errors.New(e.Message)
