@@ -66,6 +66,7 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("Link: %v %v", file.GetID(), resp)
 
 	threads := conf.QuarkThreads
 	chunkSize := conf.QuarkChunkSize
