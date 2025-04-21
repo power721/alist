@@ -43,9 +43,10 @@ func SaveAccountToken(prefix, value string, accountId int) {
 		AccountId: accountId,
 		Modified:  time.Now(),
 	}
+	log.Infof("save account token: %v", key)
 	err := SaveToken(item)
 	if err != nil {
-		log.Warnf("save Token failed: %v %v", key, err)
+		log.Warnf("save account token failed: %v %v", key, err)
 	}
 }
 
