@@ -49,19 +49,23 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	}
 	__puus := cookie.GetCookie(res.Cookies(), "__puus")
 	if __puus != nil {
-		log.Infof("update Quark cookie: %v", __puus)
-		d.Cookie = cookie.SetStr(d.Cookie, "__puus", __puus.Value)
-		var key = conf.QUARK
-		if d.config.Name == "UC" {
-			key = conf.UC
-		}
-		op.MustSaveDriverStorage(d)
-		token.SaveAccountToken(key, d.Cookie, int(d.ID))
+		d.SaveCookie(__puus.Value)
 	}
 	if e.Status >= 400 || e.Code != 0 {
 		return nil, errors.New(e.Message)
 	}
 	return res.Body(), nil
+}
+
+func (d *QuarkOrUC) SaveCookie(puus string) {
+	var key = conf.QUARK
+	if d.config.Name == "UC" {
+		key = conf.UC
+	}
+	d.Cookie = cookie.SetStr(d.Cookie, "__puus", puus)
+	log.Infof("update %v cookie: %v", key, puus)
+	op.MustSaveDriverStorage(d)
+	token.SaveAccountToken(key, d.Cookie, int(d.ID))
 }
 
 func (d *QuarkOrUC) GetFiles(parent string) ([]File, error) {

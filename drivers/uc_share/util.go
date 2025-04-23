@@ -55,6 +55,11 @@ func (d *UcShare) request(pathname string, method string, callback base.ReqCallb
 	__puus := cookie.GetCookie(res.Cookies(), "__puus")
 	if __puus != nil {
 		Cookie = cookie.SetStr(Cookie, "__puus", __puus.Value)
+		driver := op.GetFirstDriver("UC")
+		if driver != nil {
+			uc := driver.(*quark.QuarkOrUC)
+			uc.SaveCookie(__puus.Value)
+		}
 	}
 	if e.Status >= 400 || e.Code != 0 {
 		return nil, errors.New(e.Message)
