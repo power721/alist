@@ -27,7 +27,7 @@ func (d *QuarkShare) Init(ctx context.Context) error {
 	if Cookie == "" {
 		Cookie = token.GetAccountToken(conf.QUARK)
 		d.getTempFolder()
-		log.Infof("ParentFileId: %v", ParentFileId)
+		log.Infof("QuarkShare ParentFileId: %v", ParentFileId)
 		d.cleanTempFolder()
 	}
 

@@ -29,9 +29,10 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	u := d.conf.api + pathname
 	req := base.RestyClient.R()
 	req.SetHeaders(map[string]string{
-		"Cookie":  d.Cookie,
-		"Accept":  "application/json, text/plain, */*",
-		"Referer": d.conf.referer,
+		"Cookie":     d.Cookie,
+		"Accept":     "application/json, text/plain, */*",
+		"User-Agent": d.conf.ua,
+		"Referer":    d.conf.referer,
 	})
 	req.SetQueryParam("pr", d.conf.pr)
 	req.SetQueryParam("fr", "pc")

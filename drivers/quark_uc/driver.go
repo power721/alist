@@ -58,10 +58,8 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 		"fids": []string{file.GetID()},
 	}
 	var resp DownResp
-	ua := d.conf.ua
 	_, err := d.request("/file/download", http.MethodPost, func(req *resty.Request) {
-		req.SetHeader("User-Agent", ua).
-			SetBody(data)
+		req.SetBody(data)
 	}, &resp)
 	if err != nil {
 		return nil, err
@@ -81,7 +79,7 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 		Header: http.Header{
 			"Cookie":     []string{d.Cookie},
 			"Referer":    []string{d.conf.referer},
-			"User-Agent": []string{ua},
+			"User-Agent": []string{d.conf.ua},
 		},
 		Concurrency: threads,
 		PartSize:    chunkSize * utils.KB,

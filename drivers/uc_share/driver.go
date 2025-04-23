@@ -27,7 +27,7 @@ func (d *UcShare) Init(ctx context.Context) error {
 	if Cookie == "" {
 		Cookie = token.GetAccountToken(conf.UC)
 		d.getTempFolder()
-		log.Infof("ParentFileId: %v", ParentFileId)
+		log.Infof("UcShare ParentFileId: %v", ParentFileId)
 		d.cleanTempFolder()
 	}
 
