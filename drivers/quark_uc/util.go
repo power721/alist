@@ -50,7 +50,13 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	}
 	__puus := cookie.GetCookie(res.Cookies(), "__puus")
 	if __puus != nil {
-		d.SaveCookie(__puus.Value)
+		d.Cookie = cookie.SetStr(d.Cookie, "__puus", __puus.Value)
+		d.SaveCookie(d.Cookie)
+	} else {
+		c := res.Request.Header.Get("Cookie")
+		if c != d.Cookie && strings.Contains(c, "__puus") {
+			d.SaveCookie(c)
+		}
 	}
 	if e.Status >= 400 || e.Code != 0 {
 		return nil, errors.New(e.Message)
@@ -58,13 +64,12 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	return res.Body(), nil
 }
 
-func (d *QuarkOrUC) SaveCookie(puus string) {
+func (d *QuarkOrUC) SaveCookie(cookie string) {
 	var key = conf.QUARK
 	if d.config.Name == "UC" {
 		key = conf.UC
 	}
-	d.Cookie = cookie.SetStr(d.Cookie, "__puus", puus)
-	log.Infof("update %v cookie: %v", key, puus)
+	d.Cookie = cookie
 	op.MustSaveDriverStorage(d)
 	token.SaveAccountToken(key, d.Cookie, int(d.ID))
 }
