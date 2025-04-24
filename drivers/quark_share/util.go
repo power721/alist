@@ -9,6 +9,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/setting"
+	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/cookie"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
@@ -30,6 +31,9 @@ var Cookie = ""
 var ParentFileId = "0"
 
 func (d *QuarkShare) request(pathname string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
+	if Cookie == "" {
+		Cookie = token.GetAccountToken(conf.QUARK)
+	}
 	u := "https://drive.quark.cn/1/clouddrive" + pathname
 	req := base.RestyClient.R()
 	req.SetHeaders(map[string]string{
@@ -58,7 +62,17 @@ func (d *QuarkShare) request(pathname string, method string, callback base.ReqCa
 		driver := op.GetFirstDriver("Quark")
 		if driver != nil {
 			uc := driver.(*quark.QuarkOrUC)
-			uc.SaveCookie(__puus.Value)
+			uc.SaveCookie(Cookie)
+		}
+	} else {
+		c := res.Request.Header.Get("Cookie")
+		if c != Cookie && strings.Contains(c, "__puus") {
+			Cookie = c
+			driver := op.GetFirstDriver("Quark")
+			if driver != nil {
+				uc := driver.(*quark.QuarkOrUC)
+				uc.SaveCookie(Cookie)
+			}
 		}
 	}
 	if e.Status >= 400 || e.Code != 0 {
