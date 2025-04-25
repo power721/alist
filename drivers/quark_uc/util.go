@@ -59,9 +59,12 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 		d.SaveCookie(d.Cookie)
 	} else {
 		c := res.Request.Header.Get("Cookie")
-		if c != d.Cookie && strings.Contains(c, "__puus") {
+		v1 := cookie.GetStr(d.Cookie, "__puus")
+		v2 := cookie.GetStr(c, "__puus")
+		if v1 != "" && v1 != v2 {
+			d.Cookie = cookie.SetStr(d.Cookie, "__puus", v2)
 			log.Debugf("Cookie: %v %v", d.Cookie, c)
-			d.SaveCookie(c)
+			d.SaveCookie(d.Cookie)
 		}
 	}
 	if e.Status >= 400 || e.Code != 0 {
