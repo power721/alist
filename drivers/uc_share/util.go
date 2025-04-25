@@ -9,7 +9,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/setting"
-	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/cookie"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
@@ -30,9 +29,12 @@ var Cookie = ""
 var ParentFileId = "0"
 
 func (d *UcShare) request(pathname string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
-	if Cookie == "" {
-		Cookie = token.GetAccountToken(conf.UC)
+	driver := op.GetFirstDriver("UC")
+	if driver != nil {
+		uc := driver.(*quark.QuarkOrUC)
+		return uc.Request(pathname, method, callback, resp)
 	}
+
 	u := "https://pc-api.uc.cn/1/clouddrive" + pathname
 	req := base.RestyClient.R()
 	req.SetHeaders(map[string]string{
@@ -58,12 +60,8 @@ func (d *UcShare) request(pathname string, method string, callback base.ReqCallb
 	}
 	__puus := cookie.GetCookie(res.Cookies(), "__puus")
 	if __puus != nil {
+		log.Debugf("__puus: %v", __puus)
 		Cookie = cookie.SetStr(Cookie, "__puus", __puus.Value)
-		driver := op.GetFirstDriver("UC")
-		if driver != nil {
-			uc := driver.(*quark.QuarkOrUC)
-			uc.SaveCookie(Cookie)
-		}
 	}
 	if e.Status >= 400 || e.Code != 0 {
 		return nil, errors.New(e.Message)
