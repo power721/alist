@@ -61,9 +61,9 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 		c := res.Request.Header.Get("Cookie")
 		v1 := cookie.GetStr(d.Cookie, "__puus")
 		v2 := cookie.GetStr(c, "__puus")
-		if v1 != "" && v1 != v2 {
+		if v2 != "" && v1 != v2 {
 			d.Cookie = cookie.SetStr(d.Cookie, "__puus", v2)
-			log.Debugf("Cookie: %v %v", d.Cookie, c)
+			log.Debugf("Cookie: %v %v %v", d.Cookie, v1, v2)
 			d.SaveCookie(d.Cookie)
 		}
 	}
