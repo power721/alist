@@ -54,7 +54,7 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	}
 	__puus := cookie.GetCookie(res.Cookies(), "__puus")
 	if __puus != nil {
-		log.Debugf("__puus: %v", __puus)
+		log.Debugf("updaate __puus: %v", __puus)
 		d.Cookie = cookie.SetStr(d.Cookie, "__puus", __puus.Value)
 		d.SaveCookie(d.Cookie)
 	} else {
@@ -63,7 +63,7 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 		v2 := cookie.GetStr(c, "__puus")
 		if v2 != "" && v1 != v2 {
 			d.Cookie = cookie.SetStr(d.Cookie, "__puus", v2)
-			log.Debugf("Cookie: %v %v %v", d.Cookie, v1, v2)
+			log.Debugf("updaate cookie: %v %v %v", d.Cookie, v1, v2)
 			d.SaveCookie(d.Cookie)
 		}
 	}
