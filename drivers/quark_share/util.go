@@ -59,21 +59,6 @@ func (d *QuarkShare) request(pathname string, method string, callback base.ReqCa
 	__puus := cookie.GetCookie(res.Cookies(), "__puus")
 	if __puus != nil {
 		Cookie = cookie.SetStr(Cookie, "__puus", __puus.Value)
-		driver := op.GetFirstDriver("Quark")
-		if driver != nil {
-			uc := driver.(*quark.QuarkOrUC)
-			uc.SaveCookie(Cookie)
-		}
-	} else {
-		c := res.Request.Header.Get("Cookie")
-		if c != Cookie && strings.Contains(c, "__puus") {
-			Cookie = c
-			driver := op.GetFirstDriver("Quark")
-			if driver != nil {
-				uc := driver.(*quark.QuarkOrUC)
-				uc.SaveCookie(Cookie)
-			}
-		}
 	}
 	if e.Status >= 400 || e.Code != 0 {
 		return nil, errors.New(e.Message)
