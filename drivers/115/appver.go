@@ -4,6 +4,7 @@ import (
 	"errors"
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/drivers/base"
+	"github.com/alist-org/alist/v3/pkg/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -14,7 +15,11 @@ var (
 
 func (d *Pan115) getAppVersion() (string, error) {
 	result := VersionResp{}
-	_, err := base.RestyClient.R().SetResult(&result).Get(driver115.ApiGetVersion)
+	res, err := base.RestyClient.R().Get(driver115.ApiGetVersion)
+	if err != nil {
+		return "", err
+	}
+	err = utils.Json.Unmarshal(res.Body(), &result)
 	if err != nil {
 		return "", err
 	}

@@ -1,4 +1,4 @@
-FROM haroldli/alist-builder as builder
+FROM haroldli/alist-builder AS builder
 LABEL stage=go-builder
 WORKDIR /app/
 COPY go.mod go.sum ./
