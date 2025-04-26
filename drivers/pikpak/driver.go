@@ -49,6 +49,10 @@ func (d *PikPak) Init(ctx context.Context) (err error) {
 		}
 	}
 
+	if d.Platform == "" {
+		d.Platform = "pc"
+	}
+
 	if d.Platform == "android" {
 		d.ClientID = AndroidClientID
 		d.ClientSecret = AndroidClientSecret
