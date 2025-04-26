@@ -48,7 +48,7 @@ var nickname = ""
 var cleaned = false
 
 func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
-	accountId := setting.GetStr("ali_account_id", "1")
+	accountId := setting.GetStr(conf.AliAccountId, "1")
 	accessTokenOpen := token.GetToken("AccessTokenOpen-"+accountId, 7200)
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-"+accountId, 0)
 	log.Debugf("force %v accountId %v accessTokenOpen %v refreshTokenOpen: %v", force, accountId, accessTokenOpen, refreshTokenOpen)
@@ -103,7 +103,7 @@ func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 }
 
 func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
-	accountId := setting.GetInt("ali_account_id", 1)
+	accountId := setting.GetInt(conf.AliAccountId, 1)
 	item := &model.Token{
 		Key:       "AccessTokenOpen-" + strconv.Itoa(accountId),
 		Value:     AccessTokenOpen,
@@ -130,7 +130,7 @@ func (d *AliyundriveShare2Open) SaveOpenToken(t time.Time) {
 }
 
 func (d *AliyundriveShare2Open) refreshToken(force bool) error {
-	accountId := setting.GetStr("ali_account_id", "1")
+	accountId := setting.GetStr(conf.AliAccountId, "1")
 	accessToken := token.GetToken("AccessToken-"+accountId, 7200)
 	refreshToken := token.GetToken("RefreshToken-"+accountId, 0)
 	log.Debugf("refreshToken: %v %v %v", accountId, accessToken, refreshToken)
@@ -257,7 +257,7 @@ func (d *AliyundriveShare2Open) createFolderOpen() {
 }
 
 func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
-	accountId := setting.GetInt("ali_account_id", 1)
+	accountId := setting.GetInt(conf.AliAccountId, 1)
 	item := &model.Token{
 		Key:       "AccessToken-" + strconv.Itoa(accountId),
 		Value:     AccessToken,
