@@ -3,6 +3,7 @@ package _115
 import (
 	"context"
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/setting"
 	log "github.com/sirupsen/logrus"
@@ -25,7 +26,7 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 		ID: root,
 	}
 	var clean = false
-	name := "xiaoya-tvbox-temp"
+	name := conf.TempDirName
 	_, _ = d.MakeDir(ctx, dir, name)
 	files, _ := d.getFiles(root)
 	for _, file := range files {
