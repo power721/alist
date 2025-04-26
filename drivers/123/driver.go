@@ -2,20 +2,24 @@ package _123
 
 import (
 	"context"
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/time/rate"
 
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
-	"github.com/alist-org/alist/v3/internal/stream"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -29,6 +33,7 @@ type Pan123 struct {
 	model.Storage
 	Addition
 	apiRateLimit sync.Map
+	params       Params
 }
 
 func (d *Pan123) Config() driver.Config {
@@ -40,6 +45,29 @@ func (d *Pan123) GetAddition() driver.Additional {
 }
 
 func (d *Pan123) Init(ctx context.Context) error {
+	// 拼接UserAgent
+	if d.PlatformType == "android" {
+		d.params.UserAgent = AndroidUserAgentPrefix + "(" + d.OsVersion + ";" + d.DeviceName + " " + d.DeiveType + ")"
+		d.params.Platform = AndroidPlatformParam
+		d.params.AppVersion = AndroidAppVer
+		d.params.XChannel = AndroidXChannel
+		d.params.XAppVersion = AndroidXAppVer
+
+	} else if d.PlatformType == "tv" {
+		d.params.UserAgent = TVUserAgentPrefix + "(" + d.OsVersion + ";" + d.DeviceName + " " + d.DeiveType + ")"
+		d.params.Platform = TVPlatformParam
+		d.params.AppVersion = TVAndroidAppVer
+	}
+
+	if d.Addition.LoginUuid == "" {
+		d.Addition.LoginUuid = strings.ReplaceAll(uuid.New().String(), "-", "")
+	}
+
+	d.params.OsVersion = d.OsVersion
+	d.params.DeviceName = d.DeviceName
+	d.params.DeviceType = d.DeiveType
+	d.params.LoginUuid = d.Addition.LoginUuid
+
 	_, err := d.Request(UserInfo, http.MethodGet, nil, nil)
 	return err
 }
@@ -81,7 +109,6 @@ func (d *Pan123) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 			"type":      f.Type,
 		}
 		resp, err := d.Request(DownloadInfo, http.MethodPost, func(req *resty.Request) {
-
 			req.SetBody(data).SetHeaders(headers)
 		}, nil)
 		if err != nil {
@@ -183,22 +210,32 @@ func (d *Pan123) Remove(ctx context.Context, obj model.Obj) error {
 	}
 }
 
-func (d *Pan123) Put(ctx context.Context, dstDir model.Obj, file model.FileStreamer, up driver.UpdateProgress) error {
-	etag := file.GetHash().GetHash(utils.MD5)
-	var err error
-	if len(etag) < utils.MD5.Width {
-		_, etag, err = stream.CacheFullInTempFileAndHash(file, utils.MD5)
-		if err != nil {
-			return err
-		}
+func (d *Pan123) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
+	// const DEFAULT int64 = 10485760
+	h := md5.New()
+	// need to calculate md5 of the full content
+	tempFile, err := stream.CacheFullInTempFile()
+	if err != nil {
+		return err
 	}
+	defer func() {
+		_ = tempFile.Close()
+	}()
+	if _, err = io.Copy(h, tempFile); err != nil {
+		return err
+	}
+	_, err = tempFile.Seek(0, io.SeekStart)
+	if err != nil {
+		return err
+	}
+	etag := hex.EncodeToString(h.Sum(nil))
 	data := base.Json{
 		"driveId":      0,
 		"duplicate":    2, // 2->覆盖 1->重命名 0->默认
 		"etag":         etag,
-		"fileName":     file.GetName(),
+		"fileName":     stream.GetName(),
 		"parentFileId": dstDir.GetID(),
-		"size":         file.GetSize(),
+		"size":         stream.GetSize(),
 		"type":         0,
 	}
 	var resp UploadResp
@@ -213,7 +250,7 @@ func (d *Pan123) Put(ctx context.Context, dstDir model.Obj, file model.FileStrea
 		return nil
 	}
 	if resp.Data.AccessKeyId == "" || resp.Data.SecretAccessKey == "" || resp.Data.SessionToken == "" {
-		err = d.newUpload(ctx, &resp, file, up)
+		err = d.newUpload(ctx, &resp, stream, tempFile, up)
 		return err
 	} else {
 		cfg := &aws.Config{
@@ -227,21 +264,18 @@ func (d *Pan123) Put(ctx context.Context, dstDir model.Obj, file model.FileStrea
 			return err
 		}
 		uploader := s3manager.NewUploader(s)
-		if file.GetSize() > s3manager.MaxUploadParts*s3manager.DefaultUploadPartSize {
-			uploader.PartSize = file.GetSize() / (s3manager.MaxUploadParts - 1)
+		if stream.GetSize() > s3manager.MaxUploadParts*s3manager.DefaultUploadPartSize {
+			uploader.PartSize = stream.GetSize() / (s3manager.MaxUploadParts - 1)
 		}
 		input := &s3manager.UploadInput{
 			Bucket: &resp.Data.Bucket,
 			Key:    &resp.Data.Key,
-			Body: driver.NewLimitedUploadStream(ctx, &driver.ReaderUpdatingProgress{
-				Reader:         file,
-				UpdateProgress: up,
-			}),
+			Body:   tempFile,
 		}
 		_, err = uploader.UploadWithContext(ctx, input)
-		if err != nil {
-			return err
-		}
+	}
+	if err != nil {
+		return err
 	}
 	_, err = d.Request(UploadComplete, http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
@@ -253,7 +287,7 @@ func (d *Pan123) Put(ctx context.Context, dstDir model.Obj, file model.FileStrea
 
 func (d *Pan123) APIRateLimit(ctx context.Context, api string) error {
 	value, _ := d.apiRateLimit.LoadOrStore(api,
-		rate.NewLimiter(rate.Every(700*time.Millisecond), 1))
+		rate.NewLimiter(rate.Every(800*time.Millisecond), 1))
 	limiter := value.(*rate.Limiter)
 
 	return limiter.Wait(ctx)
