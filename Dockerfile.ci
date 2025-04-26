@@ -1,9 +1,9 @@
-FROM alpine:edge
+FROM xiaoyaliu/alist:latest
 
 ARG TARGETPLATFORM
 ARG INSTALL_FFMPEG=false
 ARG INSTALL_ARIA2=false
-LABEL MAINTAINER="i@nn.ci"
+LABEL MAINTAINER="Har01d"
 
 WORKDIR /opt/alist/
 
@@ -25,10 +25,3 @@ RUN apk update && \
     rm -rf /var/cache/apk/*
 
 COPY --chmod=755 /build/${TARGETPLATFORM}/alist ./
-COPY --chmod=755 entrypoint.sh /entrypoint.sh
-RUN /entrypoint.sh version
-
-ENV PUID=0 PGID=0 UMASK=022 RUN_ARIA2=${INSTALL_ARIA2}
-VOLUME /opt/alist/data/
-EXPOSE 5244 5245
-CMD [ "/entrypoint.sh" ]
