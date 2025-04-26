@@ -1,7 +1,6 @@
-FROM alpine:edge as builder
+FROM haroldli/alist-builder as builder
 LABEL stage=go-builder
 WORKDIR /app/
-RUN apk add --no-cache bash curl gcc git go musl-dev
 COPY go.mod go.sum ./
 RUN go mod download
 COPY ./ ./
