@@ -82,6 +82,7 @@ const (
 	OPEN115         = "OPEN115"
 	PAN139          = "PAN139"
 	AliTo115        = "ali_to_115"
+	AliAccountId    = "ali_account_id"
 
 	// SSO
 	SSOClientId          = "sso_client_id"
