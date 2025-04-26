@@ -120,3 +120,15 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: ${{ env.RELEASE_PLATFORMS }}
+
+      - name: Build and push - host mode
+        id: docker_build_host_mode
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.ci-host
+          push: ${{ env.IMAGE_PUSH == 'true' }}
+          build-args: ${{ matrix.build_arg }}
+          tags: ${{ env.REGISTRY }}:hostmode
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: ${{ env.RELEASE_PLATFORMS }}
