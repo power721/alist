@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/utils/random"
 )
 
@@ -193,9 +194,27 @@ func partSize(size int64) int64 {
 	return DEFAULT
 }
 
+func isBool(bs ...bool) bool {
+	for _, b := range bs {
+		if b {
+			return true
+		}
+	}
+	return false
+}
+
 func IF[V any](o bool, t V, f V) V {
 	if o {
 		return t
 	}
 	return f
+}
+
+type WrapFileStreamer struct {
+	model.FileStreamer
+	Name string
+}
+
+func (w *WrapFileStreamer) GetName() string {
+	return w.Name
 }

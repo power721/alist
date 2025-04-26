@@ -19,7 +19,7 @@ type UpdateIndexReq struct {
 }
 
 func BuildIndex(c *gin.Context) {
-	if search.Running.Load() {
+	if search.Running() {
 		common.ErrorStrResp(c, "index is running", 400)
 		return
 	}
@@ -45,12 +45,13 @@ func UpdateIndex(c *gin.Context) {
 		common.ErrorResp(c, err, 400)
 		return
 	}
-	if search.Running.Load() {
+	if search.Running() {
 		common.ErrorStrResp(c, "index is running", 400)
 		return
 	}
 	if !search.Config(c).AutoUpdate {
 		common.ErrorStrResp(c, "update is not supported for current index", 400)
+		return
 	}
 	go func() {
 		ctx := context.Background()
@@ -71,16 +72,20 @@ func UpdateIndex(c *gin.Context) {
 }
 
 func StopIndex(c *gin.Context) {
-	if !search.Running.Load() {
+	quit := search.Quit.Load()
+	if quit == nil {
 		common.ErrorStrResp(c, "index is not running", 400)
 		return
 	}
-	search.Quit <- struct{}{}
+	select {
+	case *quit <- struct{}{}:
+	default:
+	}
 	common.SuccessResp(c)
 }
 
 func ClearIndex(c *gin.Context) {
-	if search.Running.Load() {
+	if search.Running() {
 		common.ErrorStrResp(c, "index is running", 400)
 		return
 	}

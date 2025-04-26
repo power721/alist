@@ -8,6 +8,7 @@ import (
 
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/internal/driver"
+	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"golang.org/x/time/rate"
@@ -97,6 +98,30 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	}
 
 	return &model.Link{URL: downloadInfo.URL.URL}, nil
+}
+
+func (d *Pan115Share) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) error {
+	return errs.NotSupport
+}
+
+func (d *Pan115Share) Move(ctx context.Context, srcObj, dstDir model.Obj) error {
+	return errs.NotSupport
+}
+
+func (d *Pan115Share) Rename(ctx context.Context, srcObj model.Obj, newName string) error {
+	return errs.NotSupport
+}
+
+func (d *Pan115Share) Copy(ctx context.Context, srcObj, dstDir model.Obj) error {
+	return errs.NotSupport
+}
+
+func (d *Pan115Share) Remove(ctx context.Context, obj model.Obj) error {
+	return errs.NotSupport
+}
+
+func (d *Pan115Share) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) error {
+	return errs.NotSupport
 }
 
 var _ driver.Driver = (*Pan115Share)(nil)

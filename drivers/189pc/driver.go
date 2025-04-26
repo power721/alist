@@ -3,6 +3,7 @@ package _189pc
 import (
 	"context"
 	"errors"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
+	"github.com/google/uuid"
 )
 
 type Cloud189PC struct {
@@ -30,7 +32,11 @@ type Cloud189PC struct {
 
 	uploadThread int
 
+	familyTransferFolder    *Cloud189Folder
+	cleanFamilyTransferFile func()
+
 	storageConfig driver.Config
+	ref           *Cloud189PC
 }
 
 func (y *Cloud189PC) Config() driver.Config {
@@ -45,16 +51,24 @@ func (y *Cloud189PC) GetAddition() driver.Additional {
 }
 
 func (y *Cloud189PC) Init(ctx context.Context) (err error) {
-	// 兼容旧上传接口
-	y.storageConfig.NoOverwriteUpload = y.isFamily() && (y.Addition.RapidUpload || y.Addition.UploadMethod == "old")
-
+	y.storageConfig = config
+	if y.isFamily() {
+		// 兼容旧上传接口
+		if y.Addition.RapidUpload || y.Addition.UploadMethod == "old" {
+			y.storageConfig.NoOverwriteUpload = true
+		}
+	} else {
+		// 家庭云转存，不支持覆盖上传
+		if y.Addition.FamilyTransfer {
+			y.storageConfig.NoOverwriteUpload = true
+		}
+	}
 	// 处理个人云和家庭云参数
 	if y.isFamily() && y.RootFolderID == "-11" {
 		y.RootFolderID = ""
 	}
 	if !y.isFamily() && y.RootFolderID == "" {
 		y.RootFolderID = "-11"
-		y.FamilyID = ""
 	}
 
 	// 限制上传线程数
@@ -63,29 +77,45 @@ func (y *Cloud189PC) Init(ctx context.Context) (err error) {
 		y.uploadThread, y.UploadThread = 3, "3"
 	}
 
-	// 初始化请求客户端
-	if y.client == nil {
-		y.client = base.NewRestyClient().SetHeaders(map[string]string{
-			"Accept":  "application/json;charset=UTF-8",
-			"Referer": WEB_URL,
-		})
-	}
+	if y.ref == nil {
+		// 初始化请求客户端
+		if y.client == nil {
+			y.client = base.NewRestyClient().SetHeaders(map[string]string{
+				"Accept":  "application/json;charset=UTF-8",
+				"Referer": WEB_URL,
+			})
+		}
 
-	// 避免重复登陆
-	identity := utils.GetMD5EncodeStr(y.Username + y.Password)
-	if !y.isLogin() || y.identity != identity {
-		y.identity = identity
-		if err = y.login(); err != nil {
-			return
+		// 避免重复登陆
+		identity := utils.GetMD5EncodeStr(y.Username + y.Password)
+		if !y.isLogin() || y.identity != identity {
+			y.identity = identity
+			if err = y.login(); err != nil {
+				return
+			}
 		}
 	}
 
 	// 处理家庭云ID
-	if y.isFamily() && y.FamilyID == "" {
+	if y.FamilyID == "" {
 		if y.FamilyID, err = y.getFamilyID(); err != nil {
 			return err
 		}
 	}
+
+	// 创建中转文件夹
+	if y.FamilyTransfer {
+		if err := y.createFamilyTransferFolder(); err != nil {
+			return err
+		}
+	}
+
+	// 清理转存文件节流
+	y.cleanFamilyTransferFile = utils.NewThrottle2(time.Minute, func() {
+		if err := y.cleanFamilyTransfer(context.TODO()); err != nil {
+			utils.Log.Errorf("cleanFamilyTransferFolderError:%s", err)
+		}
+	})
 
 	dir := &Cloud189File{
 		ID: "-11",
@@ -95,7 +125,7 @@ func (y *Cloud189PC) Init(ctx context.Context) (err error) {
 		log.Warnf("create temp dir failed: %v", err)
 	}
 
-	files, err := y.getFiles(ctx, tempDirId)
+	files, err := y.getFiles(ctx, tempDirId, false)
 	if err != nil {
 		return err
 	}
@@ -111,12 +141,22 @@ func (y *Cloud189PC) Init(ctx context.Context) (err error) {
 	return nil
 }
 
+func (d *Cloud189PC) InitReference(storage driver.Driver) error {
+	refStorage, ok := storage.(*Cloud189PC)
+	if ok {
+		d.ref = refStorage
+		return nil
+	}
+	return errs.NotSupport
+}
+
 func (y *Cloud189PC) Drop(ctx context.Context) error {
+	y.ref = nil
 	return nil
 }
 
 func (y *Cloud189PC) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
-	return y.getFiles(ctx, dir.GetID())
+	return y.getFiles(ctx, dir.GetID(), y.isFamily())
 }
 
 func (y *Cloud189PC) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
@@ -124,8 +164,9 @@ func (y *Cloud189PC) Link(ctx context.Context, file model.Obj, args model.LinkAr
 		URL string `json:"fileDownloadUrl"`
 	}
 
+	isFamily := y.isFamily()
 	fullUrl := API_URL
-	if y.isFamily() {
+	if isFamily {
 		fullUrl += "/family/file"
 	}
 	fullUrl += "/getFileDownloadUrl.action"
@@ -133,7 +174,7 @@ func (y *Cloud189PC) Link(ctx context.Context, file model.Obj, args model.LinkAr
 	_, err := y.get(fullUrl, func(r *resty.Request) {
 		r.SetContext(ctx)
 		r.SetQueryParam("fileId", file.GetID())
-		if y.isFamily() {
+		if isFamily {
 			r.SetQueryParams(map[string]string{
 				"familyId": y.FamilyID,
 			})
@@ -143,7 +184,7 @@ func (y *Cloud189PC) Link(ctx context.Context, file model.Obj, args model.LinkAr
 				"flag": "1",
 			})
 		}
-	}, &downloadUrl)
+	}, &downloadUrl, isFamily)
 	if err != nil {
 		return nil, err
 	}
@@ -180,8 +221,9 @@ func (y *Cloud189PC) Link(ctx context.Context, file model.Obj, args model.LinkAr
 }
 
 func (y *Cloud189PC) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) (model.Obj, error) {
+	isFamily := y.isFamily()
 	fullUrl := API_URL
-	if y.isFamily() {
+	if isFamily {
 		fullUrl += "/family/file"
 	}
 	fullUrl += "/createFolder.action"
@@ -193,7 +235,7 @@ func (y *Cloud189PC) MakeDir(ctx context.Context, parentDir model.Obj, dirName s
 			"folderName":   dirName,
 			"relativePath": "",
 		})
-		if y.isFamily() {
+		if isFamily {
 			req.SetQueryParams(map[string]string{
 				"familyId": y.FamilyID,
 				"parentId": parentDir.GetID(),
@@ -203,7 +245,7 @@ func (y *Cloud189PC) MakeDir(ctx context.Context, parentDir model.Obj, dirName s
 				"parentFolderId": parentDir.GetID(),
 			})
 		}
-	}, &newFolder)
+	}, &newFolder, isFamily)
 	if err != nil {
 		return nil, err
 	}
@@ -211,27 +253,14 @@ func (y *Cloud189PC) MakeDir(ctx context.Context, parentDir model.Obj, dirName s
 }
 
 func (y *Cloud189PC) Move(ctx context.Context, srcObj, dstDir model.Obj) (model.Obj, error) {
-	var resp CreateBatchTaskResp
-	_, err := y.post(API_URL+"/batch/createBatchTask.action", func(req *resty.Request) {
-		req.SetContext(ctx)
-		req.SetFormData(map[string]string{
-			"type": "MOVE",
-			"taskInfos": MustString(utils.Json.MarshalToString(
-				[]BatchTaskInfo{
-					{
-						FileId:   srcObj.GetID(),
-						FileName: srcObj.GetName(),
-						IsFolder: BoolToNumber(srcObj.IsDir()),
-					},
-				})),
-			"targetFolderId": dstDir.GetID(),
-		})
-		if y.isFamily() {
-			req.SetFormData(map[string]string{
-				"familyId": y.FamilyID,
-			})
-		}
-	}, &resp)
+	isFamily := y.isFamily()
+	other := map[string]string{"targetFileName": dstDir.GetName()}
+
+	resp, err := y.CreateBatchTask("MOVE", IF(isFamily, y.FamilyID, ""), dstDir.GetID(), other, BatchTaskInfo{
+		FileId:   srcObj.GetID(),
+		FileName: srcObj.GetName(),
+		IsFolder: BoolToNumber(srcObj.IsDir()),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -242,10 +271,11 @@ func (y *Cloud189PC) Move(ctx context.Context, srcObj, dstDir model.Obj) (model.
 }
 
 func (y *Cloud189PC) Rename(ctx context.Context, srcObj model.Obj, newName string) (model.Obj, error) {
+	isFamily := y.isFamily()
 	queryParam := make(map[string]string)
 	fullUrl := API_URL
 	method := http.MethodPost
-	if y.isFamily() {
+	if isFamily {
 		fullUrl += "/family/file"
 		method = http.MethodGet
 		queryParam["familyId"] = y.FamilyID
@@ -269,7 +299,7 @@ func (y *Cloud189PC) Rename(ctx context.Context, srcObj model.Obj, newName strin
 
 	_, err := y.request(fullUrl, method, func(req *resty.Request) {
 		req.SetContext(ctx).SetQueryParams(queryParam)
-	}, nil, newObj)
+	}, nil, newObj, isFamily)
 	if err != nil {
 		return nil, err
 	}
@@ -277,28 +307,15 @@ func (y *Cloud189PC) Rename(ctx context.Context, srcObj model.Obj, newName strin
 }
 
 func (y *Cloud189PC) Copy(ctx context.Context, srcObj, dstDir model.Obj) error {
-	var resp CreateBatchTaskResp
-	_, err := y.post(API_URL+"/batch/createBatchTask.action", func(req *resty.Request) {
-		req.SetContext(ctx)
-		req.SetFormData(map[string]string{
-			"type": "COPY",
-			"taskInfos": MustString(utils.Json.MarshalToString(
-				[]BatchTaskInfo{
-					{
-						FileId:   srcObj.GetID(),
-						FileName: srcObj.GetName(),
-						IsFolder: BoolToNumber(srcObj.IsDir()),
-					},
-				})),
-			"targetFolderId": dstDir.GetID(),
-			"targetFileName": dstDir.GetName(),
-		})
-		if y.isFamily() {
-			req.SetFormData(map[string]string{
-				"familyId": y.FamilyID,
-			})
-		}
-	}, &resp)
+	isFamily := y.isFamily()
+	other := map[string]string{"targetFileName": dstDir.GetName()}
+
+	resp, err := y.CreateBatchTask("COPY", IF(isFamily, y.FamilyID, ""), dstDir.GetID(), other, BatchTaskInfo{
+		FileId:   srcObj.GetID(),
+		FileName: srcObj.GetName(),
+		IsFolder: BoolToNumber(srcObj.IsDir()),
+	})
+
 	if err != nil {
 		return err
 	}
@@ -306,27 +323,13 @@ func (y *Cloud189PC) Copy(ctx context.Context, srcObj, dstDir model.Obj) error {
 }
 
 func (y *Cloud189PC) Remove(ctx context.Context, obj model.Obj) error {
-	var resp CreateBatchTaskResp
-	_, err := y.post(API_URL+"/batch/createBatchTask.action", func(req *resty.Request) {
-		req.SetContext(ctx)
-		req.SetFormData(map[string]string{
-			"type": "DELETE",
-			"taskInfos": MustString(utils.Json.MarshalToString(
-				[]*BatchTaskInfo{
-					{
-						FileId:   obj.GetID(),
-						FileName: obj.GetName(),
-						IsFolder: BoolToNumber(obj.IsDir()),
-					},
-				})),
-		})
+	isFamily := y.isFamily()
 
-		if y.isFamily() {
-			req.SetFormData(map[string]string{
-				"familyId": y.FamilyID,
-			})
-		}
-	}, &resp)
+	resp, err := y.CreateBatchTask("DELETE", IF(isFamily, y.FamilyID, ""), "", nil, BatchTaskInfo{
+		FileId:   obj.GetID(),
+		FileName: obj.GetName(),
+		IsFolder: BoolToNumber(obj.IsDir()),
+	})
 	if err != nil {
 		return err
 	}
@@ -334,26 +337,88 @@ func (y *Cloud189PC) Remove(ctx context.Context, obj model.Obj) error {
 	return y.WaitBatchTask("DELETE", resp.TaskID, time.Millisecond*200)
 }
 
-func (y *Cloud189PC) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) (model.Obj, error) {
+func (y *Cloud189PC) Put(ctx context.Context, dstDir model.Obj, stream model.FileStreamer, up driver.UpdateProgress) (newObj model.Obj, err error) {
+	overwrite := true
+	isFamily := y.isFamily()
+
 	// 响应时间长,按需启用
-	if y.Addition.RapidUpload {
-		if newObj, err := y.RapidUpload(ctx, dstDir, stream); err == nil {
+	if y.Addition.RapidUpload && !stream.IsForceStreamUpload() {
+		if newObj, err := y.RapidUpload(ctx, dstDir, stream, isFamily, overwrite); err == nil {
 			return newObj, nil
 		}
 	}
 
-	switch y.UploadMethod {
-	case "old":
-		return y.OldUpload(ctx, dstDir, stream, up)
+	uploadMethod := y.UploadMethod
+	if stream.IsForceStreamUpload() {
+		uploadMethod = "stream"
+	}
+
+	// 旧版上传家庭云也有限制
+	if uploadMethod == "old" {
+		return y.OldUpload(ctx, dstDir, stream, up, isFamily, overwrite)
+	}
+
+	// 开启家庭云转存
+	if !isFamily && y.FamilyTransfer {
+		// 修改上传目标为家庭云文件夹
+		transferDstDir := dstDir
+		dstDir = y.familyTransferFolder
+
+		// 使用临时文件名
+		srcName := stream.GetName()
+		stream = &WrapFileStreamer{
+			FileStreamer: stream,
+			Name:         fmt.Sprintf("0%s.transfer", uuid.NewString()),
+		}
+
+		// 使用家庭云上传
+		isFamily = true
+		overwrite = false
+
+		defer func() {
+			if newObj != nil {
+				// 转存家庭云文件到个人云
+				err = y.SaveFamilyFileToPersonCloud(context.TODO(), y.FamilyID, newObj, transferDstDir, true)
+				// 删除家庭云源文件
+				go y.Delete(context.TODO(), y.FamilyID, newObj)
+				// 批量任务有概率删不掉
+				go y.cleanFamilyTransferFile()
+				// 转存失败返回错误
+				if err != nil {
+					return
+				}
+
+				// 查找转存文件
+				var file *Cloud189File
+				file, err = y.findFileByName(context.TODO(), newObj.GetName(), transferDstDir.GetID(), false)
+				if err != nil {
+					if err == errs.ObjectNotFound {
+						err = fmt.Errorf("unknown error: No transfer file obtained %s", newObj.GetName())
+					}
+					return
+				}
+
+				// 重命名转存文件
+				newObj, err = y.Rename(context.TODO(), file, srcName)
+				if err != nil {
+					// 重命名失败删除源文件
+					_ = y.Delete(context.TODO(), "", file)
+				}
+				return
+			}
+		}()
+	}
+
+	switch uploadMethod {
 	case "rapid":
-		return y.FastUpload(ctx, dstDir, stream, up)
+		return y.FastUpload(ctx, dstDir, stream, up, isFamily, overwrite)
 	case "stream":
 		if stream.GetSize() == 0 {
-			return y.FastUpload(ctx, dstDir, stream, up)
+			return y.FastUpload(ctx, dstDir, stream, up, isFamily, overwrite)
 		}
 		fallthrough
 	default:
-		return y.StreamUpload(ctx, dstDir, stream, up)
+		return y.StreamUpload(ctx, dstDir, stream, up, isFamily, overwrite)
 	}
 }
 
@@ -380,7 +445,7 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 	}
 
 	log.Debug("get files")
-	files, err := y.getFiles(ctx, tempDirId)
+	files, err := y.getFiles(ctx, tempDirId, false)
 	if err != nil {
 		return nil, err
 	}

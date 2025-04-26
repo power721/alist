@@ -10,6 +10,7 @@ import (
 	"errors"
 	"hash"
 	"io"
+	"iter"
 
 	"github.com/alist-org/alist/v3/internal/errs"
 	log "github.com/sirupsen/logrus"
@@ -96,7 +97,7 @@ func HashData(hashType *HashType, data []byte, params ...any) string {
 // HashReader get hash of one hashType from a reader
 func HashReader(hashType *HashType, reader io.Reader, params ...any) (string, error) {
 	h := hashType.NewFunc(params...)
-	_, err := io.Copy(h, reader)
+	_, err := CopyWithBuffer(h, reader)
 	if err != nil {
 		return "", errs.NewErr(err, "HashReader error")
 	}
@@ -225,4 +226,14 @@ func (hi HashInfo) GetHash(ht *HashType) string {
 
 func (hi HashInfo) Export() map[*HashType]string {
 	return hi.h
+}
+
+func (hi HashInfo) All() iter.Seq2[*HashType, string] {
+	return func(yield func(*HashType, string) bool) {
+		for hashType, hashValue := range hi.h {
+			if !yield(hashType, hashValue) {
+				return
+			}
+		}
+	}
 }

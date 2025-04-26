@@ -13,7 +13,7 @@ var (
 )
 
 func (d *Pan115) getAppVersion() (string, error) {
-	var result VersionResp
+	result := VersionResp{}
 	_, err := base.RestyClient.R().SetResult(&result).Get(driver115.ApiGetVersion)
 	if err != nil {
 		return "", err

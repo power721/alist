@@ -97,8 +97,12 @@ func (d *ChaoXing) GetFiles(parent string) ([]File, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(resps.List) > 0 {
-		files = append(files, resps.List...)
+	for _, file := range resps.List {
+		// 手机端超星上传的文件没有fileID字段，但ObjectID与fileID相同，可代替
+		if file.Content.FileID == "" {
+			file.Content.FileID = file.Content.ObjectID
+		}
+		files = append(files, file)
 	}
 	return files, nil
 }

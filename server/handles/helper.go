@@ -10,7 +10,6 @@ import (
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/alist-org/alist/v3/server/common"
 	"github.com/gin-gonic/gin"
-	"github.com/skip2/go-qrcode"
 )
 
 func Favicon(c *gin.Context) {
@@ -19,16 +18,6 @@ func Favicon(c *gin.Context) {
 
 func Robots(c *gin.Context) {
 	c.String(200, setting.GetStr(conf.RobotsTxt))
-}
-
-func QrCode(c *gin.Context) {
-	url := c.Query("url")
-	png, err := qrcode.Encode(url, qrcode.Medium, 256)
-	if err != nil {
-		common.ErrorResp(c, err, 500, true)
-	} else {
-		c.Data(200, "image/png", png)
-	}
 }
 
 func Plist(c *gin.Context) {

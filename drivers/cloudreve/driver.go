@@ -4,11 +4,12 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"strconv"
+	"path"
 	"strings"
 
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
+	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
@@ -71,6 +72,9 @@ func (d *Cloudreve) Link(ctx context.Context, file model.Obj, args model.LinkArg
 	if err != nil {
 		return nil, err
 	}
+	if strings.HasPrefix(dUrl, "/api") {
+		dUrl = d.Address + dUrl
+	}
 	return &model.Link{
 		URL: dUrl,
 	}, nil
@@ -87,7 +91,7 @@ func (d *Cloudreve) MakeDir(ctx context.Context, parentDir model.Obj, dirName st
 func (d *Cloudreve) Move(ctx context.Context, srcObj, dstDir model.Obj) error {
 	body := base.Json{
 		"action":  "move",
-		"src_dir": srcObj.GetPath(),
+		"src_dir": path.Dir(srcObj.GetPath()),
 		"dst":     dstDir.GetPath(),
 		"src":     convertSrc(srcObj),
 	}
@@ -109,7 +113,7 @@ func (d *Cloudreve) Rename(ctx context.Context, srcObj model.Obj, newName string
 
 func (d *Cloudreve) Copy(ctx context.Context, srcObj, dstDir model.Obj) error {
 	body := base.Json{
-		"src_dir": srcObj.GetPath(),
+		"src_dir": path.Dir(srcObj.GetPath()),
 		"dst":     dstDir.GetPath(),
 		"src":     convertSrc(srcObj),
 	}
@@ -130,6 +134,8 @@ func (d *Cloudreve) Put(ctx context.Context, dstDir model.Obj, stream model.File
 	if io.ReadCloser(stream) == http.NoBody {
 		return d.create(ctx, dstDir, stream)
 	}
+
+	// 获取存储策略
 	var r DirectoryResp
 	err := d.request(http.MethodGet, "/directory"+dstDir.GetPath(), nil, &r)
 	if err != nil {
@@ -140,8 +146,10 @@ func (d *Cloudreve) Put(ctx context.Context, dstDir model.Obj, stream model.File
 		"size":          stream.GetSize(),
 		"name":          stream.GetName(),
 		"policy_id":     r.Policy.Id,
-		"last_modified": stream.ModTime().Unix(),
+		"last_modified": stream.ModTime().UnixMilli(),
 	}
+
+	// 获取上传会话信息
 	var u UploadInfo
 	err = d.request(http.MethodPut, "/file/upload", func(req *resty.Request) {
 		req.SetBody(uploadBody)
@@ -149,36 +157,26 @@ func (d *Cloudreve) Put(ctx context.Context, dstDir model.Obj, stream model.File
 	if err != nil {
 		return err
 	}
-	var chunkSize = u.ChunkSize
-	var buf []byte
-	var chunk int
-	for {
-		var n int
-		buf = make([]byte, chunkSize)
-		n, err = io.ReadAtLeast(stream, buf, chunkSize)
-		if err != nil && err != io.ErrUnexpectedEOF {
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		}
 
-		if n == 0 {
-			break
-		}
-		buf = buf[:n]
-		err = d.request(http.MethodPost, "/file/upload/"+u.SessionID+"/"+strconv.Itoa(chunk), func(req *resty.Request) {
-			req.SetHeader("Content-Type", "application/octet-stream")
-			req.SetHeader("Content-Length", strconv.Itoa(n))
-			req.SetBody(buf)
-		}, nil)
-		if err != nil {
-			break
-		}
-		chunk++
-
+	// 根据存储方式选择分片上传的方法
+	switch r.Policy.Type {
+	case "onedrive":
+		err = d.upOneDrive(ctx, stream, u, up)
+	case "s3":
+		err = d.upS3(ctx, stream, u, up)
+	case "remote": // 从机存储
+		err = d.upRemote(ctx, stream, u, up)
+	case "local": // 本机存储
+		err = d.upLocal(ctx, stream, u, up)
+	default:
+		err = errs.NotImplement
 	}
-	return err
+	if err != nil {
+		// 删除失败的会话
+		_ = d.request(http.MethodDelete, "/file/upload/"+u.SessionID, nil, nil)
+		return err
+	}
+	return nil
 }
 
 func (d *Cloudreve) create(ctx context.Context, dir model.Obj, file model.Obj) error {

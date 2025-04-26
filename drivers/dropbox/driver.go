@@ -45,7 +45,25 @@ func (d *Dropbox) Init(ctx context.Context) error {
 	if result != query {
 		return fmt.Errorf("failed to check user: %s", string(res))
 	}
-	return nil
+	d.RootNamespaceId, err = d.GetRootNamespaceId(ctx)
+
+	return err
+}
+
+func (d *Dropbox) GetRootNamespaceId(ctx context.Context) (string, error) {
+	res, err := d.request("/2/users/get_current_account", http.MethodPost, func(req *resty.Request) {
+		req.SetBody(nil)
+	})
+	if err != nil {
+		return "", err
+	}
+	var currentAccountResp CurrentAccountResp
+	err = utils.Json.Unmarshal(res, &currentAccountResp)
+	if err != nil {
+		return "", err
+	}
+	rootNamespaceId := currentAccountResp.RootInfo.RootNamespaceId
+	return rootNamespaceId, nil
 }
 
 func (d *Dropbox) Drop(ctx context.Context) error {
@@ -173,7 +191,7 @@ func (d *Dropbox) Put(ctx context.Context, dstDir model.Obj, stream model.FileSt
 		}
 
 		url := d.contentBase + "/2/files/upload_session/append_v2"
-		reader := io.LimitReader(stream, PartSize)
+		reader := driver.NewLimitedUploadStream(ctx, io.LimitReader(stream, PartSize))
 		req, err := http.NewRequest(http.MethodPost, url, reader)
 		if err != nil {
 			log.Errorf("failed to update file when append to upload session, err: %+v", err)
@@ -201,13 +219,8 @@ func (d *Dropbox) Put(ctx context.Context, dstDir model.Obj, stream model.FileSt
 			return err
 		}
 		_ = res.Body.Close()
-
-		if count > 0 {
-			up(float64(i+1) * 100 / float64(count))
-		}
-
+		up(float64(i+1) * 100 / float64(count))
 		offset += byteSize
-
 	}
 	// 3.finish
 	toPath := dstDir.GetPath() + "/" + stream.GetName()

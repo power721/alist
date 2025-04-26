@@ -13,7 +13,7 @@ import (
 func GetApiUrl(r *http.Request) string {
 	api := conf.Conf.SiteURL
 	if strings.HasPrefix(api, "http") {
-		return api
+		return strings.TrimSuffix(api, "/")
 	}
 	if r != nil {
 		protocol := "http"

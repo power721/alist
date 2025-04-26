@@ -106,7 +106,8 @@ func (d *LanZou) request(url string, method string, callback base.ReqCallback, u
 	}
 
 	req.SetHeaders(map[string]string{
-		"Referer": "https://pc.woozooo.com",
+		"Referer":    "https://pc.woozooo.com",
+		"User-Agent": d.UserAgent,
 	})
 
 	if d.Cookie != "" {
@@ -263,6 +264,9 @@ var findSubFolderReg = regexp.MustCompile(`(?i)(?:folderlink|mbxfolder).+href="/
 // 获取下载页面链接
 var findDownPageParamReg = regexp.MustCompile(`<iframe.*?src="(.+?)"`)
 
+// 获取文件ID
+var findFileIDReg = regexp.MustCompile(`'/ajaxm\.php\?file=(\d+)'`)
+
 // 获取分享链接主界面
 func (d *LanZou) getShareUrlHtml(shareID string) (string, error) {
 	var vs string
@@ -344,6 +348,10 @@ func (d *LanZou) getFilesByShareUrl(shareID, pwd string, sharePageData string) (
 		file        FileOrFolderByShareUrl
 	)
 
+	// 删除注释
+	sharePageData = RemoveNotes(sharePageData)
+	sharePageData = RemoveJSComment(sharePageData)
+
 	// 需要密码
 	if strings.Contains(sharePageData, "pwdload") || strings.Contains(sharePageData, "passwddiv") {
 		sharePageData, err := getJSFunctionByName(sharePageData, "down_p")
@@ -355,8 +363,16 @@ func (d *LanZou) getFilesByShareUrl(shareID, pwd string, sharePageData string) (
 			return nil, err
 		}
 		param["p"] = pwd
+
+		fileIDs := findFileIDReg.FindStringSubmatch(sharePageData)
+		var fileID string
+		if len(fileIDs) > 1 {
+			fileID = fileIDs[1]
+		} else {
+			return nil, fmt.Errorf("not find file id")
+		}
 		var resp FileShareInfoAndUrlResp[string]
-		_, err = d.post(d.ShareUrl+"/ajaxm.php", func(req *resty.Request) { req.SetFormData(param) }, &resp)
+		_, err = d.post(d.ShareUrl+"/ajaxm.php?file="+fileID, func(req *resty.Request) { req.SetFormData(param) }, &resp)
 		if err != nil {
 			return nil, err
 		}
@@ -380,8 +396,15 @@ func (d *LanZou) getFilesByShareUrl(shareID, pwd string, sharePageData string) (
 			return nil, err
 		}
 
+		fileIDs := findFileIDReg.FindStringSubmatch(nextPageData)
+		var fileID string
+		if len(fileIDs) > 1 {
+			fileID = fileIDs[1]
+		} else {
+			return nil, fmt.Errorf("not find file id")
+		}
 		var resp FileShareInfoAndUrlResp[int]
-		_, err = d.post(d.ShareUrl+"/ajaxm.php", func(req *resty.Request) { req.SetFormData(param) }, &resp)
+		_, err = d.post(d.ShareUrl+"/ajaxm.php?file="+fileID, func(req *resty.Request) { req.SetFormData(param) }, &resp)
 		if err != nil {
 			return nil, err
 		}

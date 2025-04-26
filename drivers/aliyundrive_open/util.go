@@ -144,7 +144,7 @@ func (d *AliyundriveOpen) request(uri, method string, callback base.ReqCallback,
 func (d *AliyundriveOpen) requestReturnErrResp(uri, method string, callback base.ReqCallback, retry ...bool) ([]byte, error, *ErrResp) {
 	req := base.RestyClient.R()
 	// TODO check whether access_token is expired
-	req.SetHeader("Authorization", "Bearer "+d.AccessToken)
+	req.SetHeader("Authorization", "Bearer "+d.getAccessToken())
 	if method == http.MethodPost {
 		req.SetHeader("Content-Type", "application/json")
 	}
@@ -153,7 +153,7 @@ func (d *AliyundriveOpen) requestReturnErrResp(uri, method string, callback base
 	}
 	var e ErrResp
 	req.SetError(&e)
-	res, err := req.Execute(method, d.base+uri)
+	res, err := req.Execute(method, API_URL+uri)
 	if err != nil {
 		if res != nil {
 			log.Errorf("[aliyundrive_open] request error: %s", res.String())
@@ -237,4 +237,44 @@ func getNowTime() (time.Time, string) {
 	nowTime := time.Now()
 	nowTimeStr := nowTime.Format("2006-01-02T15:04:05.000Z")
 	return nowTime, nowTimeStr
+}
+
+func (d *AliyundriveOpen) getAccessToken() string {
+	if d.ref != nil {
+		return d.ref.getAccessToken()
+	}
+	return d.AccessToken
+}
+
+// Remove duplicate files with the same name in the given directory path,
+// preserving the file with the given skipID if provided
+func (d *AliyundriveOpen) removeDuplicateFiles(ctx context.Context, parentPath string, fileName string, skipID string) error {
+	// Handle empty path (root directory) case
+	if parentPath == "" {
+		parentPath = "/"
+	}
+
+	// List all files in the parent directory
+	files, err := op.List(ctx, d, parentPath, model.ListArgs{})
+	if err != nil {
+		return err
+	}
+
+	// Find all files with the same name
+	var duplicates []model.Obj
+	for _, file := range files {
+		if file.GetName() == fileName && file.GetID() != skipID {
+			duplicates = append(duplicates, file)
+		}
+	}
+
+	// Remove all duplicates files, except the file with the given ID
+	for _, file := range duplicates {
+		err := d.Remove(ctx, file)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

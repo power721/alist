@@ -14,6 +14,7 @@ type Addition struct {
 	SecretAccessKey          string `json:"secret_access_key" required:"true"`
 	SessionToken             string `json:"session_token"`
 	CustomHost               string `json:"custom_host"`
+	EnableCustomHostPresign  bool   `json:"enable_custom_host_presign"`
 	SignURLExpire            int    `json:"sign_url_expire" type:"number" default:"4"`
 	Placeholder              string `json:"placeholder"`
 	ForcePathStyle           bool   `json:"force_path_style"`
@@ -22,15 +23,25 @@ type Addition struct {
 	AddFilenameToDisposition bool   `json:"add_filename_to_disposition" help:"Add filename to Content-Disposition header."`
 }
 
-var config = driver.Config{
-	Name:        "S3",
-	DefaultRoot: "/",
-	LocalSort:   true,
-	CheckStatus: true,
-}
-
 func init() {
 	op.RegisterDriver(func() driver.Driver {
-		return &S3{}
+		return &S3{
+			config: driver.Config{
+				Name:        "S3",
+				DefaultRoot: "/",
+				LocalSort:   true,
+				CheckStatus: true,
+			},
+		}
+	})
+	op.RegisterDriver(func() driver.Driver {
+		return &S3{
+			config: driver.Config{
+				Name:        "Doge",
+				DefaultRoot: "/",
+				LocalSort:   true,
+				CheckStatus: true,
+			},
+		}
 	})
 }
