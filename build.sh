@@ -10,8 +10,10 @@ elif [ "$1" = "beta" ]; then
   version="beta"
   webVersion="dev"
 else
-  version=$(git describe --abbrev=0 --tags)
-  webVersion=$(wget -qO- -t1 -T2 "https://api.github.com/repos/alist-org/alist-web/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+  #version=$(git describe --abbrev=0 --tags)
+  #webVersion=$(wget -qO- -t1 -T2 "https://api.github.com/repos/alist-org/alist-web/releases/latest" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+  version=3.44.0
+  webVersion=3.44.0
 fi
 
 echo "backend version: $version"
