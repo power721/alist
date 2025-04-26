@@ -14,8 +14,11 @@ import (
 	"net/http"
 	"path"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/server/common"
 )
 
 // Proppatch describes a property update instruction as defined in RFC 4918.
@@ -99,7 +102,7 @@ type DeadPropsHolder interface {
 	Patch([]Proppatch) ([]Propstat, error)
 }
 
-// liveProps contains all supported, protected DAV: properties.
+// liveProps contains all supported properties.
 var liveProps = map[xml.Name]struct {
 	// findFn implements the propfind function of this property. If nil,
 	// it indicates a hidden property.
@@ -157,6 +160,10 @@ var liveProps = map[xml.Name]struct {
 	{Space: "DAV:", Local: "supportedlock"}: {
 		findFn: findSupportedLock,
 		dir:    true,
+	},
+	{Space: "http://owncloud.org/ns", Local: "checksums"}: {
+		findFn: findChecksums,
+		dir:    false,
 	},
 }
 
@@ -384,7 +391,11 @@ func findLastModified(ctx context.Context, ls LockSystem, name string, fi model.
 	return fi.ModTime().UTC().Format(http.TimeFormat), nil
 }
 func findCreationDate(ctx context.Context, ls LockSystem, name string, fi model.Obj) (string, error) {
-	return fi.CreateTime().UTC().Format(http.TimeFormat), nil
+	userAgent := ctx.Value("userAgent").(string)
+	if strings.Contains(strings.ToLower(userAgent), "microsoft-webdav") {
+		return fi.CreateTime().UTC().Format(http.TimeFormat), nil
+	}
+	return fi.CreateTime().UTC().Format(time.RFC3339), nil
 }
 
 // ErrNotImplemented should be returned by optional interfaces if they
@@ -467,7 +478,7 @@ func findETag(ctx context.Context, ls LockSystem, name string, fi model.Obj) (st
 	// The Apache http 2.4 web server by default concatenates the
 	// modification time and size of a file. We replicate the heuristic
 	// with nanosecond granularity.
-	return fmt.Sprintf(`"%x%x"`, fi.ModTime().UnixNano(), fi.GetSize()), nil
+	return common.GetEtag(fi), nil
 }
 
 func findSupportedLock(ctx context.Context, ls LockSystem, name string, fi model.Obj) (string, error) {
@@ -476,4 +487,12 @@ func findSupportedLock(ctx context.Context, ls LockSystem, name string, fi model
 		`<D:lockscope><D:exclusive/></D:lockscope>` +
 		`<D:locktype><D:write/></D:locktype>` +
 		`</D:lockentry>`, nil
+}
+
+func findChecksums(ctx context.Context, ls LockSystem, name string, fi model.Obj) (string, error) {
+	checksums := ""
+	for hashType, hashValue := range fi.GetHash().All() {
+		checksums += fmt.Sprintf("<checksum>%s:%s</checksum>", hashType.Name, hashValue)
+	}
+	return checksums, nil
 }

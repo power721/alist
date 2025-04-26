@@ -3,7 +3,6 @@ package static
 import (
 	"errors"
 	"fmt"
-	"github.com/alist-org/alist/v3/public"
 	"io"
 	"io/fs"
 	"net/http"
@@ -13,14 +12,15 @@ import (
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/utils"
+	"github.com/alist-org/alist/v3/public"
 	"github.com/gin-gonic/gin"
 )
 
-var static fs.FS = public.Public
+var static fs.FS
 
 func initStatic() {
 	if conf.Conf.DistDir == "" {
-		dist, err := fs.Sub(static, "dist")
+		dist, err := fs.Sub(public.Public, "dist")
 		if err != nil {
 			utils.Log.Fatalf("failed to read dist dir")
 		}
@@ -102,6 +102,10 @@ func Static(r *gin.RouterGroup, noRoute func(handlers ...gin.HandlerFunc)) {
 	}
 
 	noRoute(func(c *gin.Context) {
+		if c.Request.Method != "GET" && c.Request.Method != "POST" {
+			c.Status(405)
+			return
+		}
 		c.Header("Content-Type", "text/html")
 		c.Status(200)
 		if strings.HasPrefix(c.Request.URL.Path, "/@manage") {

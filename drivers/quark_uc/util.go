@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -33,10 +34,9 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	u := d.conf.api + pathname
 	req := base.RestyClient.R()
 	req.SetHeaders(map[string]string{
-		"Cookie":     d.Cookie,
-		"Accept":     "application/json, text/plain, */*",
-		"User-Agent": d.conf.ua,
-		"Referer":    d.conf.referer,
+		"Cookie":  d.Cookie,
+		"Accept":  "application/json, text/plain, */*",
+		"Referer": d.conf.referer,
 	})
 	req.SetQueryParam("pr", d.conf.pr)
 	req.SetQueryParam("fr", "pc")
@@ -54,7 +54,7 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	}
 	__puus := cookie.GetCookie(res.Cookies(), "__puus")
 	if __puus != nil {
-		log.Debugf("updaate __puus: %v", __puus)
+		log.Debugf("update __puus: %v", __puus)
 		d.Cookie = cookie.SetStr(d.Cookie, "__puus", __puus.Value)
 		d.SaveCookie(d.Cookie)
 	} else {
@@ -63,7 +63,7 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 		v2 := cookie.GetStr(c, "__puus")
 		if v2 != "" && v1 != v2 {
 			d.Cookie = cookie.SetStr(d.Cookie, "__puus", v2)
-			log.Debugf("updaate cookie: %v %v %v", d.Cookie, v1, v2)
+			log.Debugf("update cookie: %v %v %v", d.Cookie, v1, v2)
 			d.SaveCookie(d.Cookie)
 		}
 	}
@@ -147,7 +147,7 @@ func (d *QuarkOrUC) upHash(md5, sha1, taskId string) (bool, error) {
 	return resp.Data.Finish, err
 }
 
-func (d *QuarkOrUC) upPart(ctx context.Context, pre UpPreResp, mineType string, partNumber int, bytes []byte) (string, error) {
+func (d *QuarkOrUC) upPart(ctx context.Context, pre UpPreResp, mineType string, partNumber int, bytes io.Reader) (string, error) {
 	//func (driver QuarkOrUC) UpPart(pre UpPreResp, mineType string, partNumber int, bytes []byte, account *model.Account, md5Str, sha1Str string) (string, error) {
 	timeStr := time.Now().UTC().Format(http.TimeFormat)
 	data := base.Json{
@@ -191,6 +191,9 @@ x-oss-user-agent:aliyun-sdk-js/6.6.1 Chrome 98.0.4758.80 on Windows 10 64-bit
 			"partNumber": strconv.Itoa(partNumber),
 			"uploadId":   pre.Data.UploadId,
 		}).SetBody(bytes).Put(u)
+	if err != nil {
+		return "", err
+	}
 	if res.StatusCode() != 200 {
 		return "", fmt.Errorf("up status: %d, error: %s", res.StatusCode(), res.String())
 	}
@@ -258,6 +261,9 @@ x-oss-user-agent:aliyun-sdk-js/6.6.1 Chrome 98.0.4758.80 on Windows 10 64-bit
 		SetQueryParams(map[string]string{
 			"uploadId": pre.Data.UploadId,
 		}).SetBody(body).Post(u)
+	if err != nil {
+		return err
+	}
 	if res.StatusCode() != 200 {
 		return fmt.Errorf("up status: %d, error: %s", res.StatusCode(), res.String())
 	}

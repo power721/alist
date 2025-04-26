@@ -93,6 +93,17 @@ func getMainItems(config driver.Config) []driver.Item {
 			Required: true,
 		},
 		}...)
+		if config.ProxyRangeOption {
+			item := driver.Item{
+				Name: "proxy_range",
+				Type: conf.TypeBool,
+				Help: "Need to enable proxy",
+			}
+			if config.Name == "139Yun" {
+				item.Default = "true"
+			}
+			items = append(items, item)
+		}
 	} else {
 		items = append(items, driver.Item{
 			Name:     "webdav_policy",
@@ -121,6 +132,12 @@ func getMainItems(config driver.Config) []driver.Item {
 		Name:    "extract_folder",
 		Type:    conf.TypeSelect,
 		Options: "front,back",
+	})
+	items = append(items, driver.Item{
+		Name:     "disable_index",
+		Type:     conf.TypeBool,
+		Default:  "false",
+		Required: true,
 	})
 	items = append(items, driver.Item{
 		Name:     "enable_sign",

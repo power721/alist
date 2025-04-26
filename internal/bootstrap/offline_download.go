@@ -2,16 +2,16 @@ package bootstrap
 
 import (
 	"github.com/alist-org/alist/v3/internal/offline_download/tool"
-	log "github.com/sirupsen/logrus"
+	"github.com/alist-org/alist/v3/pkg/utils"
 )
 
 func InitOfflineDownloadTools() {
 	for k, v := range tool.Tools {
 		res, err := v.Init()
 		if err != nil {
-			log.Warnf("init tool %s failed: %s", k, err)
+			utils.Log.Warnf("init tool %s failed: %s", k, err)
 		} else {
-			log.Infof("init tool %s success: %s", k, res)
+			utils.Log.Infof("init tool %s success: %s", k, res)
 		}
 	}
 }

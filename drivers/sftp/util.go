@@ -4,6 +4,7 @@ import (
 	"path"
 
 	"github.com/pkg/sftp"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -11,8 +12,14 @@ import (
 
 func (d *SFTP) initClient() error {
 	var auth ssh.AuthMethod
-	if d.PrivateKey != "" {
-		signer, err := ssh.ParsePrivateKey([]byte(d.PrivateKey))
+	if len(d.PrivateKey) > 0 {
+		var err error
+		var signer ssh.Signer
+		if len(d.Passphrase) > 0 {
+			signer, err = ssh.ParsePrivateKeyWithPassphrase([]byte(d.PrivateKey), []byte(d.Passphrase))
+		} else {
+			signer, err = ssh.ParsePrivateKey([]byte(d.PrivateKey))
+		}
 		if err != nil {
 			return err
 		}
@@ -30,6 +37,23 @@ func (d *SFTP) initClient() error {
 		return err
 	}
 	d.client, err = sftp.NewClient(conn)
+	if err == nil {
+		d.clientConnectionError = nil
+		go func(d *SFTP) {
+			d.clientConnectionError = d.client.Wait()
+		}(d)
+	}
+	return err
+}
+
+func (d *SFTP) clientReconnectOnConnectionError() error {
+	err := d.clientConnectionError
+	if err == nil {
+		return nil
+	}
+	log.Debugf("[sftp] discarding closed sftp connection: %v", err)
+	_ = d.client.Close()
+	err = d.initClient()
 	return err
 }
 

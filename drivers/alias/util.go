@@ -3,11 +3,15 @@ package alias
 import (
 	"context"
 	"fmt"
+	"net/url"
 	stdpath "path"
 	"strings"
 
+	"github.com/alist-org/alist/v3/internal/driver"
+	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/fs"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/sign"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/alist-org/alist/v3/server/common"
@@ -15,7 +19,7 @@ import (
 
 func (d *Alias) listRoot() []model.Obj {
 	var objs []model.Obj
-	for k, _ := range d.pathMap {
+	for k := range d.pathMap {
 		obj := model.Object{
 			Name:     k,
 			IsFolder: true,
@@ -61,11 +65,12 @@ func (d *Alias) get(ctx context.Context, path string, dst, sub string) (model.Ob
 		Size:     obj.GetSize(),
 		Modified: obj.ModTime(),
 		IsFolder: obj.IsDir(),
+		HashInfo: obj.GetHash(),
 	}, nil
 }
 
-func (d *Alias) list(ctx context.Context, dst, sub string) ([]model.Obj, error) {
-	objs, err := fs.List(ctx, stdpath.Join(dst, sub), &fs.ListArgs{NoLog: true})
+func (d *Alias) list(ctx context.Context, dst, sub string, args *fs.ListArgs) ([]model.Obj, error) {
+	objs, err := fs.List(ctx, stdpath.Join(dst, sub), args)
 	// the obj must implement the model.SetPath interface
 	// return objs, err
 	if err != nil {
@@ -93,33 +98,128 @@ func (d *Alias) list(ctx context.Context, dst, sub string) ([]model.Obj, error) 
 
 func (d *Alias) link(ctx context.Context, dst, sub string, args model.LinkArgs) (*model.Link, error) {
 	reqPath := stdpath.Join(dst, sub)
-	storage, err := fs.GetStorage(reqPath, &fs.GetStoragesArgs{})
+	// 参考 crypt 驱动
+	storage, reqActualPath, err := op.GetStorageAndActualPath(reqPath)
 	if err != nil {
 		return nil, err
+	}
+	if _, ok := storage.(*Alias); !ok && !args.Redirect {
+		link, _, err := op.Link(ctx, storage, reqActualPath, args)
+		return link, err
 	}
 	_, err = fs.Get(ctx, reqPath, &fs.GetArgs{NoLog: true})
 	if err != nil {
 		return nil, err
 	}
 	if common.ShouldProxy(storage, stdpath.Base(sub)) {
-		return &model.Link{
+		link := &model.Link{
 			URL: fmt.Sprintf("%s/p%s?sign=%s",
 				common.GetApiUrl(args.HttpReq),
 				utils.EncodePath(reqPath, true),
 				sign.Sign(reqPath)),
-		}, nil
+		}
+		if args.HttpReq != nil && d.ProxyRange {
+			link.RangeReadCloser = common.NoProxyRange
+		}
+		return link, nil
 	}
-	link, _, err := fs.Link(ctx, reqPath, args)
+	link, _, err := op.Link(ctx, storage, reqActualPath, args)
 	return link, err
 }
 
-func (d *Alias) other(ctx context.Context, dst, sub string, args model.OtherArgs) (interface{}, error) {
-	reqPath := stdpath.Join(dst, sub)
-	fsArg := model.FsOtherArgs{
-		Method: args.Method,
-		Data:   args.Data,
-		Path:   reqPath,
+func (d *Alias) getReqPath(ctx context.Context, obj model.Obj, isParent bool) (*string, error) {
+	root, sub := d.getRootAndPath(obj.GetPath())
+	if sub == "" && !isParent {
+		return nil, errs.NotSupport
 	}
-	utils.Log.Printf("utils other: %v", fsArg)
-	return fs.Other(ctx, fsArg)
+	dsts, ok := d.pathMap[root]
+	if !ok {
+		return nil, errs.ObjectNotFound
+	}
+	var reqPath *string
+	for _, dst := range dsts {
+		path := stdpath.Join(dst, sub)
+		_, err := fs.Get(ctx, path, &fs.GetArgs{NoLog: true})
+		if err != nil {
+			continue
+		}
+		if !d.ProtectSameName {
+			return &path, nil
+		}
+		if ok {
+			ok = false
+		} else {
+			return nil, errs.NotImplement
+		}
+		reqPath = &path
+	}
+	if reqPath == nil {
+		return nil, errs.ObjectNotFound
+	}
+	return reqPath, nil
+}
+
+func (d *Alias) getArchiveMeta(ctx context.Context, dst, sub string, args model.ArchiveArgs) (model.ArchiveMeta, error) {
+	reqPath := stdpath.Join(dst, sub)
+	storage, reqActualPath, err := op.GetStorageAndActualPath(reqPath)
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := storage.(driver.ArchiveReader); ok {
+		return op.GetArchiveMeta(ctx, storage, reqActualPath, model.ArchiveMetaArgs{
+			ArchiveArgs: args,
+			Refresh:     true,
+		})
+	}
+	return nil, errs.NotImplement
+}
+
+func (d *Alias) listArchive(ctx context.Context, dst, sub string, args model.ArchiveInnerArgs) ([]model.Obj, error) {
+	reqPath := stdpath.Join(dst, sub)
+	storage, reqActualPath, err := op.GetStorageAndActualPath(reqPath)
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := storage.(driver.ArchiveReader); ok {
+		return op.ListArchive(ctx, storage, reqActualPath, model.ArchiveListArgs{
+			ArchiveInnerArgs: args,
+			Refresh:          true,
+		})
+	}
+	return nil, errs.NotImplement
+}
+
+func (d *Alias) extract(ctx context.Context, dst, sub string, args model.ArchiveInnerArgs) (*model.Link, error) {
+	reqPath := stdpath.Join(dst, sub)
+	storage, reqActualPath, err := op.GetStorageAndActualPath(reqPath)
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := storage.(driver.ArchiveReader); ok {
+		if _, ok := storage.(*Alias); !ok && !args.Redirect {
+			link, _, err := op.DriverExtract(ctx, storage, reqActualPath, args)
+			return link, err
+		}
+		_, err = fs.Get(ctx, reqPath, &fs.GetArgs{NoLog: true})
+		if err != nil {
+			return nil, err
+		}
+		if common.ShouldProxy(storage, stdpath.Base(sub)) {
+			link := &model.Link{
+				URL: fmt.Sprintf("%s/ap%s?inner=%s&pass=%s&sign=%s",
+					common.GetApiUrl(args.HttpReq),
+					utils.EncodePath(reqPath, true),
+					utils.EncodePath(args.InnerPath, true),
+					url.QueryEscape(args.Password),
+					sign.SignArchive(reqPath)),
+			}
+			if args.HttpReq != nil && d.ProxyRange {
+				link.RangeReadCloser = common.NoProxyRange
+			}
+			return link, nil
+		}
+		link, _, err := op.DriverExtract(ctx, storage, reqActualPath, args)
+		return link, err
+	}
+	return nil, errs.NotImplement
 }

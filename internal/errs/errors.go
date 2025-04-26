@@ -3,6 +3,7 @@ package errs
 import (
 	"errors"
 	"fmt"
+
 	pkgerr "github.com/pkg/errors"
 )
 
@@ -18,6 +19,10 @@ var (
 	StorageNotFound  = errors.New("storage not found")
 	StreamIncomplete = errors.New("upload/download stream incomplete, possible network issue")
 	StreamPeekFail   = errors.New("StreamPeekFail")
+
+	UnknownArchiveFormat      = errors.New("unknown archive format")
+	WrongArchivePassword      = errors.New("wrong archive password")
+	DriverExtractNotSupported = errors.New("driver extraction not supported")
 )
 
 // NewErr wrap constant error with an extra message
@@ -32,4 +37,7 @@ func IsNotFoundError(err error) bool {
 
 func IsNotSupportError(err error) bool {
 	return errors.Is(pkgerr.Cause(err), NotSupport)
+}
+func IsNotImplement(err error) bool {
+	return errors.Is(pkgerr.Cause(err), NotImplement)
 }

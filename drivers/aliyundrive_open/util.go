@@ -91,6 +91,9 @@ func getSub(token string) (string, error) {
 }
 
 func (d *AliyundriveOpen) refreshToken(force bool) error {
+	if d.ref != nil {
+		return d.ref.refreshToken(force)
+	}
 	refresh, access, err := d._refreshToken(force)
 	for i := 0; i < 3; i++ {
 		if err == nil {
@@ -109,33 +112,6 @@ func (d *AliyundriveOpen) refreshToken(force bool) error {
 	return nil
 }
 
-func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
-	accountId := strconv.Itoa(d.AccountId)
-	item := &model.Token{
-		Key:       "AccessTokenOpen-" + accountId,
-		Value:     d.AccessToken,
-		AccountId: d.AccountId,
-		Modified:  t,
-	}
-
-	err := token.SaveToken(item)
-	if err != nil {
-		log.Warnf("save AccessTokenOpen failed: %v", err)
-	}
-
-	item = &model.Token{
-		Key:       "RefreshTokenOpen-" + accountId,
-		Value:     d.RefreshToken,
-		AccountId: d.AccountId,
-		Modified:  t,
-	}
-
-	err = token.SaveToken(item)
-	if err != nil {
-		log.Warnf("save RefreshTokenOpen failed: %v", err)
-	}
-}
-
 func (d *AliyundriveOpen) request(uri, method string, callback base.ReqCallback, retry ...bool) ([]byte, error) {
 	b, err, _ := d.requestReturnErrResp(uri, method, callback, retry...)
 	return b, err
@@ -144,7 +120,7 @@ func (d *AliyundriveOpen) request(uri, method string, callback base.ReqCallback,
 func (d *AliyundriveOpen) requestReturnErrResp(uri, method string, callback base.ReqCallback, retry ...bool) ([]byte, error, *ErrResp) {
 	req := base.RestyClient.R()
 	// TODO check whether access_token is expired
-	req.SetHeader("Authorization", "Bearer "+d.AccessToken)
+	req.SetHeader("Authorization", "Bearer "+d.getAccessToken())
 	if method == http.MethodPost {
 		req.SetHeader("Content-Type", "application/json")
 	}
@@ -153,7 +129,7 @@ func (d *AliyundriveOpen) requestReturnErrResp(uri, method string, callback base
 	}
 	var e ErrResp
 	req.SetError(&e)
-	res, err := req.Execute(method, d.base+uri)
+	res, err := req.Execute(method, API_URL+uri)
 	if err != nil {
 		if res != nil {
 			log.Errorf("[aliyundrive_open] request error: %s", res.String())
@@ -162,7 +138,7 @@ func (d *AliyundriveOpen) requestReturnErrResp(uri, method string, callback base
 	}
 	isRetry := len(retry) > 0 && retry[0]
 	if e.Code != "" {
-		if !isRetry && (utils.SliceContains([]string{"AccessTokenInvalid", "AccessTokenExpired", "I400JD"}, e.Code) || d.AccessToken == "") {
+		if !isRetry && (utils.SliceContains([]string{"AccessTokenInvalid", "AccessTokenExpired", "I400JD"}, e.Code) || d.getAccessToken() == "") {
 			err = d.refreshToken(true)
 			if err != nil {
 				return nil, err, nil
@@ -172,24 +148,6 @@ func (d *AliyundriveOpen) requestReturnErrResp(uri, method string, callback base
 		return nil, fmt.Errorf("%s:%s", e.Code, e.Message), &e
 	}
 	return res.Body(), nil, nil
-}
-
-func (d *AliyundriveOpen) getDownloadUrl(fileId string) (string, error) {
-	res, err := d.request("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
-		req.SetBody(base.Json{
-			"drive_id":   d.DriveId,
-			"file_id":    fileId,
-			"expire_sec": 14400,
-		})
-	})
-	if err != nil {
-		return "", err
-	}
-	url := utils.Json.Get(res, "url").ToString()
-	if url == "" {
-		url = utils.Json.Get(res, "streamsUrl", d.LIVPDownloadFormat).ToString()
-	}
-	return url, nil
 }
 
 func (d *AliyundriveOpen) list(ctx context.Context, data base.Json) (*Files, error) {
@@ -237,4 +195,44 @@ func getNowTime() (time.Time, string) {
 	nowTime := time.Now()
 	nowTimeStr := nowTime.Format("2006-01-02T15:04:05.000Z")
 	return nowTime, nowTimeStr
+}
+
+func (d *AliyundriveOpen) getAccessToken() string {
+	if d.ref != nil {
+		return d.ref.getAccessToken()
+	}
+	return d.AccessToken
+}
+
+// Remove duplicate files with the same name in the given directory path,
+// preserving the file with the given skipID if provided
+func (d *AliyundriveOpen) removeDuplicateFiles(ctx context.Context, parentPath string, fileName string, skipID string) error {
+	// Handle empty path (root directory) case
+	if parentPath == "" {
+		parentPath = "/"
+	}
+
+	// List all files in the parent directory
+	files, err := op.List(ctx, d, parentPath, model.ListArgs{})
+	if err != nil {
+		return err
+	}
+
+	// Find all files with the same name
+	var duplicates []model.Obj
+	for _, file := range files {
+		if file.GetName() == fileName && file.GetID() != skipID {
+			duplicates = append(duplicates, file)
+		}
+	}
+
+	// Remove all duplicates files, except the file with the given ID
+	for _, file := range duplicates {
+		err := d.Remove(ctx, file)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

@@ -1,17 +1,17 @@
 <div align="center">
-  <a href="https://alist.nn.ci"><img height="100px" alt="logo" src="https://cdn.jsdelivr.net/gh/alist-org/logo@main/logo.svg"/></a>
+  <a href="https://alist.nn.ci"><img width="100px" alt="logo" src="https://cdn.jsdelivr.net/gh/alist-org/logo@main/logo.svg"/></a>
   <p><em>🗂️A file list program that supports multiple storages, powered by Gin and Solidjs.</em></p>
 <div>
   <a href="https://goreportcard.com/report/github.com/alist-org/alist/v3">
     <img src="https://goreportcard.com/badge/github.com/alist-org/alist/v3" alt="latest version" />
   </a>
-  <a href="https://github.com/Xhofe/alist/blob/main/LICENSE">
+  <a href="https://github.com/alist-org/alist/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/Xhofe/alist" alt="License" />
   </a>
-  <a href="https://github.com/Xhofe/alist/actions?query=workflow%3ABuild">
+  <a href="https://github.com/alist-org/alist/actions?query=workflow%3ABuild">
     <img src="https://img.shields.io/github/actions/workflow/status/Xhofe/alist/build.yml?branch=main" alt="Build status" />
   </a>
-  <a href="https://github.com/Xhofe/alist/releases">
+  <a href="https://github.com/alist-org/alist/releases">
     <img src="https://img.shields.io/github/release/Xhofe/alist" alt="latest version" />
   </a>
   <a title="Crowdin" target="_blank" href="https://crwd.in/alist">
@@ -19,13 +19,13 @@
   </a>
 </div>
 <div>
-  <a href="https://github.com/Xhofe/alist/discussions">
+  <a href="https://github.com/alist-org/alist/discussions">
     <img src="https://img.shields.io/github/discussions/Xhofe/alist?color=%23ED8936" alt="discussions" />
   </a>
   <a href="https://discord.gg/F4ymsH4xv2">
     <img src="https://img.shields.io/discord/1018870125102895134?logo=discord" alt="discussions" />
   </a>
-  <a href="https://github.com/Xhofe/alist/releases">
+  <a href="https://github.com/alist-org/alist/releases">
     <img src="https://img.shields.io/github/downloads/Xhofe/alist/total?color=%239F7AEA&logo=github" alt="Downloads" />
   </a>
   <a href="https://hub.docker.com/r/xhofe/alist">
@@ -39,13 +39,13 @@
 
 ---
 
-English | [中文](./README_cn.md)| [日本語](./README_ja.md) | [Contributing](./CONTRIBUTING.md) | [CODE_OF_CONDUCT](./CODE_OF_CONDUCT.md)
+English | [中文](./README_cn.md) | [日本語](./README_ja.md) | [Contributing](./CONTRIBUTING.md) | [CODE_OF_CONDUCT](./CODE_OF_CONDUCT.md)
 
 ## Features
 
 - [x] Multiple storages
     - [x] Local storage
-    - [x] [Aliyundrive](https://www.aliyundrive.com/)
+    - [x] [Aliyundrive](https://www.alipan.com/)
     - [x] OneDrive / Sharepoint ([global](https://www.office.com/), [cn](https://portal.partner.microsoftonline.cn),de,us)
     - [x] [189cloud](https://cloud.189.cn) (Personal, Family)
     - [x] [GoogleDrive](https://drive.google.com/)
@@ -58,7 +58,7 @@ English | [中文](./README_cn.md)| [日本語](./README_ja.md) | [Contributing]
     - [x] WebDav(Support OneDrive/SharePoint without API)
     - [x] Teambition([China](https://www.teambition.com/ ),[International](https://us.teambition.com/ ))
     - [x] [Mediatrack](https://www.mediatrack.cn/)
-    - [x] [139yun](https://yun.139.com/) (Personal, Family)
+    - [x] [139yun](https://yun.139.com/) (Personal, Family, Group)
     - [x] [YandexDisk](https://disk.yandex.com/)
     - [x] [BaiduNetdisk](http://pan.baidu.com/)
     - [x] [Terabox](https://www.terabox.com/main)
@@ -66,7 +66,8 @@ English | [中文](./README_cn.md)| [日本語](./README_ja.md) | [Contributing]
     - [x] [Quark](https://pan.quark.cn)
     - [x] [Thunder](https://pan.xunlei.com)
     - [x] [Lanzou](https://www.lanzou.com/)
-    - [x] [Aliyundrive share](https://www.aliyundrive.com/)
+    - [x] [ILanzou](https://www.ilanzou.com/)
+    - [x] [Aliyundrive share](https://www.alipan.com/)
     - [x] [Google photo](https://photos.google.com/)
     - [x] [Mega.nz](https://mega.nz)
     - [x] [Baidu photo](https://photo.baidu.com/)
@@ -74,6 +75,9 @@ English | [中文](./README_cn.md)| [日本語](./README_ja.md) | [Contributing]
     - [x] [115](https://115.com/)
     - [X] Cloudreve
     - [x] [Dropbox](https://www.dropbox.com/)
+    - [x] [FeijiPan](https://www.feijipan.com/)
+    - [x] [dogecloud](https://www.dogecloud.com/product/oss)
+    - [x] [Azure Blob Storage](https://azure.microsoft.com/products/storage/blobs)
 - [x] Easy to deploy and out-of-the-box
 - [x] File preview (PDF, markdown, code, plain text, ...)
 - [x] Image preview in gallery mode
@@ -95,7 +99,7 @@ English | [中文](./README_cn.md)| [日本語](./README_ja.md) | [Contributing]
 
 ## Document
 
-<https://alist.nn.ci/>
+<https://alistgo.com/>
 
 ## Demo
 
@@ -103,7 +107,7 @@ English | [中文](./README_cn.md)| [日本語](./README_ja.md) | [Contributing]
 
 ## Discussion
 
-Please go to our [discussion forum](https://github.com/Xhofe/alist/discussions) for general questions, **issues are for bug reports and feature requests only.**
+Please go to our [discussion forum](https://github.com/alist-org/alist/discussions) for general questions, **issues are for bug reports and feature requests only.**
 
 ## Sponsor
 
@@ -112,9 +116,9 @@ https://alist.nn.ci/guide/sponsor.html
 
 ### Special sponsors
 
-- [VidHub](https://okaapps.com/product/1659622164?ref=alist) - An elegant cloud video player within the Apple ecosystem. Support for iPhone, iPad, Mac, and Apple TV.
+- [VidHub](https://apps.apple.com/app/apple-store/id1659622164?pt=118612019&ct=alist&mt=8) - An elegant cloud video player within the Apple ecosystem. Support for iPhone, iPad, Mac, and Apple TV.
 - [亚洲云](https://www.asiayun.com/aff/QQCOOQKZ) - 高防服务器|服务器租用|福州高防|广东电信|香港服务器|美国服务器|海外服务器 - 国内靠谱的企业级云计算服务提供商 (sponsored Chinese API server)
-- [找资源](https://zhaoziyuan.pw/) - 阿里云盘资源搜索引擎
+- [找资源](http://zhaoziyuan2.cc/) - 阿里云盘资源搜索引擎
 
 ## Contributors
 
@@ -135,4 +139,4 @@ The `AList` is open-source software licensed under the AGPL-3.0 license.
 
 ---
 
-> [@Blog](https://nn.ci/) · [@GitHub](https://github.com/Xhofe) · [@TelegramGroup](https://t.me/alist_chat) · [@Discord](https://discord.gg/F4ymsH4xv2)
+> [@GitHub](https://github.com/alist-org) · [@TelegramGroup](https://t.me/alist_chat) · [@Discord](https://discord.gg/F4ymsH4xv2)
