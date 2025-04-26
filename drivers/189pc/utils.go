@@ -54,11 +54,8 @@ const (
 	PC  = "TELEPC"
 	MAC = "TELEMAC"
 
-	CHANNEL_ID   = "web_cloud.189.cn"
-	TransferPath = "xiaoya-tvbox-temp"
+	CHANNEL_ID = "web_cloud.189.cn"
 )
-
-var tempDirId = "-11"
 
 func (y *Cloud189PC) SignatureHeader(url, method, params string, isFamily bool) map[string]string {
 	dateOfGmt := getHttpDateStr()

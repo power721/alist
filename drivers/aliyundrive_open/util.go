@@ -91,6 +91,9 @@ func getSub(token string) (string, error) {
 }
 
 func (d *AliyundriveOpen) refreshToken(force bool) error {
+	if d.ref != nil {
+		return d.ref.refreshToken(force)
+	}
 	refresh, access, err := d._refreshToken(force)
 	for i := 0; i < 3; i++ {
 		if err == nil {
@@ -107,33 +110,6 @@ func (d *AliyundriveOpen) refreshToken(force bool) error {
 	d.RefreshToken, d.AccessToken = refresh, access
 	op.MustSaveDriverStorage(d)
 	return nil
-}
-
-func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
-	accountId := strconv.Itoa(d.AccountId)
-	item := &model.Token{
-		Key:       "AccessTokenOpen-" + accountId,
-		Value:     d.AccessToken,
-		AccountId: d.AccountId,
-		Modified:  t,
-	}
-
-	err := token.SaveToken(item)
-	if err != nil {
-		log.Warnf("save AccessTokenOpen failed: %v", err)
-	}
-
-	item = &model.Token{
-		Key:       "RefreshTokenOpen-" + accountId,
-		Value:     d.RefreshToken,
-		AccountId: d.AccountId,
-		Modified:  t,
-	}
-
-	err = token.SaveToken(item)
-	if err != nil {
-		log.Warnf("save RefreshTokenOpen failed: %v", err)
-	}
 }
 
 func (d *AliyundriveOpen) request(uri, method string, callback base.ReqCallback, retry ...bool) ([]byte, error) {
@@ -162,7 +138,7 @@ func (d *AliyundriveOpen) requestReturnErrResp(uri, method string, callback base
 	}
 	isRetry := len(retry) > 0 && retry[0]
 	if e.Code != "" {
-		if !isRetry && (utils.SliceContains([]string{"AccessTokenInvalid", "AccessTokenExpired", "I400JD"}, e.Code) || d.AccessToken == "") {
+		if !isRetry && (utils.SliceContains([]string{"AccessTokenInvalid", "AccessTokenExpired", "I400JD"}, e.Code) || d.getAccessToken() == "") {
 			err = d.refreshToken(true)
 			if err != nil {
 				return nil, err, nil
@@ -172,24 +148,6 @@ func (d *AliyundriveOpen) requestReturnErrResp(uri, method string, callback base
 		return nil, fmt.Errorf("%s:%s", e.Code, e.Message), &e
 	}
 	return res.Body(), nil, nil
-}
-
-func (d *AliyundriveOpen) getDownloadUrl(fileId string) (string, error) {
-	res, err := d.request("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
-		req.SetBody(base.Json{
-			"drive_id":   d.DriveId,
-			"file_id":    fileId,
-			"expire_sec": 14400,
-		})
-	})
-	if err != nil {
-		return "", err
-	}
-	url := utils.Json.Get(res, "url").ToString()
-	if url == "" {
-		url = utils.Json.Get(res, "streamsUrl", d.LIVPDownloadFormat).ToString()
-	}
-	return url, nil
 }
 
 func (d *AliyundriveOpen) list(ctx context.Context, data base.Json) (*Files, error) {

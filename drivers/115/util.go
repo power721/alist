@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"net/url"
@@ -21,7 +20,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
-	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/http_range"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
@@ -61,58 +59,6 @@ func (d *Pan115) login() error {
 		return errors.New("missing cookie or qrcode account")
 	}
 	return d.client.LoginCheck()
-}
-
-func (d *Pan115) createTempDir(ctx context.Context) {
-	root := d.Addition.RootID.RootFolderID
-	TempDirId = root
-	dir := &model.Object{
-		ID: root,
-	}
-	var clean = false
-	name := "xiaoya-tvbox-temp"
-	_, _ = d.MakeDir(ctx, dir, name)
-	files, _ := d.getFiles(root)
-	for _, file := range files {
-		if file.Name == name {
-			TempDirId = file.FileID
-			clean = true
-			break
-		}
-	}
-	log.Infof("115 temp folder id: %v", TempDirId)
-	if clean {
-		d.cleanTempDir()
-	}
-}
-
-func (d *Pan115) cleanTempDir() {
-	files, _ := d.getFiles(TempDirId)
-	for _, file := range files {
-		log.Infof("删除115文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
-		d.client.Delete(file.GetID())
-		d.DeleteFile(file.Sha1)
-	}
-}
-
-func (d *Pan115) DeleteTempFile(fullHash string) {
-	files, _ := d.getFiles(TempDirId)
-	for _, file := range files {
-		if file.Sha1 == fullHash {
-			log.Infof("删除115文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
-			d.client.Delete(file.GetID())
-			d.DeleteFile(file.Sha1)
-		}
-	}
-}
-
-func (d *Pan115) DeleteFile(id string) error {
-	code := setting.GetStr("delete_code_115")
-	if code == "" {
-		return nil
-	}
-
-	return d.client.CleanRecycleBin(code, id)
 }
 
 func (d *Pan115) getFiles(fileId string) ([]FileObj, error) {
@@ -223,7 +169,7 @@ func (c *Pan115) GenerateToken(fileID, preID, timeStamp, fileSize, signKey, sign
 	return hex.EncodeToString(tokenMd5[:])
 }
 
-func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID string, stream model.FileStreamer) (*driver115.UploadInitResp, error) {
+func (d *Pan115) rapidUpload(fileSize int64, fileName, dirID, preID, fileID string, stream model.FileStreamer) (*driver115.UploadInitResp, error) {
 	var (
 		ecdhCipher   *cipher.EcdhCipher
 		encrypted    []byte

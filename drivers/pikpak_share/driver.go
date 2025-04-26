@@ -46,10 +46,6 @@ func (d *PikPakShare) Init(ctx context.Context) error {
 		op.MustSaveDriverStorage(d)
 	}
 
-	if d.Platform == "" {
-		d.Platform = "pc"
-	}
-
 	if d.Platform == "android" {
 		d.ClientID = AndroidClientID
 		d.ClientSecret = AndroidClientSecret
