@@ -303,6 +303,7 @@ func (d *QuarkShare) deleteFile(fileId string) error {
 }
 
 func (d *QuarkShare) getShareFiles(id string) ([]File, error) {
+	log.Debugf("getShareFiles: %v", id)
 	s := strings.Split(id, "-")
 	fileId := s[0]
 	files := make([]File, 0)
