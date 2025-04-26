@@ -83,6 +83,7 @@ const (
 	PAN139          = "PAN139"
 	AliTo115        = "ali_to_115"
 	AliAccountId    = "ali_account_id"
+	TempDirName     = "alist-tvbox-temp"
 
 	// SSO
 	SSOClientId          = "sso_client_id"

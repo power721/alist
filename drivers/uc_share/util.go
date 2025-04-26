@@ -76,7 +76,7 @@ func (d *UcShare) getTempFolder() {
 	}
 
 	for _, file := range files {
-		if file.Name == "alist-tvbox-temp" {
+		if file.Name == conf.TempDirName {
 			ParentFileId = file.ID
 			return
 		}
@@ -89,7 +89,7 @@ func (d *UcShare) createTempFolder() {
 	data := base.Json{
 		"dir_init_lock": false,
 		"dir_path":      "",
-		"file_name":     "alist-tvbox-temp",
+		"file_name":     conf.TempDirName,
 		"pdir_fid":      "0",
 	}
 	res, err := d.request("/file", http.MethodPost, func(req *resty.Request) {

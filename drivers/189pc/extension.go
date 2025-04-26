@@ -3,6 +3,7 @@ package _189pc
 import (
 	"context"
 	"errors"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	log "github.com/sirupsen/logrus"
 	"strconv"
@@ -10,15 +11,13 @@ import (
 	"time"
 )
 
-const TransferPath = "xiaoya-tvbox-temp"
-
 var tempDirId = "-11"
 
 func (y *Cloud189PC) createTempDir(ctx context.Context) error {
 	dir := &Cloud189File{
 		ID: "-11",
 	}
-	_, err := y.MakeDir(ctx, dir, TransferPath)
+	_, err := y.MakeDir(ctx, dir, conf.TempDirName)
 	if err != nil {
 		log.Warnf("create temp dir failed: %v", err)
 	}
@@ -29,7 +28,7 @@ func (y *Cloud189PC) createTempDir(ctx context.Context) error {
 	}
 
 	for _, file := range files {
-		if file.GetName() == TransferPath {
+		if file.GetName() == conf.TempDirName {
 			tempDirId = file.GetID()
 			break
 		}
