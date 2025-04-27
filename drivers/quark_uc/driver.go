@@ -23,8 +23,9 @@ import (
 type QuarkOrUC struct {
 	model.Storage
 	Addition
-	config    driver.Config
-	conf      Conf
+	config driver.Config
+	conf   Conf
+
 	TempDirId string
 }
 
