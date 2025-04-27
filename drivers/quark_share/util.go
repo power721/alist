@@ -10,7 +10,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/cookie"
-	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	"math/rand"
 	"net/http"
@@ -27,7 +26,6 @@ const Referer = "https://pan.quark.cn"
 const Accept = "application/json, text/plain, */*"
 
 var Cookie = ""
-var ParentFileId = "0"
 
 func (d *QuarkShare) request(pathname string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
 	driver := op.GetFirstDriver("Quark")
@@ -67,57 +65,6 @@ func (d *QuarkShare) request(pathname string, method string, callback base.ReqCa
 		return nil, errors.New(e.Message)
 	}
 	return res.Body(), nil
-}
-
-func (d *QuarkShare) getTempFolder() {
-	files, err := d.GetFiles("0")
-	if err != nil {
-		log.Warnf("get files error: %v", err)
-	}
-
-	for _, file := range files {
-		if file.Name == conf.TempDirName {
-			ParentFileId = file.ID
-			return
-		}
-	}
-
-	d.createTempFolder()
-}
-
-func (d *QuarkShare) createTempFolder() {
-	data := base.Json{
-		"dir_init_lock": false,
-		"dir_path":      "",
-		"file_name":     conf.TempDirName,
-		"pdir_fid":      "0",
-	}
-	res, err := d.request("/file", http.MethodPost, func(req *resty.Request) {
-		req.SetBody(data)
-	}, nil)
-	fid := utils.Json.Get(res, "data", "fid").ToString()
-	if fid != "" {
-		ParentFileId = fid
-	}
-	log.Infof("create folder: %v", string(res))
-	if err != nil {
-		log.Warnf("create folder error: %v", err)
-	}
-}
-
-func (d *QuarkShare) cleanTempFolder() {
-	if ParentFileId == "0" {
-		return
-	}
-
-	files, err := d.GetFiles(ParentFileId)
-	if err != nil {
-		log.Warnf("get files error: %v", err)
-	}
-
-	for _, file := range files {
-		go d.deleteFile(file.ID)
-	}
 }
 
 func (d *QuarkShare) GetFiles(parent string) ([]File, error) {
@@ -173,13 +120,19 @@ func (d *QuarkShare) getShareToken() error {
 }
 
 func (d *QuarkShare) saveFile(id string) (string, error) {
+	driver := op.GetFirstDriver("Quark")
+	folderId := "0"
+	if driver != nil {
+		uc := driver.(*quark.QuarkOrUC)
+		folderId = uc.TempDirId
+	}
 	s := strings.Split(id, "-")
 	fileId := s[0]
 	fileTokenId := s[1]
 	data := base.Json{
 		"fid_list":       []string{fileId},
 		"fid_token_list": []string{fileTokenId},
-		"to_pdir_fid":    ParentFileId,
+		"to_pdir_fid":    folderId,
 		"pwd_id":         d.ShareId,
 		"stoken":         d.ShareToken,
 		"pdir_fid":       "0",

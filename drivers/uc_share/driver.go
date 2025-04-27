@@ -26,9 +26,6 @@ func (d *UcShare) GetAddition() driver.Additional {
 func (d *UcShare) Init(ctx context.Context) error {
 	if Cookie == "" {
 		Cookie = token.GetAccountToken(conf.UC)
-		d.getTempFolder()
-		log.Infof("UcShare ParentFileId: %v", ParentFileId)
-		d.cleanTempFolder()
 	}
 
 	err := d.getShareToken()
