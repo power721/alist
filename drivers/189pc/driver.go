@@ -35,6 +35,7 @@ type Cloud189PC struct {
 
 	storageConfig driver.Config
 	ref           *Cloud189PC
+	TempDirId     string
 }
 
 func (y *Cloud189PC) Config() driver.Config {

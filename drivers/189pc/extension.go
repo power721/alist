@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-var tempDirId = "-11"
-
 func (y *Cloud189PC) createTempDir(ctx context.Context) error {
 	dir := &Cloud189File{
 		ID: "-11",
@@ -22,19 +20,19 @@ func (y *Cloud189PC) createTempDir(ctx context.Context) error {
 		log.Warnf("create temp dir failed: %v", err)
 	}
 
-	files, err := y.getFiles(ctx, tempDirId, false)
+	files, err := y.getFiles(ctx, y.TempDirId, false)
 	if err != nil {
 		return err
 	}
 
 	for _, file := range files {
 		if file.GetName() == conf.TempDirName {
-			tempDirId = file.GetID()
+			y.TempDirId = file.GetID()
 			break
 		}
 	}
 
-	log.Info("189Cloud temp folder id: ", tempDirId)
+	log.Info("189Cloud temp folder id: ", y.TempDirId)
 	return nil
 }
 
@@ -44,7 +42,7 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 	other := map[string]string{"shareId": strconv.Itoa(shareId)}
 
 	log.Debug("create share save task")
-	resp, err := y.CreateBatchTask("SHARE_SAVE", IF(isFamily, y.FamilyID, ""), tempDirId, other, BatchTaskInfo{
+	resp, err := y.CreateBatchTask("SHARE_SAVE", IF(isFamily, y.FamilyID, ""), y.TempDirId, other, BatchTaskInfo{
 		FileId:   fileId,
 		FileName: fileName,
 		IsFolder: 0,
@@ -61,7 +59,7 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 	}
 
 	log.Debug("get files")
-	files, err := y.getFiles(ctx, tempDirId, false)
+	files, err := y.getFiles(ctx, y.TempDirId, false)
 	if err != nil {
 		return nil, err
 	}

@@ -205,6 +205,12 @@ func (d *AliyundriveShare2Open) checkUserId() error {
 		return errors.New("阿里Token与开放Token账号不匹配！")
 	}
 	DriveId = utils.Json.Get(res, "resource_drive_id").ToString()
+	if DriveId == "" {
+		DriveId = utils.Json.Get(res, "default_drive_id").ToString()
+		log.Printf("备份盘ID： %v", DriveId)
+	} else {
+		log.Printf("资源盘ID： %v", DriveId)
+	}
 	return nil
 }
 
@@ -229,7 +235,7 @@ func (d *AliyundriveShare2Open) getDriveId() {
 	}
 }
 
-func (d *AliyundriveShare2Open) createFolderOpen() {
+func (d *AliyundriveShare2Open) createTempDir() {
 	if ParentFileId != "" {
 		return
 	}
@@ -245,7 +251,7 @@ func (d *AliyundriveShare2Open) createFolderOpen() {
 	})
 
 	if err != nil {
-		log.Warnf("创建缓存文件夹失败: %v", err)
+		log.Warnf("创建阿里缓存文件夹失败: %v", err)
 	} else {
 		ParentFileId = utils.Json.Get(res, "file_id").ToString()
 	}
@@ -253,7 +259,7 @@ func (d *AliyundriveShare2Open) createFolderOpen() {
 	if ParentFileId == "" {
 		ParentFileId = "root"
 	}
-	log.Printf("缓存文件夹ID： %v", ParentFileId)
+	log.Printf("阿里缓存文件夹ID： %v", ParentFileId)
 }
 
 func (d *AliyundriveShare2Open) SaveToken(t time.Time) {
@@ -650,7 +656,7 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 	return files, nil
 }
 
-func (d *AliyundriveShare2Open) clean() {
+func (d *AliyundriveShare2Open) cleanTempFolder() {
 	if cleaned || ParentFileId == "root" {
 		return
 	}
@@ -738,7 +744,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 	if ok, err := pan115.UploadAvailable(); err != nil || !ok {
 		return nil, err
 	}
-	log.Debugf("save file to 115 cloud: file=%v dir=%v", file.GetID(), _115.TempDirId)
+	log.Debugf("save file to 115 cloud: file=%v dir=%v", file.GetID(), pan115.TempDirId)
 	fs := stream.FileStream{
 		Obj: file,
 		Ctx: ctx,
@@ -753,7 +759,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 	preHash := "2EF7BDE608CE5404E97D5F042F95F89F1C232871"
 	fullHash := fs.GetHash().GetHash(utils.SHA1)
 	log.Infof("id=%v name=%v size=%v hash=%v", fs.GetID(), fs.GetName(), fs.GetSize(), fullHash)
-	res, err := pan115.RapidUpload(fs.GetSize(), fs.GetName(), _115.TempDirId, preHash, fullHash, ss)
+	res, err := pan115.RapidUpload(fs.GetSize(), fs.GetName(), pan115.TempDirId, preHash, fullHash, ss)
 	if err != nil {
 		log.Warnf("115 upload failed: %v", err)
 		return link, nil

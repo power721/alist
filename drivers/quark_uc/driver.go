@@ -23,8 +23,9 @@ import (
 type QuarkOrUC struct {
 	model.Storage
 	Addition
-	config driver.Config
-	conf   Conf
+	config    driver.Config
+	conf      Conf
+	TempDirId string
 }
 
 func (d *QuarkOrUC) Config() driver.Config {
@@ -37,7 +38,11 @@ func (d *QuarkOrUC) GetAddition() driver.Additional {
 
 func (d *QuarkOrUC) Init(ctx context.Context) error {
 	_, err := d.request("/config", http.MethodGet, nil, nil)
-	return err
+	if err != nil {
+		return err
+	}
+	d.getTempFolder()
+	return nil
 }
 
 func (d *QuarkOrUC) Drop(ctx context.Context) error {

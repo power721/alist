@@ -9,8 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var TempDirId = "0"
-
 func (d *Pan115) GetClient() *driver115.Pan115Client {
 	return d.client
 }
@@ -21,7 +19,7 @@ func (d *Pan115) UploadAvailable() (bool, error) {
 
 func (d *Pan115) createTempDir(ctx context.Context) {
 	root := d.Addition.RootID.RootFolderID
-	TempDirId = root
+	d.TempDirId = root
 	dir := &model.Object{
 		ID: root,
 	}
@@ -31,19 +29,19 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 	files, _ := d.getFiles(root)
 	for _, file := range files {
 		if file.Name == name {
-			TempDirId = file.FileID
+			d.TempDirId = file.FileID
 			clean = true
 			break
 		}
 	}
-	log.Infof("115 temp folder id: %v", TempDirId)
+	log.Infof("115 temp folder id: %v", d.TempDirId)
 	if clean {
 		d.cleanTempDir()
 	}
 }
 
 func (d *Pan115) cleanTempDir() {
-	files, _ := d.getFiles(TempDirId)
+	files, _ := d.getFiles(d.TempDirId)
 	for _, file := range files {
 		log.Infof("删除115文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
 		d.client.Delete(file.GetID())
@@ -52,7 +50,7 @@ func (d *Pan115) cleanTempDir() {
 }
 
 func (d *Pan115) DeleteTempFile(fullHash string) {
-	files, _ := d.getFiles(TempDirId)
+	files, _ := d.getFiles(d.TempDirId)
 	for _, file := range files {
 		if file.Sha1 == fullHash {
 			log.Infof("删除115文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())

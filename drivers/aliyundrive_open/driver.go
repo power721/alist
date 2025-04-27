@@ -27,6 +27,8 @@ type AliyundriveOpen struct {
 
 	DriveId string
 
+	TempDirId string
+
 	limitList func(ctx context.Context, data base.Json) (*Files, error)
 	limitLink func(ctx context.Context, file model.Obj) (*model.Link, error)
 	ref       *AliyundriveOpen

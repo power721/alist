@@ -61,8 +61,8 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 		}
 
 		d.getDriveId()
-		d.createFolderOpen()
-		d.clean()
+		d.createTempDir()
+		d.cleanTempFolder()
 
 		initialized = true
 	}
