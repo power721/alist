@@ -29,7 +29,7 @@ func LoadStorages() {
 					i+1, storages[i].MountPath, storages[i].Driver)
 			}
 		}
-		log.Infof("load storages completed")
+		log.Infof("=== load storages completed ===")
 		conf.StoragesLoaded = true
 	}(storages)
 }
