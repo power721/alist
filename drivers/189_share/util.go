@@ -63,8 +63,8 @@ func (d *Cloud189Share) getShareFiles(ctx context.Context, dir model.Obj) ([]Fil
 		fileId = shareInfo.FileId
 	}
 
-	log.Infof("shareInfo=%v", shareInfo)
-	log.Infof("fileId=%v", fileId)
+	log.Debugf("shareInfo=%v", shareInfo)
+	log.Debugf("fileId=%v", fileId)
 
 	var res []FileObj
 	for pageNum := 1; ; pageNum++ {
