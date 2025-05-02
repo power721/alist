@@ -27,6 +27,7 @@ type QuarkOrUC struct {
 	conf   Conf
 
 	TempDirId string
+	vip       bool
 }
 
 func (d *QuarkOrUC) Config() driver.Config {
@@ -38,7 +39,7 @@ func (d *QuarkOrUC) GetAddition() driver.Additional {
 }
 
 func (d *QuarkOrUC) Init(ctx context.Context) error {
-	_, err := d.request("/config", http.MethodGet, nil, nil)
+	err := d.getUserInfo()
 	if err != nil {
 		return err
 	}
@@ -61,6 +62,10 @@ func (d *QuarkOrUC) List(ctx context.Context, dir model.Obj, args model.ListArgs
 }
 
 func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	if !d.vip {
+		return d.getPlayUrl(file)
+	}
+
 	data := base.Json{
 		"fids": []string{file.GetID()},
 	}
