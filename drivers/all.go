@@ -8,6 +8,7 @@ import (
 	_ "github.com/alist-org/alist/v3/drivers/123_link"
 	_ "github.com/alist-org/alist/v3/drivers/123_share"
 	_ "github.com/alist-org/alist/v3/drivers/139"
+	_ "github.com/alist-org/alist/v3/drivers/139_share"
 	_ "github.com/alist-org/alist/v3/drivers/189"
 	_ "github.com/alist-org/alist/v3/drivers/189_share"
 	_ "github.com/alist-org/alist/v3/drivers/189pc"
