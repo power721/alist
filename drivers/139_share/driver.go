@@ -6,6 +6,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 type Yun139Share struct {
@@ -41,12 +42,13 @@ func (d *Yun139Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 }
 
 func (d *Yun139Share) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	log.Infof("获取文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
+	log.Debugf("获取文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
 	url, err := d.link(file.GetID())
 	if err != nil {
 		return nil, err
 	}
-	return &model.Link{URL: url}, nil
+	exp := 895 * time.Second
+	return &model.Link{URL: url, Expiration: &exp}, nil
 }
 
 var _ driver.Driver = (*Yun139Share)(nil)
