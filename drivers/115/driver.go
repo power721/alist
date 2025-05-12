@@ -22,7 +22,9 @@ type Pan115 struct {
 	client     *driver115.Pan115Client
 	limiter    *rate.Limiter
 	appVerOnce sync.Once
-	TempDirId  string
+
+	TempDirId    string
+	ReceiveDirId string
 }
 
 func (d *Pan115) Config() driver.Config {

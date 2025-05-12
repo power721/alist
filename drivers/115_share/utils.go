@@ -59,8 +59,8 @@ func transFunc(sf driver115.ShareFile) (model.Obj, error) {
 	}
 	var (
 		utm    = time.Unix(timeInt, 0)
-		isDir  = (sf.IsFile == 0)
-		fileID = string(sf.FileID)
+		isDir  = sf.IsFile == 0
+		fileID = sf.FileID + "-" + sf.Sha1
 	)
 	if isDir {
 		fileID = string(sf.CategoryID)
@@ -69,7 +69,7 @@ func transFunc(sf driver115.ShareFile) (model.Obj, error) {
 		Size:     int64(sf.Size),
 		Sha1:     sf.Sha1,
 		Utm:      utm,
-		FileName: string(sf.FileName),
+		FileName: sf.FileName,
 		isDir:    isDir,
 		FileID:   fileID,
 	}, nil

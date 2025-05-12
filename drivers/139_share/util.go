@@ -14,7 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
-	"regexp"
 	"time"
 )
 
@@ -109,7 +108,6 @@ func (y *Yun139Share) list(pCaID string) ([]File, error) {
 	}
 
 	files := make([]File, 0)
-	filter := regexp.MustCompile("App|活动中心|免费|1T空间|免流")
 
 	log.Debugf("list files: %v", actualID)
 
@@ -123,9 +121,6 @@ func (y *Yun139Share) list(pCaID string) ([]File, error) {
 		log.Debugf("list count: %v next: %v, %v folders %v files", res.Data.Count, res.Data.Next, len(res.Data.Folders), len(res.Data.Files))
 
 		for _, f := range res.Data.Folders {
-			if filter.MatchString(f.Name) {
-				continue
-			}
 			file := File{
 				Name:  f.Name,
 				Path:  f.Path,
