@@ -4,7 +4,11 @@ import (
 	"context"
 	"errors"
 	_115 "github.com/alist-org/alist/v3/drivers/115"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/op"
+	"github.com/alist-org/alist/v3/internal/setting"
+	log "github.com/sirupsen/logrus"
+	"time"
 
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -97,7 +101,21 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		return nil, err
 	}
 
+	go deleteFile(client, downloadInfo.FileID)
+
 	return &model.Link{URL: downloadInfo.URL.URL}, nil
+}
+
+func deleteFile(client *driver115.Pan115Client, fileId string) {
+	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
+	if delayTime == 0 {
+		return
+	}
+
+	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
+	time.Sleep(time.Duration(delayTime) * time.Second)
+
+	client.Delete(fileId)
 }
 
 func (d *Pan115Share) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) error {
