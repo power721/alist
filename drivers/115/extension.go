@@ -37,6 +37,7 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 		}
 	}
 	log.Infof("115 temp folder id: %v", d.TempDirId)
+	log.Infof("115 receive folder id: %v", d.ReceiveDirId)
 	if clean {
 		d.cleanTempDir()
 	}
@@ -62,7 +63,20 @@ func (d *Pan115) DeleteTempFile(fullHash string) {
 	}
 }
 
+func (d *Pan115) getReceiveDirId() {
+	files, _ := d.getFiles("0")
+	for _, file := range files {
+		if file.Name == "我的接收" {
+			d.ReceiveDirId = file.FileID
+		}
+	}
+	log.Infof("115 receive folder id: %v", d.ReceiveDirId)
+}
+
 func (d *Pan115) DeleteReceivedFile(sha1 string) {
+	if len(d.ReceiveDirId) == 0 {
+		d.getReceiveDirId()
+	}
 	files, _ := d.getFiles(d.ReceiveDirId)
 	for _, file := range files {
 		if file.Sha1 == sha1 {
