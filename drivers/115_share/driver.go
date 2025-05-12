@@ -8,6 +8,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/setting"
 	log "github.com/sirupsen/logrus"
+	"strings"
 	"time"
 
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
@@ -90,32 +91,35 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		return nil, err
 	}
 
+	log.Debugf("get link: %s", file.GetID())
 	pan115 := op.Get115Driver()
 	if pan115 == nil {
 		return nil, errors.New("no 115 driver found")
 	}
 	client := pan115.(*_115.Pan115).GetClient()
 
-	downloadInfo, err := client.DownloadByShareCode(d.ShareCode, d.ReceiveCode, file.GetID())
+	parts := strings.Split(file.GetID(), "-")
+	fid := parts[0]
+	sha1 := parts[1]
+	downloadInfo, err := client.DownloadByShareCode(d.ShareCode, d.ReceiveCode, fid)
 	if err != nil {
 		return nil, err
 	}
 
-	go deleteFile(client, downloadInfo.FileID)
+	go delayDelete115(pan115.(*_115.Pan115), sha1)
 
 	return &model.Link{URL: downloadInfo.URL.URL}, nil
 }
 
-func deleteFile(client *driver115.Pan115Client, fileId string) {
+func delayDelete115(pan115 *_115.Pan115, sha1 string) {
 	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
 	if delayTime == 0 {
 		return
 	}
 
-	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
+	log.Infof("Delete 115 file %v after %v seconds.", sha1, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
-
-	client.Delete(fileId)
+	pan115.DeleteReceivedFile(sha1)
 }
 
 func (d *Pan115Share) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) error {

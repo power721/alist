@@ -28,10 +28,12 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 	_, _ = d.MakeDir(ctx, dir, name)
 	files, _ := d.getFiles(root)
 	for _, file := range files {
+		if file.Name == "我的接收" {
+			d.ReceiveDirId = file.FileID
+		}
 		if file.Name == name {
 			d.TempDirId = file.FileID
 			clean = true
-			break
 		}
 	}
 	log.Infof("115 temp folder id: %v", d.TempDirId)
@@ -53,6 +55,17 @@ func (d *Pan115) DeleteTempFile(fullHash string) {
 	files, _ := d.getFiles(d.TempDirId)
 	for _, file := range files {
 		if file.Sha1 == fullHash {
+			log.Infof("删除115文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
+			d.client.Delete(file.GetID())
+			d.DeleteFile(file.Sha1)
+		}
+	}
+}
+
+func (d *Pan115) DeleteReceivedFile(sha1 string) {
+	files, _ := d.getFiles(d.ReceiveDirId)
+	for _, file := range files {
+		if file.Sha1 == sha1 {
 			log.Infof("删除115文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
 			d.client.Delete(file.GetID())
 			d.DeleteFile(file.Sha1)
