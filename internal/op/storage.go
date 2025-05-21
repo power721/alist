@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/conf"
-	"github.com/alist-org/alist/v3/internal/setting"
 	"runtime"
 	"sort"
 	"strconv"
@@ -37,7 +36,7 @@ func Get115Driver(id int) driver.Driver {
 
 func GetFirstDriver(name string, id int) driver.Driver {
 	prefix := ""
-	if setting.GetBool(conf.DriverRoundRobin) {
+	if GetBool(conf.DriverRoundRobin) {
 		return GetMasterDriver(name, prefix, id)
 	}
 
@@ -99,6 +98,11 @@ func GetMasterDriver(name, prefix string, id int) driver.Driver {
 		return storage
 	}
 	return nil
+}
+
+func GetBool(key string) bool {
+	val, _ := GetSettingItemByKey(key)
+	return val.Value == "true" || val.Value == "1"
 }
 
 func getMasterId(prefix string) uint {
