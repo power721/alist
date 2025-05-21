@@ -45,7 +45,15 @@ func (d *ThunderShare) Link(ctx context.Context, file model.Obj, args model.Link
 		return nil, err
 	}
 
-	return d.getDownloadUrl(ctx, fileId)
+	link, err := d.getDownloadUrl(ctx, fileId)
+	if err != nil {
+		return nil, err
+	}
+	if lastId != file.GetID() {
+		lastId = file.GetID()
+		idx++
+	}
+	return link, err
 }
 
 var _ driver.Driver = (*ThunderShare)(nil)

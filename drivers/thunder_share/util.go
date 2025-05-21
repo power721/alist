@@ -21,9 +21,11 @@ const (
 )
 
 var ParentFileId = ""
+var idx = 0
+var lastId = ""
 
 func (d *ThunderShare) saveFile(ctx context.Context, file model.Obj) (string, error) {
-	storage := op.GetFirstDriver("ThunderBrowser")
+	storage := op.GetFirstDriver("ThunderBrowser", idx)
 	thunder, ok := storage.(*thunder_browser.ThunderBrowser)
 	if !ok {
 		return "", errors.New("ThunderBrowser storage error")
@@ -70,7 +72,7 @@ func (d *ThunderShare) saveFile(ctx context.Context, file model.Obj) (string, er
 func (d *ThunderShare) getDownloadUrl(ctx context.Context, fileId string) (*model.Link, error) {
 	var link *model.Link
 	var args model.LinkArgs
-	storage := op.GetFirstDriver("ThunderBrowser")
+	storage := op.GetFirstDriver("ThunderBrowser", idx)
 	thunder, ok := storage.(*thunder_browser.ThunderBrowser)
 	if !ok {
 		return link, errors.New("ThunderBrowser storage error")
@@ -95,7 +97,7 @@ func (d *ThunderShare) deleteFile(ctx context.Context, thunder *thunder_browser.
 }
 
 func (t *ThunderShare) listShareFiles(ctx context.Context, dir model.Obj) ([]model.Obj, error) {
-	storage := op.GetFirstDriver("ThunderBrowser")
+	storage := op.GetFirstDriver("ThunderBrowser", idx)
 	thunder, ok := storage.(*thunder_browser.ThunderBrowser)
 	if !ok {
 		return nil, errors.New("ThunderBrowser storage error")

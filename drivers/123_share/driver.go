@@ -38,7 +38,7 @@ func (d *Pan123Share) GetAddition() driver.Additional {
 }
 
 func (d *Pan123Share) Init(ctx context.Context) error {
-	pan123 := op.GetFirstDriver("123Pan")
+	pan123 := op.GetFirstDriver("123Pan", idx)
 	if pan123 != nil {
 		return d.InitReference(pan123)
 	}
@@ -128,6 +128,10 @@ func (d *Pan123Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		}
 		link.Header = http.Header{
 			"Referer": []string{"https://www.123pan.com/"},
+		}
+		if lastId != file.GetID() {
+			lastId = file.GetID()
+			idx++
 		}
 		return &link, nil
 	}

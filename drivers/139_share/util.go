@@ -20,6 +20,8 @@ import (
 var (
 	secretKey = []byte("PVGDwmcvfs1uV3d1")
 )
+var idx = 0
+var lastId = ""
 
 func (y *Yun139Share) httpPost(pathname string, data string, auth bool) ([]byte, error) {
 	u := "https://share-kd-njs.yun.139.com/yun-share/richlifeApp/devapp/IOutLink/" + pathname
@@ -33,7 +35,7 @@ func (y *Yun139Share) httpPost(pathname string, data string, auth bool) ([]byte,
 	})
 
 	if auth {
-		driver := op.GetFirstDriver("139Yun")
+		driver := op.GetFirstDriver("139Yun", idx)
 		if driver != nil {
 			yun139 := driver.(*_139.Yun139)
 			req.SetHeader("Authorization", "Basic "+yun139.Authorization)
@@ -150,7 +152,7 @@ func (y *Yun139Share) list(pCaID string) ([]File, error) {
 
 func (y *Yun139Share) link(fid string) (string, error) {
 	account := ""
-	driver := op.GetFirstDriver("139Yun")
+	driver := op.GetFirstDriver("139Yun", idx)
 	if driver != nil {
 		yun139 := driver.(*_139.Yun139)
 		account = yun139.Account

@@ -25,9 +25,11 @@ const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 const Referer = "https://fast.uc.cn/"
 
 var Cookie = ""
+var idx = 0
+var lastId = ""
 
 func (d *UcShare) request(pathname string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
-	driver := op.GetFirstDriver("UC")
+	driver := op.GetFirstDriver("UC", idx)
 	if driver != nil {
 		uc := driver.(*quark.QuarkOrUC)
 		return uc.Request(pathname, method, callback, resp)
@@ -121,7 +123,7 @@ func (d *UcShare) getShareToken() error {
 }
 
 func (d *UcShare) saveFile(id string) (string, error) {
-	driver := op.GetFirstDriver("UC")
+	driver := op.GetFirstDriver("UC", idx)
 	folderId := "0"
 	if driver != nil {
 		uc := driver.(*quark.QuarkOrUC)
@@ -204,13 +206,13 @@ func (d *UcShare) getSaveTaskResult(taskId string) (string, error) {
 func (d *UcShare) getDownloadUrl(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	go d.deleteDelay(file.GetID())
 
-	driver := op.GetFirstDriver("UC")
+	driver := op.GetFirstDriver("UC", idx)
 	if driver != nil {
 		log.Infof("use UC cookie")
 		uc := driver.(*quark.QuarkOrUC)
 		return uc.Link(ctx, file, args)
 	} else {
-		driver := op.GetFirstDriver("UCTV")
+		driver := op.GetFirstDriver("UCTV", idx)
 		if driver != nil {
 			log.Infof("use UC TV")
 			uc := driver.(*quark_uc_tv.QuarkUCTV)

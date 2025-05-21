@@ -63,7 +63,7 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 		return nil, errors.New("文件格式错误")
 	}
 
-	storage := op.GetFirstDriver("189CloudPC")
+	storage := op.GetFirstDriver("189CloudPC", idx)
 	cloud189PC, ok := storage.(*_189pc.Cloud189PC)
 	if !ok {
 		return &model.Link{
@@ -81,7 +81,10 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 	if transfer != nil && transfer.URL != "" {
 		transfer.Expiration = &hour
 	}
-
+	if lastId != file.GetID() {
+		lastId = file.GetID()
+		idx++
+	}
 	return transfer, err
 }
 

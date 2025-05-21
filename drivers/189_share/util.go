@@ -16,6 +16,9 @@ import (
 var shareTokenCache = cache.NewMemCache(cache.WithShards[ShareInfo](128))
 var limiter = rate.NewLimiter(rate.Every(3000*time.Millisecond), 1)
 
+var idx = 0
+var lastId = ""
+
 func (d *Cloud189Share) getShareInfo() (ShareInfo, error) {
 	tempShareInfo, exist := shareTokenCache.Get(d.ShareId)
 	if exist {

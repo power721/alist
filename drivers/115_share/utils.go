@@ -10,6 +10,8 @@ import (
 )
 
 var _ model.Obj = (*FileObj)(nil)
+var idx = 0
+var lastId = ""
 
 type FileObj struct {
 	Size     int64

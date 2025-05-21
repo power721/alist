@@ -3,13 +3,14 @@ package op
 import (
 	"context"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/conf"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/db"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
@@ -30,12 +31,16 @@ func GetAllStorages() []driver.Driver {
 	return storagesMap.Values()
 }
 
-func Get115Driver() driver.Driver {
-	return GetFirstDriver("115 Cloud")
+func Get115Driver(id int) driver.Driver {
+	return GetFirstDriver("115 Cloud", id)
 }
 
-func GetFirstDriver(name string) driver.Driver {
+func GetFirstDriver(name string, id int) driver.Driver {
 	prefix := ""
+	if setting.GetBool(conf.DriverRoundRobin) {
+		return GetMasterDriver(name, prefix, id)
+	}
+
 	if name == "115 Cloud" {
 		prefix = conf.PAN115
 	} else if name == "Quark" {
@@ -57,11 +62,14 @@ func GetFirstDriver(name string) driver.Driver {
 	} else if name == "123Pan" {
 		prefix = "PAN123"
 	}
-	return GetMasterDriver(name, prefix)
+	return GetMasterDriver(name, prefix, id)
 }
 
-func GetMasterDriver(name, prefix string) driver.Driver {
+func GetMasterDriver(name, prefix string, id int) driver.Driver {
 	storages := storagesMap.Values()
+	sort.Slice(storages, func(i, j int) bool {
+		return storages[i].GetStorage().ID < storages[j].GetStorage().ID
+	})
 
 	if prefix != "" {
 		id := getMasterId(prefix)
@@ -74,10 +82,21 @@ func GetMasterDriver(name, prefix string) driver.Driver {
 		}
 	}
 
+	var drivers []driver.Driver
 	for _, storage := range storages {
 		if storage.Config().Name == name {
-			return storage
+			drivers = append(drivers, storage)
 		}
+	}
+
+	if len(drivers) == 0 {
+		return drivers[0]
+	}
+
+	if len(drivers) > 1 {
+		storage := drivers[id%len(drivers)]
+		log.Infof("Use storage %v %v %v %v", id, len(drivers), storage.Config().Name, storage.GetStorage().ID)
+		return storage
 	}
 	return nil
 }

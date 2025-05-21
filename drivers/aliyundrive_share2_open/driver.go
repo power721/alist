@@ -145,7 +145,7 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 		return link, err
 	}
 
-	driver115 := op.Get115Driver()
+	driver115 := op.Get115Driver(idx)
 	if driver115 != nil {
 		myFile := MyFile{
 			FileId:   fileId,
@@ -156,6 +156,10 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 		link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link, args)
 		if err2 == nil {
 			link = link115
+			if lastId != file.GetID() {
+				lastId = file.GetID()
+				idx++
+			}
 		}
 	}
 	return link, err
