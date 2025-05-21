@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	_123 "github.com/alist-org/alist/v3/drivers/123"
+	"github.com/alist-org/alist/v3/internal/op"
 	"hash/crc32"
 	"math"
 	"math/rand"
@@ -29,6 +31,9 @@ const (
 	//AuthKeySalt      = "8-8D$sL8gPjom7bk#cY"
 )
 
+var idx = 0
+var lastId = ""
+
 func signPath(path string, os string, version string) (k string, v string) {
 	table := []byte{'a', 'd', 'e', 'f', 'g', 'h', 'l', 'm', 'y', 'i', 'j', 'n', 'o', 'p', 'k', 'q', 'r', 's', 't', 'u', 'b', 'c', 'v', 'w', 's', 'z'}
 	random := fmt.Sprintf("%.f", math.Round(1e7*rand.Float64()))
@@ -53,6 +58,13 @@ func GetApi(rawUrl string) string {
 }
 
 func (d *Pan123Share) request(url string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
+	storage := op.GetFirstDriver("123Pan", idx)
+	if storage != nil {
+		pan123, ok := storage.(*_123.Pan123)
+		if ok {
+			return pan123.Request(url, method, callback, resp)
+		}
+	}
 	if d.ref != nil {
 		return d.ref.Request(url, method, callback, resp)
 	}

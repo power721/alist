@@ -46,6 +46,8 @@ var lastTime int64 = 0
 var userid = ""
 var nickname = ""
 var cleaned = false
+var idx = 0
+var lastId = ""
 
 func (d *AliyundriveShare2Open) refreshOpenToken(force bool) error {
 	accountId := setting.GetStr(conf.AliAccountId, "1")

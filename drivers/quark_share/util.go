@@ -26,9 +26,11 @@ const Referer = "https://pan.quark.cn"
 const Accept = "application/json, text/plain, */*"
 
 var Cookie = ""
+var idx = 0
+var lastId = ""
 
 func (d *QuarkShare) request(pathname string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
-	driver := op.GetFirstDriver("Quark")
+	driver := op.GetFirstDriver("Quark", idx)
 	if driver != nil {
 		uc := driver.(*quark.QuarkOrUC)
 		return uc.Request(pathname, method, callback, resp)
@@ -120,7 +122,7 @@ func (d *QuarkShare) getShareToken() error {
 }
 
 func (d *QuarkShare) saveFile(id string) (string, error) {
-	driver := op.GetFirstDriver("Quark")
+	driver := op.GetFirstDriver("Quark", idx)
 	folderId := "0"
 	if driver != nil {
 		uc := driver.(*quark.QuarkOrUC)
@@ -205,13 +207,13 @@ func (d *QuarkShare) getSaveTaskResult(taskId string) (string, error) {
 func (d *QuarkShare) getDownloadUrl(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	go d.deleteDelay(file.GetID())
 
-	driver := op.GetFirstDriver("Quark")
+	driver := op.GetFirstDriver("Quark", idx)
 	if driver != nil {
 		log.Infof("use Quark cookie")
 		uc := driver.(*quark.QuarkOrUC)
 		return uc.Link(ctx, file, args)
 	} else {
-		driver := op.GetFirstDriver("QuarkTV")
+		driver := op.GetFirstDriver("QuarkTV", idx)
 		if driver != nil {
 			log.Infof("use Quark TV")
 			uc := driver.(*quark_uc_tv.QuarkUCTV)

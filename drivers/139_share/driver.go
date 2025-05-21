@@ -47,6 +47,10 @@ func (d *Yun139Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	if err != nil {
 		return nil, err
 	}
+	if lastId != file.GetID() {
+		lastId = file.GetID()
+		idx++
+	}
 	exp := 895 * time.Second
 	return &model.Link{URL: url, Expiration: &exp}, nil
 }

@@ -57,7 +57,7 @@ func (d *Pan115Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 		return nil, err
 	}
 
-	pan115 := op.Get115Driver()
+	pan115 := op.Get115Driver(idx)
 	if pan115 == nil {
 		return []model.Obj{}, errors.New("no 115 driver found")
 	}
@@ -92,7 +92,7 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	}
 
 	log.Debugf("get link: %s", file.GetID())
-	pan115 := op.Get115Driver()
+	pan115 := op.Get115Driver(idx)
 	if pan115 == nil {
 		return nil, errors.New("no 115 driver found")
 	}
@@ -107,7 +107,10 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	}
 
 	go delayDelete115(pan115.(*_115.Pan115), sha1)
-
+	if lastId != file.GetID() {
+		lastId = file.GetID()
+		idx++
+	}
 	return &model.Link{URL: downloadInfo.URL.URL}, nil
 }
 
