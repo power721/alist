@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	quark "github.com/alist-org/alist/v3/drivers/quark_uc"
-	"github.com/alist-org/alist/v3/drivers/quark_uc_tv"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
@@ -211,16 +210,17 @@ func (d *QuarkShare) getDownloadUrl(ctx context.Context, file model.Obj, args mo
 		uc := driver.(*quark.QuarkOrUC)
 		go d.deleteDelay(uc, file.GetID())
 		return uc.Link(ctx, file, args)
-	} else {
-		driver := op.GetFirstDriver("QuarkTV", idx)
-		if driver != nil {
-			log.Infof("use Quark TV")
-			uc := driver.(*quark_uc_tv.QuarkUCTV)
-			return uc.Link(ctx, file, args)
-		}
 	}
+	//else {
+	//	driver := op.GetFirstDriver("QuarkTV", idx)
+	//	if driver != nil {
+	//		log.Infof("use Quark TV")
+	//		uc := driver.(*quark_uc_tv.QuarkUCTV)
+	//		return uc.Link(ctx, file, args)
+	//	}
+	//}
 
-	return nil, errors.New("no quark driver")
+	return nil, errors.New("no Quark driver")
 }
 
 func (d *QuarkShare) deleteDelay(quark *quark.QuarkOrUC, fileId string) {
