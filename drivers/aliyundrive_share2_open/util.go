@@ -523,7 +523,7 @@ func (d *AliyundriveShare2Open) deleteDelay(fileId string) {
 		return
 	}
 
-	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
+	log.Infof("Delete aliyun temp file %v after %v seconds.", fileId, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	d.deleteOpen(fileId)
 }
@@ -796,7 +796,7 @@ func (d *AliyundriveShare2Open) delayDelete115(pan115 *_115.Pan115, fileId strin
 		return
 	}
 
-	log.Infof("Delete 115 file %v after %v seconds.", fileId, delayTime)
+	log.Infof("Delete 115 temp file %v after %v seconds.", fileId, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	pan115.DeleteTempFile(fileId)
 }

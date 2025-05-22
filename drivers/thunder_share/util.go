@@ -5,8 +5,10 @@ import (
 	"errors"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/drivers/thunder_browser"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -24,13 +26,7 @@ var ParentFileId = ""
 var idx = 0
 var lastId = ""
 
-func (d *ThunderShare) saveFile(ctx context.Context, file model.Obj) (string, error) {
-	storage := op.GetFirstDriver("ThunderBrowser", idx)
-	thunder, ok := storage.(*thunder_browser.ThunderBrowser)
-	if !ok {
-		return "", errors.New("ThunderBrowser storage error")
-	}
-
+func (d *ThunderShare) saveFile(ctx context.Context, thunder *thunder_browser.ThunderBrowser, file model.Obj) (string, error) {
 	data := base.Json{
 		"file_ids":          []string{file.GetID()},
 		"ancestor_ids":      []string{},
@@ -69,39 +65,44 @@ func (d *ThunderShare) saveFile(ctx context.Context, file model.Obj) (string, er
 	return "", errors.New("file not found")
 }
 
-func (d *ThunderShare) getDownloadUrl(ctx context.Context, fileId string) (*model.Link, error) {
-	var link *model.Link
+func (d *ThunderShare) getDownloadUrl(ctx context.Context, thunder *thunder_browser.ThunderBrowser, fileId string) (*model.Link, error) {
 	var args model.LinkArgs
-	storage := op.GetFirstDriver("ThunderBrowser", idx)
-	thunder, ok := storage.(*thunder_browser.ThunderBrowser)
-	if !ok {
-		return link, errors.New("ThunderBrowser storage error")
-	}
-
 	var file model.Obj = &thunder_browser.Files{
 		ID:    fileId,
 		Space: "",
 	}
 
-	go d.deleteFile(ctx, thunder, file)
+	go d.deleteFileDelay(ctx, thunder, file)
 
-	log.Debugf("get link: %v", fileId)
+	log.Debugf("get Thunder file link: %v", fileId)
 	return thunder.Link(ctx, file, args)
+}
+
+func (d *ThunderShare) deleteFileDelay(ctx context.Context, thunder *thunder_browser.ThunderBrowser, file model.Obj) {
+	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
+	if delayTime == 0 {
+		return
+	}
+
+	log.Infof("Delete Thunder temp file %v after %v seconds.", file.GetID(), delayTime)
+	time.Sleep(time.Duration(delayTime) * time.Second)
+
+	d.deleteFile(ctx, thunder, file)
 }
 
 func (d *ThunderShare) deleteFile(ctx context.Context, thunder *thunder_browser.ThunderBrowser, file model.Obj) {
 	err := thunder.Remove(ctx, file)
 	if err != nil {
-		log.Warnf("delete temp file error: %v", err)
+		log.Warnf("delete Thunder temp file error: %v", err)
 	}
 }
 
 func (t *ThunderShare) listShareFiles(ctx context.Context, dir model.Obj) ([]model.Obj, error) {
 	storage := op.GetFirstDriver("ThunderBrowser", idx)
-	thunder, ok := storage.(*thunder_browser.ThunderBrowser)
-	if !ok {
-		return nil, errors.New("ThunderBrowser storage error")
+	if storage == nil {
+		return nil, errors.New("ThunderBrowser not found")
 	}
+	thunder := storage.(*thunder_browser.ThunderBrowser)
 	files := make([]model.Obj, 0)
 
 	parentId := dir.GetID()

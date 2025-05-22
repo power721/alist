@@ -2,8 +2,11 @@ package thunder_share
 
 import (
 	"context"
+	"errors"
+	"github.com/alist-org/alist/v3/drivers/thunder_browser"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/op"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -39,13 +42,18 @@ func (d *ThunderShare) List(ctx context.Context, dir model.Obj, args model.ListA
 
 func (d *ThunderShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	log.Infof("获取文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
-	fileId, err := d.saveFile(ctx, file)
+	storage := op.GetFirstDriver("ThunderBrowser", idx)
+	if storage == nil {
+		return nil, errors.New("ThunderBrowser not found")
+	}
+	thunder := storage.(*thunder_browser.ThunderBrowser)
+	fileId, err := d.saveFile(ctx, thunder, file)
 	if err != nil {
 		log.Warnf("保存文件失败: %v", err)
 		return nil, err
 	}
 
-	link, err := d.getDownloadUrl(ctx, fileId)
+	link, err := d.getDownloadUrl(ctx, thunder, fileId)
 	if lastId != file.GetID() {
 		lastId = file.GetID()
 		idx++

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -81,6 +82,14 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 	link, err := y.Link(ctx, transferFile, model.LinkArgs{})
 
 	go func() {
+		delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
+		if delayTime == 0 {
+			return
+		}
+
+		log.Infof("Delete 189 temp file %v after %v seconds.", fileId, delayTime)
+		time.Sleep(time.Duration(delayTime) * time.Second)
+
 		removeErr := y.Remove(ctx, transferFile)
 		if removeErr != nil {
 			log.Infof("天翼云盘删除文件:%s失败:%v", fileName, removeErr)

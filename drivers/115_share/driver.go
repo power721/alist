@@ -120,7 +120,7 @@ func delayDelete115(pan115 *_115.Pan115, sha1 string) {
 		return
 	}
 
-	log.Infof("Delete 115 file %v after %v seconds.", sha1, delayTime)
+	log.Infof("Delete 115 temp file %v after %v seconds.", sha1, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	pan115.DeleteReceivedFile(sha1)
 }

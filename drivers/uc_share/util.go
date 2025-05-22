@@ -229,7 +229,7 @@ func (d *UcShare) deleteDelay(uc *quark.QuarkOrUC, fileId string) {
 	}
 
 	delayTime += 5
-	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
+	log.Infof("Delete UC temp file %v after %v seconds.", fileId, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	d.deleteFile(uc, fileId)
 }
@@ -246,11 +246,11 @@ func (d *UcShare) deleteFile(uc *quark.QuarkOrUC, fileId string) error {
 	}, &resp)
 	log.Debugf("deleteFile: %v %v", fileId, string(res))
 	if err != nil {
-		log.Warnf("Delete UC file failed: %v %v", fileId, err)
+		log.Warnf("Delete UC temp file failed: %v %v", fileId, err)
 		return err
 	}
 	if resp.Status != 200 {
-		log.Warnf("Delete UC file failed: %v %v", fileId, resp.Message)
+		log.Warnf("Delete UC temp file failed: %v %v", fileId, resp.Message)
 		return errors.New(resp.Message)
 	}
 	return nil
