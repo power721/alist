@@ -88,7 +88,7 @@ func GetMasterDriver(name, prefix string, id int) driver.Driver {
 		}
 	}
 
-	if len(drivers) == 0 {
+	if len(drivers) == 1 {
 		return drivers[0]
 	}
 
