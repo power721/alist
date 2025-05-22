@@ -60,9 +60,6 @@ func (d *UcShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 	}
 
 	link, err := d.getDownloadUrl(ctx, MyFile{FileId: fileId}, args)
-	if err != nil {
-		return nil, err
-	}
 	if lastId != file.GetID() {
 		lastId = file.GetID()
 		idx++

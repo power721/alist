@@ -154,12 +154,12 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 			HashInfo: utils.NewHashInfo(utils.SHA1, hash),
 		}
 		link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link, args)
+		if lastId != file.GetID() {
+			lastId = file.GetID()
+			idx++
+		}
 		if err2 == nil {
 			link = link115
-			if lastId != file.GetID() {
-				lastId = file.GetID()
-				idx++
-			}
 		}
 	}
 	return link, err

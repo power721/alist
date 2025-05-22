@@ -204,12 +204,11 @@ func (d *UcShare) getSaveTaskResult(taskId string) (string, error) {
 }
 
 func (d *UcShare) getDownloadUrl(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	go d.deleteDelay(file.GetID())
-
 	driver := op.GetFirstDriver("UC", idx)
 	if driver != nil {
 		log.Infof("use UC cookie")
 		uc := driver.(*quark.QuarkOrUC)
+		go d.deleteDelay(uc, file.GetID())
 		return uc.Link(ctx, file, args)
 	} else {
 		driver := op.GetFirstDriver("UCTV", idx)
@@ -223,7 +222,7 @@ func (d *UcShare) getDownloadUrl(ctx context.Context, file model.Obj, args model
 	return nil, errors.New("no UC driver")
 }
 
-func (d *UcShare) deleteDelay(fileId string) {
+func (d *UcShare) deleteDelay(uc *quark.QuarkOrUC, fileId string) {
 	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
 	if delayTime == 0 {
 		return
@@ -232,17 +231,17 @@ func (d *UcShare) deleteDelay(fileId string) {
 	delayTime += 5
 	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
-	d.deleteFile(fileId)
+	d.deleteFile(uc, fileId)
 }
 
-func (d *UcShare) deleteFile(fileId string) error {
+func (d *UcShare) deleteFile(uc *quark.QuarkOrUC, fileId string) error {
 	data := base.Json{
 		"action_type":  1,
 		"exclude_fids": []string{},
 		"filelist":     []string{fileId},
 	}
 	var resp PlayResp
-	res, err := d.request("/file/delete", http.MethodPost, func(req *resty.Request) {
+	res, err := uc.Request("/file/delete", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data)
 	}, &resp)
 	log.Debugf("deleteFile: %v %v", fileId, string(res))

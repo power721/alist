@@ -44,12 +44,12 @@ func (d *Yun139Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 func (d *Yun139Share) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	log.Debugf("获取文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
 	url, err := d.link(file.GetID())
-	if err != nil {
-		return nil, err
-	}
 	if lastId != file.GetID() {
 		lastId = file.GetID()
 		idx++
+	}
+	if err != nil {
+		return nil, err
 	}
 	exp := 895 * time.Second
 	return &model.Link{URL: url, Expiration: &exp}, nil

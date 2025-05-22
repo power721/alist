@@ -46,9 +46,6 @@ func (d *ThunderShare) Link(ctx context.Context, file model.Obj, args model.Link
 	}
 
 	link, err := d.getDownloadUrl(ctx, fileId)
-	if err != nil {
-		return nil, err
-	}
 	if lastId != file.GetID() {
 		lastId = file.GetID()
 		idx++
