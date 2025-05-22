@@ -22,7 +22,6 @@ const (
 	SHARE_RESTORE_API_URL = API_URL + "/share/restore"
 )
 
-var ParentFileId = ""
 var idx = 0
 var lastId = ""
 
@@ -30,13 +29,13 @@ func (d *ThunderShare) saveFile(ctx context.Context, thunder *thunder_browser.Th
 	data := base.Json{
 		"file_ids":          []string{file.GetID()},
 		"ancestor_ids":      []string{},
-		"parent_id":         ParentFileId,
+		"parent_id":         thunder.TempDirId,
 		"share_id":          d.ShareId,
 		"pass_code_token":   d.ShareToken,
 		"specify_parent_id": true,
 	}
 
-	log.Debugf("[%v] save Thunder file to folder %v", thunder.ID, ParentFileId)
+	log.Debugf("[%v] save Thunder file to folder %v", thunder.ID, thunder.TempDirId)
 	_, err := thunder.Request(SHARE_RESTORE_API_URL, http.MethodPost, func(r *resty.Request) {
 		r.SetBody(data)
 	}, nil)
@@ -47,7 +46,7 @@ func (d *ThunderShare) saveFile(ctx context.Context, thunder *thunder_browser.Th
 	time.Sleep(500 * time.Millisecond)
 	var args model.ListArgs
 	var dir model.Obj = &thunder_browser.Files{
-		ID:    ParentFileId,
+		ID:    thunder.TempDirId,
 		Space: "",
 	}
 	files, err := thunder.List(ctx, dir, args)
@@ -91,7 +90,7 @@ func (d *ThunderShare) deleteFileDelay(ctx context.Context, thunder *thunder_bro
 }
 
 func (d *ThunderShare) deleteFile(ctx context.Context, thunder *thunder_browser.ThunderBrowser, file model.Obj) {
-	log.Infof("[%v] delete Thunder temp file: %v", thunder.ID, file.GetID())
+	log.Infof("[%v] delete Thunder temp file: %v %v", thunder.ID, file.GetID(), file.GetName())
 	err := thunder.Remove(ctx, file)
 	if err != nil {
 		log.Warnf("[%v] delete Thunder temp file error: %v", thunder.ID, err)

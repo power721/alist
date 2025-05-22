@@ -29,6 +29,8 @@ type ThunderBrowser struct {
 	Addition
 
 	identity string
+
+	TempDirId string
 }
 
 func (x *ThunderBrowser) Config() driver.Config {
@@ -117,7 +119,7 @@ func (x *ThunderBrowser) Init(ctx context.Context) (err error) {
 		return err
 	}
 
-	return nil
+	return x.createTempDir(ctx)
 }
 
 func (x *ThunderBrowser) Drop(ctx context.Context) error {

@@ -90,7 +90,7 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 		log.Infof("[%v] Delete 189 temp file %v after %v seconds.", y.ID, fileId, delayTime)
 		time.Sleep(time.Duration(delayTime) * time.Second)
 
-		log.Infof("[%v] Delete 189 temp file: %v", y.ID, fileId)
+		log.Infof("[%v] Delete 189 temp file: %v %v", y.ID, fileId, fileName)
 		removeErr := y.Remove(ctx, transferFile)
 		if removeErr != nil {
 			log.Infof("[%v] 天翼云盘删除文件:%s失败: %v", y.ID, fileName, removeErr)
