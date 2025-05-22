@@ -73,7 +73,7 @@ func (d *QuarkOrUC) deleteFile(fileId string) error {
 	}, nil)
 	log.Debugf("deleteFile: %v %v", fileId, string(res))
 	if err != nil {
-		log.Warnf("Delete file failed: %v %v", fileId, err)
+		log.Warnf("Delete %v temp file failed: %v %v", d.Config().Name, fileId, err)
 		return err
 	}
 	return nil

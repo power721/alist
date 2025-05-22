@@ -125,7 +125,7 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 	// 1. 转存资源
 	// 2. 获取链接
 	// 3. 删除文件
-	log.Infof("获取文件直链 %v %v %v %v", DriveId, file.GetName(), file.GetID(), file.GetSize())
+	log.Infof("获取阿里云盘文件直链 %v %v %v %v", DriveId, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(file.GetID())
 	if err != nil {
 		return nil, err
@@ -154,12 +154,12 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 			HashInfo: utils.NewHashInfo(utils.SHA1, hash),
 		}
 		link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link, args)
+		if lastId != file.GetID() {
+			lastId = file.GetID()
+			idx++
+		}
 		if err2 == nil {
 			link = link115
-			if lastId != file.GetID() {
-				lastId = file.GetID()
-				idx++
-			}
 		}
 	}
 	return link, err

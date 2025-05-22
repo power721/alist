@@ -10,6 +10,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
+	log "github.com/sirupsen/logrus"
 	"path/filepath"
 	"time"
 )
@@ -70,6 +71,7 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 			URL: "",
 		}, nil
 	}
+	log.Infof("[%v] 获取天翼云盘文件直链 %v %v %v", cloud189PC.ID, file.GetName(), file.GetID(), file.GetSize())
 
 	shareInfo, err := d.getShareInfo()
 	if err != nil {

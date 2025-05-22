@@ -2,9 +2,12 @@ package uc_share
 
 import (
 	"context"
+	"errors"
+	quark "github.com/alist-org/alist/v3/drivers/quark_uc"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	log "github.com/sirupsen/logrus"
@@ -53,16 +56,18 @@ func (d *UcShare) List(ctx context.Context, dir model.Obj, args model.ListArgs) 
 }
 
 func (d *UcShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	log.Infof("获取文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
-	fileId, err := d.saveFile(file.GetID())
+	storage := op.GetFirstDriver("UC", idx)
+	if storage == nil {
+		return nil, errors.New("UC not found")
+	}
+	uc := storage.(*quark.QuarkOrUC)
+	log.Infof("[%v] 获取UC文件直链 %v %v %v", uc.ID, file.GetName(), file.GetID(), file.GetSize())
+	fileId, err := d.saveFile(uc, file.GetID())
 	if err != nil {
 		return nil, err
 	}
 
-	link, err := d.getDownloadUrl(ctx, MyFile{FileId: fileId}, args)
-	if err != nil {
-		return nil, err
-	}
+	link, err := d.getDownloadUrl(ctx, uc, MyFile{FileId: fileId}, args)
 	if lastId != file.GetID() {
 		lastId = file.GetID()
 		idx++

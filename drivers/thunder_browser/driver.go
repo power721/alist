@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -28,6 +29,8 @@ type ThunderBrowser struct {
 	Addition
 
 	identity string
+
+	TempDirId string
 }
 
 func (x *ThunderBrowser) Config() driver.Config {
@@ -116,7 +119,7 @@ func (x *ThunderBrowser) Init(ctx context.Context) (err error) {
 		return err
 	}
 
-	return nil
+	return x.createTempDir(ctx)
 }
 
 func (x *ThunderBrowser) Drop(ctx context.Context) error {
@@ -333,8 +336,10 @@ func (xc *XunLeiBrowserCommon) Link(ctx context.Context, file model.Obj, args mo
 	if err != nil {
 		return nil, err
 	}
+	exp := 895 * time.Second
 	link := &model.Link{
-		URL: lFile.WebContentLink,
+		Expiration: &exp,
+		URL:        lFile.WebContentLink,
 		Header: http.Header{
 			"User-Agent": {xc.DownloadUserAgent},
 		},

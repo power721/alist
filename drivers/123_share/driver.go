@@ -71,6 +71,7 @@ func (d *Pan123Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 }
 
 func (d *Pan123Share) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	log.Infof("获取123文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
 	// TODO return link of file, required
 	if f, ok := file.(File); ok {
 		//var resp DownResp
@@ -94,6 +95,10 @@ func (d *Pan123Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		resp, err := d.request(DownloadInfo, http.MethodPost, func(req *resty.Request) {
 			req.SetBody(data).SetHeaders(headers)
 		}, nil)
+		if lastId != file.GetID() {
+			lastId = file.GetID()
+			idx++
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -128,10 +133,6 @@ func (d *Pan123Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		}
 		link.Header = http.Header{
 			"Referer": []string{"https://www.123pan.com/"},
-		}
-		if lastId != file.GetID() {
-			lastId = file.GetID()
-			idx++
 		}
 		return &link, nil
 	}

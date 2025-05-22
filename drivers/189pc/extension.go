@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -81,21 +82,30 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 	link, err := y.Link(ctx, transferFile, model.LinkArgs{})
 
 	go func() {
-		removeErr := y.Remove(ctx, transferFile)
-		if removeErr != nil {
-			log.Infof("天翼云盘删除文件:%s失败:%v", fileName, removeErr)
+		delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
+		if delayTime == 0 {
 			return
 		}
-		log.Debugf("已删除天翼云盘下的文件:%s", fileName)
+
+		log.Infof("[%v] Delete 189 temp file %v after %v seconds.", y.ID, fileId, delayTime)
+		time.Sleep(time.Duration(delayTime) * time.Second)
+
+		log.Infof("[%v] Delete 189 temp file: %v %v", y.ID, fileId, fileName)
+		removeErr := y.Remove(ctx, transferFile)
+		if removeErr != nil {
+			log.Infof("[%v] 天翼云盘删除文件:%s失败: %v", y.ID, fileName, removeErr)
+			return
+		}
+		log.Debugf("[%v] 已删除天翼云盘下的文件: %v", y.ID, fileName)
 		_, removeErr = y.CreateBatchTask("CLEAR_RECYCLE", "", "", nil, BatchTaskInfo{
 			FileId:   transferFile.GetID(),
 			FileName: transferFile.GetName(),
 			IsFolder: 0,
 		})
 		if removeErr != nil {
-			log.Info("天翼云盘清除回收站失败", removeErr)
+			log.Infof("[%v] 天翼云盘清除回收站失败: %v", y.ID, removeErr)
 		} else {
-			log.Debug("天翼云盘清除回收站完成")
+			log.Debugf("[%v] 天翼云盘清除回收站完成", y.ID)
 		}
 	}()
 

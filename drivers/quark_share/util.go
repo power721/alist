@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	quark "github.com/alist-org/alist/v3/drivers/quark_uc"
-	"github.com/alist-org/alist/v3/drivers/quark_uc_tv"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
@@ -121,20 +120,14 @@ func (d *QuarkShare) getShareToken() error {
 	return nil
 }
 
-func (d *QuarkShare) saveFile(id string) (string, error) {
-	driver := op.GetFirstDriver("Quark", idx)
-	folderId := "0"
-	if driver != nil {
-		uc := driver.(*quark.QuarkOrUC)
-		folderId = uc.TempDirId
-	}
+func (d *QuarkShare) saveFile(quark *quark.QuarkOrUC, id string) (string, error) {
 	s := strings.Split(id, "-")
 	fileId := s[0]
 	fileTokenId := s[1]
 	data := base.Json{
 		"fid_list":       []string{fileId},
 		"fid_token_list": []string{fileTokenId},
-		"to_pdir_fid":    folderId,
+		"to_pdir_fid":    quark.TempDirId,
 		"pwd_id":         d.ShareId,
 		"stoken":         d.ShareToken,
 		"pdir_fid":       "0",
@@ -204,57 +197,39 @@ func (d *QuarkShare) getSaveTaskResult(taskId string) (string, error) {
 	return "", errors.New("Get task result failed.")
 }
 
-func (d *QuarkShare) getDownloadUrl(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	go d.deleteDelay(file.GetID())
-
-	driver := op.GetFirstDriver("Quark", idx)
-	if driver != nil {
-		log.Infof("use Quark cookie")
-		uc := driver.(*quark.QuarkOrUC)
-		return uc.Link(ctx, file, args)
-	} else {
-		driver := op.GetFirstDriver("QuarkTV", idx)
-		if driver != nil {
-			log.Infof("use Quark TV")
-			uc := driver.(*quark_uc_tv.QuarkUCTV)
-			return uc.Link(ctx, file, args)
-		}
-	}
-
-	return nil, errors.New("no quark driver")
+func (d *QuarkShare) getDownloadUrl(ctx context.Context, quark *quark.QuarkOrUC, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	go d.deleteDelay(quark, file.GetID())
+	return quark.Link(ctx, file, args)
 }
 
-func (d *QuarkShare) deleteDelay(fileId string) {
+func (d *QuarkShare) deleteDelay(quark *quark.QuarkOrUC, fileId string) {
 	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
 	if delayTime == 0 {
 		return
 	}
 
-	log.Infof("Delete file %v after %v seconds.", fileId, delayTime)
+	log.Infof("[%v] Delete Quark temp file %v after %v seconds.", quark.ID, fileId, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
-	d.deleteFile(fileId)
+	d.deleteFile(quark, fileId)
 }
 
-func (d *QuarkShare) deleteFile(fileId string) error {
+func (d *QuarkShare) deleteFile(quark *quark.QuarkOrUC, fileId string) {
+	log.Infof("[%v] Delete Quark temp file: %v", quark.ID, fileId)
 	data := base.Json{
 		"action_type":  1,
 		"exclude_fids": []string{},
 		"filelist":     []string{fileId},
 	}
 	var resp PlayResp
-	res, err := d.request("/file/delete", http.MethodPost, func(req *resty.Request) {
+	res, err := quark.Request("/file/delete", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data)
 	}, &resp)
-	log.Debugf("deleteFile: %v %v", fileId, string(res))
+	log.Debugf("[%v] Delete Quark temp file: %v %v", quark.ID, fileId, string(res))
 	if err != nil {
-		log.Warnf("Delete file failed: %v %v", fileId, err)
-		return err
+		log.Warnf("[%v] Delete Quark temp file failed: %v %v", quark.ID, fileId, err)
+	} else if resp.Status != 200 {
+		log.Warnf("[%v] Delete Quark temp file failed: %v %v", quark.ID, fileId, resp.Message)
 	}
-	if resp.Status != 200 {
-		log.Warnf("Delete file failed: %v %v", fileId, resp.Message)
-		return errors.New(resp.Message)
-	}
-	return nil
 }
 
 func (d *QuarkShare) getShareFiles(id string) ([]File, error) {

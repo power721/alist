@@ -91,26 +91,27 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		return nil, err
 	}
 
-	log.Debugf("get link: %s", file.GetID())
-	pan115 := op.Get115Driver(idx)
-	if pan115 == nil {
+	storage := op.Get115Driver(idx)
+	if storage == nil {
 		return nil, errors.New("no 115 driver found")
 	}
-	client := pan115.(*_115.Pan115).GetClient()
+	pan115 := storage.(*_115.Pan115)
+	client := pan115.GetClient()
+	log.Infof("[%v] 获取115文件直链 %v %v %v", pan115.ID, file.GetName(), file.GetID(), file.GetSize())
 
 	parts := strings.Split(file.GetID(), "-")
 	fid := parts[0]
 	sha1 := parts[1]
 	downloadInfo, err := client.DownloadByShareCode(d.ShareCode, d.ReceiveCode, fid)
-	if err != nil {
-		return nil, err
-	}
-
-	go delayDelete115(pan115.(*_115.Pan115), sha1)
 	if lastId != file.GetID() {
 		lastId = file.GetID()
 		idx++
 	}
+	if err != nil {
+		return nil, err
+	}
+
+	go delayDelete115(pan115, sha1)
 	return &model.Link{URL: downloadInfo.URL.URL}, nil
 }
 
@@ -120,7 +121,7 @@ func delayDelete115(pan115 *_115.Pan115, sha1 string) {
 		return
 	}
 
-	log.Infof("Delete 115 file %v after %v seconds.", sha1, delayTime)
+	log.Infof("[%v] Delete 115 temp file %v after %v seconds.", pan115.ID, sha1, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	pan115.DeleteReceivedFile(sha1)
 }

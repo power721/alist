@@ -83,8 +83,10 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 		chunkSize = conf.UcChunkSize
 	}
 
+	exp := 895 * time.Second
 	return &model.Link{
-		URL: resp.Data[0].DownloadUrl,
+		Expiration: &exp,
+		URL:        resp.Data[0].DownloadUrl,
 		Header: http.Header{
 			"Cookie":     []string{d.Cookie},
 			"Referer":    []string{d.conf.referer},
