@@ -71,6 +71,7 @@ func (d *Pan123Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 }
 
 func (d *Pan123Share) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	log.Infof("获取123文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
 	// TODO return link of file, required
 	if f, ok := file.(File); ok {
 		//var resp DownResp

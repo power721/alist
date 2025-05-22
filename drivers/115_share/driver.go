@@ -91,12 +91,13 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		return nil, err
 	}
 
-	log.Debugf("get link: %s", file.GetID())
-	pan115 := op.Get115Driver(idx)
-	if pan115 == nil {
+	storage := op.Get115Driver(idx)
+	if storage == nil {
 		return nil, errors.New("no 115 driver found")
 	}
-	client := pan115.(*_115.Pan115).GetClient()
+	pan115 := storage.(*_115.Pan115)
+	client := pan115.GetClient()
+	log.Infof("[%v] 获取115文件直链 %v %v %v", pan115.ID, file.GetName(), file.GetID(), file.GetSize())
 
 	parts := strings.Split(file.GetID(), "-")
 	fid := parts[0]
@@ -110,7 +111,7 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		return nil, err
 	}
 
-	go delayDelete115(pan115.(*_115.Pan115), sha1)
+	go delayDelete115(pan115, sha1)
 	return &model.Link{URL: downloadInfo.URL.URL}, nil
 }
 
