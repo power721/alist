@@ -529,6 +529,7 @@ func (d *AliyundriveShare2Open) deleteDelay(fileId string) {
 }
 
 func (d *AliyundriveShare2Open) deleteOpen(fileId string) {
+	log.Infof("Delete Aliyun temp file: %v", fileId)
 	_, err := d.requestOpen("/adrive/v1.0/openFile/delete", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id": DriveId,

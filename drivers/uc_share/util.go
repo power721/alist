@@ -121,20 +121,14 @@ func (d *UcShare) getShareToken() error {
 	return nil
 }
 
-func (d *UcShare) saveFile(id string) (string, error) {
-	driver := op.GetFirstDriver("UC", idx)
-	folderId := "0"
-	if driver != nil {
-		uc := driver.(*quark.QuarkOrUC)
-		folderId = uc.TempDirId
-	}
+func (d *UcShare) saveFile(uc *quark.QuarkOrUC, id string) (string, error) {
 	s := strings.Split(id, "-")
 	fileId := s[0]
 	fileTokenId := s[1]
 	data := base.Json{
 		"fid_list":       []string{fileId},
 		"fid_token_list": []string{fileTokenId},
-		"to_pdir_fid":    folderId,
+		"to_pdir_fid":    uc.TempDirId,
 		"pwd_id":         d.ShareId,
 		"stoken":         d.ShareToken,
 		"pdir_fid":       "0",
@@ -149,9 +143,9 @@ func (d *UcShare) saveFile(id string) (string, error) {
 	res, err := d.request("/share/sharepage/save", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data).SetQueryParams(query)
 	}, &resp)
-	log.Debugf("saveFile: %v %v", id, string(res))
+	log.Debugf("[%v] save Quark file: %v %v", uc.ID, id, string(res))
 	if err != nil {
-		log.Warnf("save file failed: %v", err)
+		log.Warnf("[%v] save file failed: %v", uc.ID, err)
 		return "", err
 	}
 	if resp.Status != 200 {
@@ -202,24 +196,9 @@ func (d *UcShare) getSaveTaskResult(taskId string) (string, error) {
 	return "", errors.New("Get task result failed.")
 }
 
-func (d *UcShare) getDownloadUrl(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	driver := op.GetFirstDriver("UC", idx)
-	if driver != nil {
-		log.Infof("use UC cookie")
-		uc := driver.(*quark.QuarkOrUC)
-		go d.deleteDelay(uc, file.GetID())
-		return uc.Link(ctx, file, args)
-	}
-	//else {
-	//	driver := op.GetFirstDriver("UCTV", idx)
-	//	if driver != nil {
-	//		log.Infof("use UC TV")
-	//		uc := driver.(*quark_uc_tv.QuarkUCTV)
-	//		return uc.Link(ctx, file, args)
-	//	}
-	//}
-
-	return nil, errors.New("no UC driver")
+func (d *UcShare) getDownloadUrl(ctx context.Context, uc *quark.QuarkOrUC, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	go d.deleteDelay(uc, file.GetID())
+	return uc.Link(ctx, file, args)
 }
 
 func (d *UcShare) deleteDelay(uc *quark.QuarkOrUC, fileId string) {
@@ -229,12 +208,13 @@ func (d *UcShare) deleteDelay(uc *quark.QuarkOrUC, fileId string) {
 	}
 
 	delayTime += 5
-	log.Infof("Delete UC temp file %v after %v seconds.", fileId, delayTime)
+	log.Infof("[%v] Delete UC temp file %v after %v seconds.", uc.ID, fileId, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	d.deleteFile(uc, fileId)
 }
 
-func (d *UcShare) deleteFile(uc *quark.QuarkOrUC, fileId string) error {
+func (d *UcShare) deleteFile(uc *quark.QuarkOrUC, fileId string) {
+	log.Infof("[%v] Delete UC temp file: %v", uc.ID, fileId)
 	data := base.Json{
 		"action_type":  1,
 		"exclude_fids": []string{},
@@ -244,16 +224,12 @@ func (d *UcShare) deleteFile(uc *quark.QuarkOrUC, fileId string) error {
 	res, err := uc.Request("/file/delete", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data)
 	}, &resp)
-	log.Debugf("deleteFile: %v %v", fileId, string(res))
+	log.Debugf("[%v] Delete UC temp file: %v %v", uc.ID, fileId, string(res))
 	if err != nil {
-		log.Warnf("Delete UC temp file failed: %v %v", fileId, err)
-		return err
+		log.Warnf("[%v] Delete UC temp file failed: %v %v", uc.ID, fileId, err)
+	} else if resp.Status != 200 {
+		log.Warnf("[%v] Delete UC temp file failed: %v %v", uc.ID, fileId, resp.Message)
 	}
-	if resp.Status != 200 {
-		log.Warnf("Delete UC temp file failed: %v %v", fileId, resp.Message)
-		return errors.New(resp.Message)
-	}
-	return nil
 }
 
 func (d *UcShare) getShareFiles(id string) ([]File, error) {

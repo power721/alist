@@ -49,7 +49,7 @@ func (d *ThunderShare) Link(ctx context.Context, file model.Obj, args model.Link
 	log.Infof("[%v] 获取迅雷文件直链 %v %v %v", thunder.ID, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(ctx, thunder, file)
 	if err != nil {
-		log.Warnf("保存迅雷文件失败: %v", err)
+		log.Warnf("[%v] 保存迅雷文件失败: %v", thunder.ID, err)
 		return nil, err
 	}
 

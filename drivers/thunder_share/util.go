@@ -91,6 +91,7 @@ func (d *ThunderShare) deleteFileDelay(ctx context.Context, thunder *thunder_bro
 }
 
 func (d *ThunderShare) deleteFile(ctx context.Context, thunder *thunder_browser.ThunderBrowser, file model.Obj) {
+	log.Infof("[%v] delete Thunder temp file: %v", thunder.ID, file.GetID())
 	err := thunder.Remove(ctx, file)
 	if err != nil {
 		log.Warnf("[%v] delete Thunder temp file error: %v", thunder.ID, err)
