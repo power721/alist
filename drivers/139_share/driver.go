@@ -42,7 +42,7 @@ func (d *Yun139Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 }
 
 func (d *Yun139Share) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	log.Debugf("获取文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
+	log.Debugf("获取移动云盘文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
 	url, err := d.link(file.GetID())
 	if lastId != file.GetID() {
 		lastId = file.GetID()

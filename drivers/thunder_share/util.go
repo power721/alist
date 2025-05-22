@@ -36,7 +36,7 @@ func (d *ThunderShare) saveFile(ctx context.Context, thunder *thunder_browser.Th
 		"specify_parent_id": true,
 	}
 
-	log.Debugf("save file to folder %v", ParentFileId)
+	log.Debugf("[%v] save Thunder file to folder %v", thunder.ID, ParentFileId)
 	_, err := thunder.Request(SHARE_RESTORE_API_URL, http.MethodPost, func(r *resty.Request) {
 		r.SetBody(data)
 	}, nil)
@@ -74,7 +74,7 @@ func (d *ThunderShare) getDownloadUrl(ctx context.Context, thunder *thunder_brow
 
 	go d.deleteFileDelay(ctx, thunder, file)
 
-	log.Debugf("get Thunder file link: %v", fileId)
+	log.Infof("[%v] get Thunder file link: %v", thunder.ID, fileId)
 	return thunder.Link(ctx, file, args)
 }
 
@@ -84,7 +84,7 @@ func (d *ThunderShare) deleteFileDelay(ctx context.Context, thunder *thunder_bro
 		return
 	}
 
-	log.Infof("Delete Thunder temp file %v after %v seconds.", file.GetID(), delayTime)
+	log.Infof("[%v] Delete Thunder temp file %v after %v seconds.", thunder.ID, file.GetID(), delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 
 	d.deleteFile(ctx, thunder, file)
@@ -93,7 +93,7 @@ func (d *ThunderShare) deleteFileDelay(ctx context.Context, thunder *thunder_bro
 func (d *ThunderShare) deleteFile(ctx context.Context, thunder *thunder_browser.ThunderBrowser, file model.Obj) {
 	err := thunder.Remove(ctx, file)
 	if err != nil {
-		log.Warnf("delete Thunder temp file error: %v", err)
+		log.Warnf("[%v] delete Thunder temp file error: %v", thunder.ID, err)
 	}
 }
 
@@ -177,7 +177,7 @@ func (t *ThunderShare) getShareInfo(ctx context.Context, thunder *thunder_browse
 		return share, err
 	}
 
-	log.Debugf("get share token: %v", share.Token)
+	log.Debugf("[%v] get Thunder share token: %v", thunder.ID, share.Token)
 	t.ShareToken = share.Token
 	return share, nil
 }

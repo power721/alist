@@ -53,7 +53,7 @@ func (d *QuarkShare) List(ctx context.Context, dir model.Obj, args model.ListArg
 }
 
 func (d *QuarkShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	log.Infof("获取文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
+	log.Infof("获取夸克文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(file.GetID())
 	if err != nil {
 		return nil, err

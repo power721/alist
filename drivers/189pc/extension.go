@@ -87,24 +87,24 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 			return
 		}
 
-		log.Infof("Delete 189 temp file %v after %v seconds.", fileId, delayTime)
+		log.Infof("[%v] Delete 189 temp file %v after %v seconds.", y.ID, fileId, delayTime)
 		time.Sleep(time.Duration(delayTime) * time.Second)
 
 		removeErr := y.Remove(ctx, transferFile)
 		if removeErr != nil {
-			log.Infof("天翼云盘删除文件:%s失败:%v", fileName, removeErr)
+			log.Infof("[%v] 天翼云盘删除文件:%s失败: %v", y.ID, fileName, removeErr)
 			return
 		}
-		log.Debugf("已删除天翼云盘下的文件:%s", fileName)
+		log.Debugf("[%v] 已删除天翼云盘下的文件: %v", y.ID, fileName)
 		_, removeErr = y.CreateBatchTask("CLEAR_RECYCLE", "", "", nil, BatchTaskInfo{
 			FileId:   transferFile.GetID(),
 			FileName: transferFile.GetName(),
 			IsFolder: 0,
 		})
 		if removeErr != nil {
-			log.Info("天翼云盘清除回收站失败", removeErr)
+			log.Infof("[%v] 天翼云盘清除回收站失败: %v", y.ID, removeErr)
 		} else {
-			log.Debug("天翼云盘清除回收站完成")
+			log.Debugf("[%v] 天翼云盘清除回收站完成", y.ID)
 		}
 	}()
 

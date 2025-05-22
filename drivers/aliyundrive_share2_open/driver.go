@@ -125,7 +125,7 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 	// 1. 转存资源
 	// 2. 获取链接
 	// 3. 删除文件
-	log.Infof("获取文件直链 %v %v %v %v", DriveId, file.GetName(), file.GetID(), file.GetSize())
+	log.Infof("获取阿里云盘文件直链 %v %v %v %v", DriveId, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(file.GetID())
 	if err != nil {
 		return nil, err

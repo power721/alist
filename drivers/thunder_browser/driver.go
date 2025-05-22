@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -333,8 +334,10 @@ func (xc *XunLeiBrowserCommon) Link(ctx context.Context, file model.Obj, args mo
 	if err != nil {
 		return nil, err
 	}
+	exp := 895 * time.Second
 	link := &model.Link{
-		URL: lFile.WebContentLink,
+		Expiration: &exp,
+		URL:        lFile.WebContentLink,
 		Header: http.Header{
 			"User-Agent": {xc.DownloadUserAgent},
 		},

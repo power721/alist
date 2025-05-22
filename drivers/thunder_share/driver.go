@@ -34,22 +34,22 @@ func (d *ThunderShare) Drop(ctx context.Context) error {
 func (d *ThunderShare) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
 	files, err := d.listShareFiles(ctx, dir)
 	if err != nil {
-		log.Warnf("list files error: %v", err)
+		log.Warnf("list Thunder files error: %v", err)
 		return nil, err
 	}
 	return files, err
 }
 
 func (d *ThunderShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	log.Infof("获取文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
 	storage := op.GetFirstDriver("ThunderBrowser", idx)
 	if storage == nil {
 		return nil, errors.New("ThunderBrowser not found")
 	}
 	thunder := storage.(*thunder_browser.ThunderBrowser)
+	log.Infof("[%v] 获取迅雷文件直链 %v %v %v", thunder.ID, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(ctx, thunder, file)
 	if err != nil {
-		log.Warnf("保存文件失败: %v", err)
+		log.Warnf("保存迅雷文件失败: %v", err)
 		return nil, err
 	}
 
