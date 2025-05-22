@@ -112,7 +112,8 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	}
 
 	go delayDelete115(pan115, sha1)
-	return &model.Link{URL: downloadInfo.URL.URL}, nil
+	exp := 895 * time.Second
+	return &model.Link{URL: downloadInfo.URL.URL, Expiration: &exp}, nil
 }
 
 func delayDelete115(pan115 *_115.Pan115, sha1 string) {
