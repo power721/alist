@@ -58,7 +58,7 @@ func (d *QuarkShare) List(ctx context.Context, dir model.Obj, args model.ListArg
 func (d *QuarkShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	storage := op.GetFirstDriver("Quark", idx)
 	if storage == nil {
-		return nil, errors.New("Quark not found")
+		return nil, errors.New("找不到夸克网盘帐号")
 	}
 	uc := storage.(*quark.QuarkOrUC)
 	log.Infof("[%v] 获取夸克文件直链 %v %v %v", uc.ID, file.GetName(), file.GetID(), file.GetSize())

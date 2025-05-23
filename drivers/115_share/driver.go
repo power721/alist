@@ -93,7 +93,7 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 
 	storage := op.Get115Driver(idx)
 	if storage == nil {
-		return nil, errors.New("115 Cloud not found")
+		return nil, errors.New("找不到115云盘帐号")
 	}
 	pan115 := storage.(*_115.Pan115)
 	client := pan115.GetClient()
