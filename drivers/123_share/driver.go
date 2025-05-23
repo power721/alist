@@ -74,7 +74,7 @@ func (d *Pan123Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 func (d *Pan123Share) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	storage := op.GetFirstDriver("123Pan", idx)
 	if storage == nil {
-		return nil, errors.New("no 123 driver found")
+		return nil, errors.New("123Pan not found")
 	}
 	pan123 := storage.(*_123.Pan123)
 	log.Infof("[%v] 获取123文件直链 %v %v %v", pan123.ID, file.GetName(), file.GetID(), file.GetSize())
