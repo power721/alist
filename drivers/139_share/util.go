@@ -150,14 +150,8 @@ func (y *Yun139Share) list(pCaID string) ([]File, error) {
 	return files, nil
 }
 
-func (y *Yun139Share) link(fid string) (string, error) {
-	account := ""
-	driver := op.GetFirstDriver("139Yun", idx)
-	if driver != nil {
-		yun139 := driver.(*_139.Yun139)
-		account = yun139.Account
-	}
-
+func (y *Yun139Share) link(yun139 *_139.Yun139, fid string) (string, error) {
+	account := yun139.Account
 	params := map[string]interface{}{
 		"dlFromOutLinkReqV3": map[string]interface{}{
 			"linkID":  y.ShareId,

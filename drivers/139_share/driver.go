@@ -2,8 +2,11 @@ package _139_share
 
 import (
 	"context"
+	"errors"
+	_139 "github.com/alist-org/alist/v3/drivers/139"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	log "github.com/sirupsen/logrus"
 	"time"
@@ -42,8 +45,13 @@ func (d *Yun139Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 }
 
 func (d *Yun139Share) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	log.Debugf("获取移动云盘文件直链 %v %v %v", file.GetName(), file.GetID(), file.GetSize())
-	url, err := d.link(file.GetID())
+	storage := op.GetFirstDriver("139Yun", idx)
+	if storage == nil {
+		return nil, errors.New("139Yun not found")
+	}
+	yun139 := storage.(*_139.Yun139)
+	log.Infof("[%v] 获取移动云盘文件直链 %v %v %v", yun139.ID, file.GetName(), file.GetID(), file.GetSize())
+	url, err := d.link(yun139, file.GetID())
 	if lastId != file.GetID() {
 		lastId = file.GetID()
 		idx++
