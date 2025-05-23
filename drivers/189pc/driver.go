@@ -178,8 +178,10 @@ func (y *Cloud189PC) Link(ctx context.Context, file model.Obj, args model.LinkAr
 		downloadUrl.URL = res.Header().Get("location")
 	}
 
+	exp := time.Hour
 	like := &model.Link{
-		URL: downloadUrl.URL,
+		Expiration: &exp,
+		URL:        downloadUrl.URL,
 		Header: http.Header{
 			"User-Agent": []string{base.UserAgent},
 		},

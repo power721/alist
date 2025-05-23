@@ -336,7 +336,7 @@ func (xc *XunLeiBrowserCommon) Link(ctx context.Context, file model.Obj, args mo
 	if err != nil {
 		return nil, err
 	}
-	exp := 895 * time.Second
+	exp := 15 * time.Minute
 	link := &model.Link{
 		Expiration: &exp,
 		URL:        lFile.WebContentLink,

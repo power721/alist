@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"strings"
 	"sync"
+	"time"
 
 	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -86,9 +87,11 @@ func (d *Pan115) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 	if err != nil {
 		return nil, err
 	}
+	exp := 15 * time.Minute
 	link := &model.Link{
-		URL:    downloadInfo.Url.Url,
-		Header: downloadInfo.Header,
+		Expiration: &exp,
+		URL:        downloadInfo.Url.Url,
+		Header:     downloadInfo.Header,
 	}
 	log.Debugf("Link: %v", link)
 	return link, nil

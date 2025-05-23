@@ -134,8 +134,10 @@ func (d *Pan123) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 			return nil, err
 		}
 		log.Debug(res.String())
+		exp := 15 * time.Minute
 		link := model.Link{
-			URL: u_,
+			Expiration: &exp,
+			URL:        u_,
 		}
 		log.Debugln("res code: ", res.StatusCode())
 		if res.StatusCode() == 302 {
