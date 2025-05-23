@@ -47,7 +47,7 @@ func (d *Yun139Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 func (d *Yun139Share) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	storage := op.GetFirstDriver("139Yun", idx)
 	if storage == nil {
-		return nil, errors.New("139Yun not found")
+		return nil, errors.New("找不到移动云盘帐号")
 	}
 	yun139 := storage.(*_139.Yun139)
 	log.Infof("[%v] 获取移动云盘文件直链 %v %v %v", yun139.ID, file.GetName(), file.GetID(), file.GetSize())

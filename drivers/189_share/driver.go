@@ -66,7 +66,7 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 
 	storage := op.GetFirstDriver("189CloudPC", idx)
 	if storage == nil {
-		return nil, errors.New("189CloudPC not found")
+		return nil, errors.New("找不到天翼云盘帐号")
 	}
 	cloud189PC := storage.(*_189pc.Cloud189PC)
 	log.Infof("[%v] 获取天翼云盘文件直链 %v %v %v", cloud189PC.ID, file.GetName(), file.GetID(), file.GetSize())

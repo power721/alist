@@ -58,7 +58,7 @@ func (d *UcShare) List(ctx context.Context, dir model.Obj, args model.ListArgs) 
 func (d *UcShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	storage := op.GetFirstDriver("UC", idx)
 	if storage == nil {
-		return nil, errors.New("UC not found")
+		return nil, errors.New("找不到UC网盘帐号")
 	}
 	uc := storage.(*quark.QuarkOrUC)
 	log.Infof("[%v] 获取UC文件直链 %v %v %v", uc.ID, file.GetName(), file.GetID(), file.GetSize())
