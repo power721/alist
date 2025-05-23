@@ -53,14 +53,6 @@ func (d *AliyundriveOpen) Init(ctx context.Context) error {
 	d.ClientID = setting.GetStr("open_api_client_id")
 	d.ClientSecret = setting.GetStr("open_api_client_secret")
 
-	res, err := d.request("/adrive/v1.0/user/getDriveInfo", http.MethodPost, nil)
-	if err != nil {
-		return err
-	}
-	d.DriveId = utils.Json.Get(res, d.DriveType+"_drive_id").ToString()
-	if d.DriveId == "" {
-		d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
-	}
 	d.limitList = rateg.LimitFnCtx(d.list, rateg.LimitFnOption{
 		Limit:  4,
 		Bucket: 1,
@@ -69,6 +61,24 @@ func (d *AliyundriveOpen) Init(ctx context.Context) error {
 		Limit:  1,
 		Bucket: 1,
 	})
+
+	err := d.refreshToken(false)
+	if err != nil {
+		log.Errorf("[%v] refreshToken error: %v", d.AccountId, err)
+		return err
+	}
+
+	err = d.RefreshAliToken(false)
+	if err != nil {
+		log.Errorf("[%v] RefreshAliToken error: %v", d.AccountId, err)
+		return err
+	}
+
+	err = d.checkUserId()
+	if err != nil {
+		return err
+	}
+	d.createTempDir(ctx)
 	return nil
 }
 

@@ -2,9 +2,11 @@ package aliyundrive_share2_open
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/Xhofe/rateg"
 	_115 "github.com/alist-org/alist/v3/drivers/115"
+	"github.com/alist-org/alist/v3/drivers/aliyundrive_open"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -18,7 +20,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
-	"time"
 )
 
 type AliyundriveShare2Open struct {
@@ -40,46 +41,6 @@ func (d *AliyundriveShare2Open) GetAddition() driver.Additional {
 }
 
 func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
-	if !initialized {
-		err := d.refreshToken(false)
-		if err != nil {
-			log.Errorf("refreshToken error: %v", err)
-			return err
-		}
-
-		d.getUser()
-
-		lazyLoad = setting.GetBool("ali_lazy_load")
-		ClientID = setting.GetStr("open_api_client_id")
-		ClientSecret = setting.GetStr("open_api_client_secret")
-		log.Printf("Open API Client ID: %v", ClientID)
-
-		err = d.refreshOpenToken(false)
-		if err != nil {
-			log.Errorf("refreshOpenToken error: %v", err)
-			return err
-		}
-
-		d.getDriveId()
-		d.createTempDir()
-		d.cleanTempFolder()
-
-		initialized = true
-	}
-
-	if !lazyLoad {
-		if lastTime > 0 {
-			diff := lastTime + DelayTime - time.Now().UnixMilli()
-			time.Sleep(time.Duration(diff) * time.Millisecond)
-		}
-
-		err := d.getShareToken()
-		if err != nil {
-			log.Errorf("getShareToken error: %v", err)
-			return err
-		}
-	}
-
 	d.limitList = rateg.LimitFnCtx(d.list, rateg.LimitFnOption{
 		Limit:  4,
 		Bucket: 1,
@@ -91,7 +52,6 @@ func (d *AliyundriveShare2Open) Drop(ctx context.Context) error {
 	if d.cron != nil {
 		d.cron.Stop()
 	}
-	DriveId = ""
 	return nil
 }
 
@@ -122,11 +82,13 @@ func (d *AliyundriveShare2Open) list(ctx context.Context, dir model.Obj) ([]mode
 }
 
 func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	// 1. 转存资源
-	// 2. 获取链接
-	// 3. 删除文件
-	log.Infof("获取阿里云盘文件直链 %v %v %v %v", DriveId, file.GetName(), file.GetID(), file.GetSize())
-	fileId, err := d.saveFile(file.GetID())
+	storage := op.GetFirstDriver("AliyundriveOpen", idx)
+	if storage == nil {
+		return nil, errors.New("找不到阿里云盘帐号")
+	}
+	ali := storage.(*aliyundrive_open.AliyundriveOpen)
+	log.Infof("[%v] 获取阿里云盘文件直链 %v %v %v %v", ali.ID, ali.DriveId, file.GetName(), file.GetID(), file.GetSize())
+	fileId, err := d.saveFile(ali, file.GetID())
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +98,11 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 		Name:   "livp",
 	}
 
-	link, hash, err := d.getOpenLink(newFile)
+	link, hash, err := d.getOpenLink(ali, newFile)
+	if lastId != file.GetID() {
+		lastId = file.GetID()
+		idx++
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +111,7 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 		return link, err
 	}
 
-	driver115 := op.Get115Driver(idx)
+	driver115 := op.Get115Driver(idx2)
 	if driver115 != nil {
 		myFile := MyFile{
 			FileId:   fileId,
@@ -154,9 +120,9 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 			HashInfo: utils.NewHashInfo(utils.SHA1, hash),
 		}
 		link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link, args)
-		if lastId != file.GetID() {
-			lastId = file.GetID()
-			idx++
+		if lastId2 != file.GetID() {
+			lastId2 = file.GetID()
+			idx2++
 		}
 		if err2 == nil {
 			link = link115
@@ -166,6 +132,12 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 }
 
 func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
+	storage := op.GetFirstDriver("AliyundriveOpen", idx)
+	if storage == nil {
+		return nil, errors.New("找不到阿里云盘帐号")
+	}
+	ali := storage.(*aliyundrive_open.AliyundriveOpen)
+
 	if args.Method == "share_info" {
 		d.getShareToken()
 		data := base.Json{
@@ -181,8 +153,8 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 		return nil, errs.NotSupport
 	}
 
-	log.Infof("获取文件链接 %v %v %v %v", DriveId, args.Obj.GetName(), args.Obj.GetID(), args.Obj.GetSize())
-	fileId, err := d.saveFile(args.Obj.GetID())
+	log.Infof("[%v] 获取文件链接 %v %v %v %v", ali.ID, ali.DriveId, args.Obj.GetID(), args.Obj.GetName(), args.Obj.GetSize())
+	fileId, err := d.saveFile(ali, args.Obj.GetID())
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +162,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	var resp VideoPreviewResponse
 	var uri string
 	data := base.Json{
-		"drive_id": DriveId,
+		"drive_id": ali.DriveId,
 		"file_id":  fileId,
 	}
 	switch args.Method {
@@ -201,11 +173,11 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	default:
 		return nil, errs.NotSupport
 	}
-	_, err = d.requestOpen(uri, http.MethodPost, func(req *resty.Request) {
+	_, err = ali.Request(uri, http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data).SetResult(&resp)
 	})
 
-	go d.deleteDelay(fileId)
+	go d.deleteDelay(ali, fileId)
 
 	if err != nil {
 		log.Errorf("获取文件链接失败：%v", err)
@@ -213,7 +185,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	}
 
 	if args.Data == "preview" {
-		url, _, _ := d.getDownloadUrl(fileId)
+		url, _, _ := d.getDownloadUrl(ali, fileId)
 		if url != "" {
 			resp.PlayInfo.Videos = append(resp.PlayInfo.Videos, LiveTranscoding{
 				TemplateId: "原画",
