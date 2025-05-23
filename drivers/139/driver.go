@@ -148,7 +148,8 @@ func (d *Yun139) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 	if err != nil {
 		return nil, err
 	}
-	return &model.Link{URL: url}, nil
+	exp := 15 * time.Minute
+	return &model.Link{URL: url, Expiration: &exp}, nil
 }
 
 func (d *Yun139) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) error {

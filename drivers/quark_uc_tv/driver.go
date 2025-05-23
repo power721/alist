@@ -148,7 +148,9 @@ func (d *QuarkUCTV) Link(ctx context.Context, file model.Obj, args model.LinkArg
 		chunkSize = conf.UcChunkSize
 	}
 
+	exp := 15 * time.Minute
 	return &model.Link{
+		Expiration:  &exp,
 		URL:         fileLink.Data.DownloadURL,
 		Concurrency: threads,
 		PartSize:    chunkSize * utils.KB,

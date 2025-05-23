@@ -51,7 +51,7 @@ func (d *Yun139Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	if err != nil {
 		return nil, err
 	}
-	exp := 895 * time.Second
+	exp := 15 * time.Minute
 	return &model.Link{URL: url, Expiration: &exp}, nil
 }
 

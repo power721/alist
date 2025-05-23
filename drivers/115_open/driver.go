@@ -108,8 +108,10 @@ func (d *Open115) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 	if !ok {
 		return nil, fmt.Errorf("can't get link")
 	}
+	exp := 15 * time.Minute
 	return &model.Link{
-		URL: u.URL.URL,
+		Expiration: &exp,
+		URL:        u.URL.URL,
 		Header: http.Header{
 			"User-Agent": []string{ua},
 		},

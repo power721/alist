@@ -67,9 +67,11 @@ func (d *WebDav) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 	if err != nil {
 		return nil, err
 	}
+	exp := 15 * time.Minute
 	return &model.Link{
-		URL:    url,
-		Header: header,
+		Expiration: &exp,
+		URL:        url,
+		Header:     header,
 	}, nil
 }
 

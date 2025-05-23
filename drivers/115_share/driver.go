@@ -112,7 +112,7 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	}
 
 	go delayDelete115(pan115, sha1)
-	exp := 895 * time.Second
+	exp := 15 * time.Minute
 	return &model.Link{URL: downloadInfo.URL.URL, Expiration: &exp}, nil
 }
 

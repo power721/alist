@@ -83,7 +83,7 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 		chunkSize = conf.UcChunkSize
 	}
 
-	exp := 895 * time.Second
+	exp := 15 * time.Minute
 	return &model.Link{
 		Expiration: &exp,
 		URL:        resp.Data[0].DownloadUrl,
