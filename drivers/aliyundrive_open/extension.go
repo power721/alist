@@ -12,6 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -210,6 +211,18 @@ func (d *AliyundriveOpen) getUser() (string, error) {
 	return userid, nil
 }
 
+func (d *AliyundriveOpen) getVipInfo() {
+	res, err := d.request2("https://api.aliyundrive.com/business/v1.0/users/vip/info", http.MethodPost, nil)
+	if err != nil {
+		log.Warnf("get vip info failed: %v", err)
+		return
+	}
+	identity := utils.Json.Get(res, "identity").ToString()
+	status := utils.Json.Get(res, "status").ToString()
+	d.IsVip = strings.Contains(identity, "vip")
+	log.Printf("[%v] 阿里账号会员类型: %v  状态: %v", d.AccountId, identity, status)
+}
+
 func (d *AliyundriveOpen) request2(url, method string, callback base.ReqCallback) ([]byte, error) {
 	var e ErrorResp
 	req := base.RestyClient.R().
@@ -231,10 +244,8 @@ func (d *AliyundriveOpen) request2(url, method string, callback base.ReqCallback
 	}
 	if e.Code != "" {
 		log.Warnf("请求失败: %v %v", e.Code, e.Message)
-		if e.Code == "AccessTokenInvalid" || e.Code == "ShareLinkTokenInvalid" {
-			if e.Code == "AccessTokenInvalid" {
-				err = d.RefreshAliToken(true)
-			}
+		if e.Code == "AccessTokenInvalid" {
+			err = d.RefreshAliToken(true)
 			if err != nil {
 				return nil, err
 			}

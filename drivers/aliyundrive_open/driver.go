@@ -28,6 +28,7 @@ type AliyundriveOpen struct {
 	DriveId string
 
 	TempDirId string
+	IsVip     bool
 
 	limitList func(ctx context.Context, data base.Json) (*Files, error)
 	limitLink func(ctx context.Context, file model.Obj) (*model.Link, error)
@@ -62,15 +63,17 @@ func (d *AliyundriveOpen) Init(ctx context.Context) error {
 		Bucket: 1,
 	})
 
-	err := d.refreshToken(false)
+	err := d.RefreshAliToken(false)
 	if err != nil {
-		log.Errorf("[%v] refreshToken error: %v", d.AccountId, err)
+		log.Errorf("[%v] RefreshAliToken error: %v", d.AccountId, err)
 		return err
 	}
 
-	err = d.RefreshAliToken(false)
+	d.getVipInfo()
+
+	err = d.refreshToken(false)
 	if err != nil {
-		log.Errorf("[%v] RefreshAliToken error: %v", d.AccountId, err)
+		log.Errorf("[%v] refreshToken error: %v", d.AccountId, err)
 		return err
 	}
 

@@ -2,11 +2,9 @@ package aliyundrive_share2_open
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Xhofe/rateg"
 	_115 "github.com/alist-org/alist/v3/drivers/115"
-	"github.com/alist-org/alist/v3/drivers/aliyundrive_open"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
@@ -82,11 +80,10 @@ func (d *AliyundriveShare2Open) list(ctx context.Context, dir model.Obj) ([]mode
 }
 
 func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	storage := op.GetFirstDriver("AliyundriveOpen", idx)
-	if storage == nil {
-		return nil, errors.New("找不到阿里云盘帐号")
+	ali, err := getAliOpenDriver(idx)
+	if err != nil {
+		return nil, err
 	}
-	ali := storage.(*aliyundrive_open.AliyundriveOpen)
 	log.Infof("[%v] 获取阿里云盘文件直链 %v %v %v %v", ali.ID, ali.DriveId, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(ali, file.GetID())
 	if err != nil {
@@ -132,11 +129,10 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 }
 
 func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {
-	storage := op.GetFirstDriver("AliyundriveOpen", idx)
-	if storage == nil {
-		return nil, errors.New("找不到阿里云盘帐号")
+	ali, err := getAliOpenDriver(idx)
+	if err != nil {
+		return nil, err
 	}
-	ali := storage.(*aliyundrive_open.AliyundriveOpen)
 
 	if args.Method == "share_info" {
 		d.getShareToken()
