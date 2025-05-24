@@ -30,6 +30,17 @@ func GetAllStorages() []driver.Driver {
 	return storagesMap.Values()
 }
 
+func GetStorages(name string) []driver.Driver {
+	storages := storagesMap.Values()
+	var drivers []driver.Driver
+	for _, storage := range storages {
+		if storage.Config().Name == name {
+			drivers = append(drivers, storage)
+		}
+	}
+	return drivers
+}
+
 func Get115Driver(id int) driver.Driver {
 	return GetFirstDriver("115 Cloud", id)
 }

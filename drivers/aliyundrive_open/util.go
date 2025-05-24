@@ -35,6 +35,9 @@ func (d *AliyundriveOpen) _refreshToken(force bool) (string, string, error) {
 
 	t := time.Now()
 	url := setting.GetStr("open_token_url", d.base+"/oauth/access_token")
+	if d.IsVip {
+		url = "http://127.0.0.1:4567/ali/access_token"
+	}
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
 	}

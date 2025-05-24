@@ -19,7 +19,10 @@ type Addition struct {
 	InternalUpload     bool   `json:"internal_upload" help:"If you are using Aliyun ECS is located in Beijing, you can turn it on to boost the upload speed"`
 	LIVPDownloadFormat string `json:"livp_download_format" type:"select" options:"jpeg,mov" default:"jpeg"`
 	AccessToken        string
-	AccountId          int `json:"account_id"`
+
+	AccountId     int    `json:"account_id" required:"true"`
+	RefreshToken2 string `json:"refresh_token2" required:"true"`
+	AccessToken2  string
 }
 
 var config = driver.Config{
@@ -33,7 +36,8 @@ var config = driver.Config{
 	DefaultRoot:       "root",
 	NoOverwriteUpload: true,
 }
-var API_URL = "https://openapi.alipan.com"
+
+const API_URL = "https://openapi.alipan.com"
 
 func init() {
 	op.RegisterDriver(func() driver.Driver {
