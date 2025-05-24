@@ -109,9 +109,9 @@ func (d *AliyundriveShare2Open) saveFile(ali *aliyundrive_open.AliyundriveOpen, 
 	})
 
 	if err != nil {
-		log.Errorf("保存文件失败: %v", err)
+		log.Errorf("[%v] 保存文件失败: %v", ali.ID, err)
 		if strings.Contains(err.Error(), "share_id doesn't match. share_token") {
-			log.Infof("getShareToken: %v", d.ShareId)
+			log.Infof("[%v] getShareToken: %v", ali.ID, d.ShareId)
 			d.getShareToken()
 		}
 		return "", err
@@ -119,10 +119,10 @@ func (d *AliyundriveShare2Open) saveFile(ali *aliyundrive_open.AliyundriveOpen, 
 
 	msg := utils.Json.Get(res, "responses", 0, "body", "message").ToString()
 	if msg != "" {
-		log.Infof("请求结果 : %v", string(res))
-		log.Errorf("保存文件失败 : %v", msg)
+		log.Infof("[%v] 请求结果 : %v", ali.ID, string(res))
+		log.Errorf("[%v] 保存文件失败 : %v", ali.ID, msg)
 		if strings.Contains(msg, "share_id doesn't match. share_token") {
-			log.Infof("getShareToken: %v", d.ShareId)
+			log.Infof("[%v] getShareToken: %v", ali.ID, d.ShareId)
 			d.getShareToken()
 		}
 		return "", errors.New(msg)
@@ -144,7 +144,7 @@ func (d *AliyundriveShare2Open) getOpenLink(ali *aliyundrive_open.AliyundriveOpe
 	go d.deleteDelay(ali, file.GetID())
 
 	if err != nil {
-		log.Errorf("getOpenLink failed: %v", err)
+		log.Errorf("[%v] getOpenLink failed: %v", ali.ID, err)
 		return nil, "", err
 	}
 	url := utils.Json.Get(res, "url").ToString()
@@ -170,7 +170,7 @@ func (d *AliyundriveShare2Open) getOpenLink(ali *aliyundrive_open.AliyundriveOpe
 }
 
 func (d *AliyundriveShare2Open) getDownloadUrl(ali *aliyundrive_open.AliyundriveOpen, fileId string) (string, string, error) {
-	log.Infof("getDownloadUrl %v %v", ali.DriveId, fileId)
+	log.Infof("[%v] getDownloadUrl %v %v", ali.ID, ali.DriveId, fileId)
 	res, err := ali.Request("/adrive/v1.0/openFile/getDownloadUrl", http.MethodPost, func(req *resty.Request) {
 		req.SetBody(base.Json{
 			"drive_id":   ali.DriveId,
@@ -180,7 +180,7 @@ func (d *AliyundriveShare2Open) getDownloadUrl(ali *aliyundrive_open.Aliyundrive
 	})
 
 	if err != nil {
-		log.Errorf("getDownloadUrl failed: %v", err)
+		log.Errorf("[%v] getDownloadUrl failed: %v", ali.ID, err)
 		return "", "", err
 	}
 	url := utils.Json.Get(res, "url").ToString()
@@ -213,7 +213,7 @@ func (d *AliyundriveShare2Open) deleteOpen(ali *aliyundrive_open.AliyundriveOpen
 		})
 	})
 	if err != nil {
-		log.Warnf("删除文件%v失败： %v", fileId, err)
+		log.Warnf("[%v] 删除文件%v失败： %v", ali.ID, fileId, err)
 	}
 }
 
@@ -234,11 +234,11 @@ func (d *AliyundriveShare2Open) request(ali *aliyundrive_open.AliyundriveOpen, u
 	}
 	resp, err := req.Execute(method, url)
 	if err != nil {
-		log.Warnf("请求失败: %v", err)
+		log.Warnf("[%v] 请求失败: %v", ali.ID, err)
 		return nil, err
 	}
 	if e.Code != "" {
-		log.Warnf("请求失败: %v %v", e.Code, e.Message)
+		log.Warnf("[%v] 请求失败: %v %v", ali.ID, e.Code, e.Message)
 		if e.Code == "AccessTokenInvalid" || e.Code == "ShareLinkTokenInvalid" {
 			if e.Code == "AccessTokenInvalid" {
 				err = ali.RefreshAliToken(true)
@@ -280,7 +280,7 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 		}
 		log.Debugf("aliyundrive share get files: %s", res.String())
 		if e.Code != "" {
-			log.Warnf("aliyundrive share get files error: %v", e)
+			log.Warnf("[%v] aliyundrive share get files error: %v", d.ID, e)
 			if e.Code == "AccessTokenInvalid" || e.Code == "ShareLinkTokenInvalid" {
 				err = d.getShareToken()
 				if err != nil {
@@ -300,7 +300,7 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 			}
 		} else {
 			retry++
-			log.Infof("retry get files: %v", retry)
+			log.Infof("[%v] retry get files: %v", d.ID, retry)
 		}
 	}
 	return files, nil
@@ -324,10 +324,10 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 
 	preHash := "2EF7BDE608CE5404E97D5F042F95F89F1C232871"
 	fullHash := fs.GetHash().GetHash(utils.SHA1)
-	log.Infof("id=%v name=%v size=%v hash=%v", fs.GetID(), fs.GetName(), fs.GetSize(), fullHash)
+	log.Infof("[%v] id=%v name=%v size=%v hash=%v", pan115.ID, fs.GetID(), fs.GetName(), fs.GetSize(), fullHash)
 	res, err := pan115.RapidUpload(fs.GetSize(), fs.GetName(), pan115.TempDirId, preHash, fullHash, ss)
 	if err != nil {
-		log.Warnf("115 upload failed: %v", err)
+		log.Warnf("[%v] 115 upload failed: %v", pan115.ID, err)
 		return link, nil
 	}
 	log.Debugf("115.RapidUpload: %v", res)
@@ -343,7 +343,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 			continue
 		}
 		go d.delayDelete115(pan115, fullHash)
-		log.Infof("使用115链接: %v", link115.URL)
+		log.Infof("[%v] 使用115链接: %v", pan115.ID, link115.URL)
 		exp := 4 * time.Hour
 		return &model.Link{
 			URL:        link115.URL,
@@ -360,7 +360,7 @@ func (d *AliyundriveShare2Open) delayDelete115(pan115 *_115.Pan115, fileId strin
 		return
 	}
 
-	log.Infof("Delete 115 temp file %v after %v seconds.", fileId, delayTime)
+	log.Infof("[%v] Delete 115 temp file %v after %v seconds.", pan115.ID, fileId, delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	pan115.DeleteTempFile(fileId)
 }
