@@ -80,7 +80,7 @@ func (d *Pan115) DeleteReceivedFile(sha1 string) {
 	files, _ := d.getFiles(d.ReceiveDirId)
 	for _, file := range files {
 		if file.Sha1 == sha1 {
-			log.Infof("删除115文件: %v %v 创建于 %v", file.GetName(), file.GetID(), file.CreateTime().Local())
+			log.Infof("[%v] 删除115文件: %v %v 创建于 %v", d.ID, file.GetName(), file.GetID(), file.CreateTime().Local())
 			d.client.Delete(file.GetID())
 			d.DeleteFile(file.Sha1)
 		}
