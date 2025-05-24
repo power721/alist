@@ -34,21 +34,23 @@ var idx2 = 0
 var lastId2 = ""
 
 func getAliOpenDriver(idx int) (*aliyundrive_open.AliyundriveOpen, error) {
-	storages := op.GetStorages("AliyundriveOpen")
-	if len(storages) == 0 {
-		return nil, errors.New("找不到阿里云盘帐号")
-	}
-
-	var vips []*aliyundrive_open.AliyundriveOpen
-	for _, storage := range storages {
-		ali := storage.(*aliyundrive_open.AliyundriveOpen)
-		if ali.IsVip {
-			vips = append(vips, ali)
+	if setting.GetBool(conf.DriverRoundRobin) {
+		storages := op.GetStorages("AliyundriveOpen")
+		if len(storages) == 0 {
+			return nil, errors.New("找不到阿里云盘帐号")
 		}
-	}
 
-	if len(vips) > 0 {
-		return vips[idx%len(vips)], nil
+		var vips []*aliyundrive_open.AliyundriveOpen
+		for _, storage := range storages {
+			ali := storage.(*aliyundrive_open.AliyundriveOpen)
+			if ali.IsVip {
+				vips = append(vips, ali)
+			}
+		}
+
+		if len(vips) > 0 {
+			return vips[idx%len(vips)], nil
+		}
 	}
 
 	storage := op.GetFirstDriver("AliyundriveOpen", idx)
