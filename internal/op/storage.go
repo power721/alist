@@ -71,6 +71,8 @@ func GetFirstDriver(name string, id int) driver.Driver {
 		prefix = conf.OPEN115
 	} else if name == "123Pan" {
 		prefix = "PAN123"
+	} else if name == "AliyundriveOpen" {
+		prefix = "ali_account"
 	}
 	return GetMasterDriver(name, prefix, id)
 }
