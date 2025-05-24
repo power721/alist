@@ -172,6 +172,10 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	_, err = ali.Request(uri, http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data).SetResult(&resp)
 	})
+	if lastId != args.Obj.GetID() {
+		lastId = args.Obj.GetID()
+		idx++
+	}
 
 	go d.deleteDelay(ali, fileId)
 
