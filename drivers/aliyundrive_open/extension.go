@@ -7,6 +7,7 @@ import (
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	log "github.com/sirupsen/logrus"
@@ -35,10 +36,10 @@ func (d *AliyundriveOpen) RefreshAliToken(force bool) error {
 	accountId := strconv.Itoa(d.AccountId)
 	accessToken := token.GetToken("AccessToken-"+accountId, 7200)
 	refreshToken := token.GetToken("RefreshToken-"+accountId, 0)
-	log.Debugf("refreshToken: %v %v %v", accountId, accessToken, refreshToken)
+	log.Debugf("[%v] Ali Token: %v %v %v", d.ID, accountId, accessToken, refreshToken)
 	if !force && accessToken != "" && refreshToken != "" {
 		d.RefreshToken2, d.AccessToken2 = refreshToken, accessToken
-		log.Debugf("RefreshToken已经存在")
+		log.Debugf("[%v] 阿里token已经存在", d.ID)
 		return nil
 	}
 	if refreshToken != "" {
@@ -69,11 +70,11 @@ func (d *AliyundriveOpen) RefreshAliToken(force bool) error {
 }
 
 func (d *AliyundriveOpen) SaveToken(t time.Time) {
-	accountId := d.AccountId
+	accountId := strconv.Itoa(d.AccountId)
 	item := &model.Token{
-		Key:       "AccessToken-" + strconv.Itoa(accountId),
+		Key:       "AccessToken-" + accountId,
 		Value:     d.AccessToken2,
-		AccountId: accountId,
+		AccountId: d.AccountId,
 		Modified:  t,
 	}
 
@@ -87,9 +88,9 @@ func (d *AliyundriveOpen) SaveToken(t time.Time) {
 	}
 
 	item = &model.Token{
-		Key:       "RefreshToken-" + strconv.Itoa(accountId),
+		Key:       "RefreshToken-" + accountId,
 		Value:     d.RefreshToken2,
-		AccountId: accountId,
+		AccountId: d.AccountId,
 		Modified:  t,
 	}
 
@@ -97,6 +98,14 @@ func (d *AliyundriveOpen) SaveToken(t time.Time) {
 	if err != nil {
 		log.Warnf("[%v] save RefreshToken failed: %v", d.ID, err)
 	}
+
+	data := base.Json{
+		"refreshToken":     d.RefreshToken2,
+		"refreshTokenTime": t,
+		"accessToken":      d.AccessToken2,
+		"accessTokenTime":  t,
+	}
+	d.syncTokens(accountId, data)
 }
 
 func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
@@ -123,6 +132,25 @@ func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
 	err = token.SaveToken(item)
 	if err != nil {
 		log.Warnf("[%v] save RefreshTokenOpen failed: %v", d.ID, err)
+	}
+
+	data := base.Json{
+		"openToken":           d.RefreshToken,
+		"openTokenTime":       t,
+		"openAccessToken":     d.AccessToken,
+		"openAccessTokenTime": t,
+	}
+	d.syncTokens(accountId, data)
+}
+
+func (d *AliyundriveOpen) syncTokens(id string, data base.Json) {
+	url := "http://127.0.0.1:4567/api/ali/accounts/" + id + "/token"
+	_, err := base.RestyClient.R().
+		SetHeader("X-API-KEY", setting.GetStr("atv_api_key")).
+		SetBody(data).
+		Post(url)
+	if err != nil {
+		log.Warnf("[%v] sync tokens failed: %v", d.ID, err)
 	}
 }
 
