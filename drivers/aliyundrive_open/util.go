@@ -22,7 +22,7 @@ import (
 
 // do others that not defined in Driver interface
 
-func (d *AliyundriveOpen) _refreshToken(force bool) (string, string, error) {
+func (d *AliyundriveOpen) _refreshToken(force, vip bool) (string, string, error) {
 	accountId := strconv.Itoa(d.AccountId)
 	accessTokenOpen := token.GetToken("AccessTokenOpen-"+accountId, 7200)
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-"+accountId, 0)
@@ -35,7 +35,7 @@ func (d *AliyundriveOpen) _refreshToken(force bool) (string, string, error) {
 
 	t := time.Now()
 	url := setting.GetStr("open_token_url", d.base+"/oauth/access_token")
-	if d.IsVip {
+	if vip && d.IsVip {
 		url = "http://127.0.0.1:4567/ali/access_token"
 	}
 	if d.OauthTokenURL != "" && d.ClientID == "" {
@@ -98,15 +98,18 @@ func (d *AliyundriveOpen) refreshToken(force bool) error {
 	if d.ref != nil {
 		return d.ref.refreshToken(force)
 	}
-	refresh, access, err := d._refreshToken(force)
-	for i := 0; i < 3; i++ {
-		if err == nil {
-			break
-		} else {
-			log.Errorf("[ali_open] failed to refresh token: %s", err)
-		}
-		refresh, access, err = d._refreshToken(force)
+	refresh, access, err := d._refreshToken(force, true)
+	if err != nil {
+		refresh, access, err = d._refreshToken(force, false)
 	}
+	//for i := 0; i < 3; i++ {
+	//	if err == nil {
+	//		break
+	//	} else {
+	//		log.Errorf("[ali_open] failed to refresh token: %s", err)
+	//	}
+	//	refresh, access, err = d._refreshToken(force)
+	//}
 	if err != nil {
 		return err
 	}
