@@ -29,7 +29,7 @@ func (d *AliyundriveOpen) _refreshToken(force bool) (string, string, error) {
 	log.Debugf("accountID %v accessTokenOpen %v refreshTokenOpen: %v", accountId, accessTokenOpen, refreshTokenOpen)
 	if !force && accessTokenOpen != "" && refreshTokenOpen != "" {
 		d.RefreshToken, d.AccessToken = refreshTokenOpen, accessTokenOpen
-		log.Println("RefreshTokenOpen已经存在")
+		log.Infof("[%v] RefreshTokenOpen已经存在", d.ID)
 		return refreshTokenOpen, accessTokenOpen, nil
 	}
 
@@ -41,7 +41,7 @@ func (d *AliyundriveOpen) _refreshToken(force bool) (string, string, error) {
 	if d.OauthTokenURL != "" && d.ClientID == "" {
 		url = d.OauthTokenURL
 	}
-	log.Println("refreshOpenToken", url)
+	log.Infof("[%v] refreshOpenToken: %v", d.ID, url)
 	//var resp base.TokenResp
 	var e ErrResp
 	res, err := base.RestyClient.R().
