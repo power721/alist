@@ -26,10 +26,10 @@ func (d *AliyundriveOpen) _refreshToken(force bool) (string, string, error) {
 	accountId := strconv.Itoa(d.AccountId)
 	accessTokenOpen := token.GetToken("AccessTokenOpen-"+accountId, 7200)
 	refreshTokenOpen := token.GetToken("RefreshTokenOpen-"+accountId, 0)
-	log.Debugf("accountID %v accessTokenOpen %v refreshTokenOpen: %v", accountId, accessTokenOpen, refreshTokenOpen)
+	log.Debugf("[%v] accountID: %v force: %v accessTokenOpen: %v refreshTokenOpen: %v", d.ID, accountId, force, accessTokenOpen, refreshTokenOpen)
 	if !force && accessTokenOpen != "" && refreshTokenOpen != "" {
 		d.RefreshToken, d.AccessToken = refreshTokenOpen, accessTokenOpen
-		log.Infof("[%v] RefreshTokenOpen已经存在", d.ID)
+		log.Debugf("[%v] 开放token已经存在", d.ID)
 		return refreshTokenOpen, accessTokenOpen, nil
 	}
 
@@ -77,6 +77,7 @@ func (d *AliyundriveOpen) _refreshToken(force bool) (string, string, error) {
 	if curSub != newSub {
 		return "", "", errors.New("failed to refresh token: sub not match")
 	}
+	d.RefreshToken, d.AccessToken = refresh, access
 	d.SaveOpenToken(t)
 	return refresh, access, nil
 }

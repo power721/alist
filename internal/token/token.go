@@ -1,6 +1,7 @@
 package token
 
 import (
+	"github.com/alist-org/alist/v3/drivers/base"
 	"strconv"
 	"time"
 
@@ -47,6 +48,23 @@ func SaveAccountToken(prefix, value string, accountId int) {
 	err := SaveToken(item)
 	if err != nil {
 		log.Warnf("save account token failed: %v %v", key, err)
+	}
+
+	data := base.Json{
+		"name":  prefix,
+		"token": value,
+	}
+	syncTokens(accountId, data)
+}
+
+func syncTokens(id int, data base.Json) {
+	url := "http://127.0.0.1:4567/api/pan/accounts/" + strconv.Itoa(id) + "/token"
+	_, err := base.RestyClient.R().
+		SetHeader("X-API-KEY", setting.GetStr("atv_api_key")).
+		SetBody(data).
+		Post(url)
+	if err != nil {
+		log.Warnf("[%v] sync tokens failed: %v", id, err)
 	}
 }
 
