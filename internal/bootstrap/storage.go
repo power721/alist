@@ -2,6 +2,8 @@ package bootstrap
 
 import (
 	"context"
+	"github.com/alist-org/alist/v3/drivers/base"
+	"github.com/alist-org/alist/v3/internal/setting"
 
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/db"
@@ -30,6 +32,17 @@ func LoadStorages() {
 			}
 		}
 		log.Infof("=== load storages completed ===")
+		syncStatus()
 		conf.StoragesLoaded = true
 	}(storages)
+}
+
+func syncStatus() {
+	url := "http://127.0.0.1:4567/api/alist/status?code=2"
+	_, err := base.RestyClient.R().
+		SetHeader("X-API-KEY", setting.GetStr("atv_api_key")).
+		Post(url)
+	if err != nil {
+		log.Warnf("sync status failed: %v", err)
+	}
 }
