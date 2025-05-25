@@ -47,7 +47,7 @@ func (d *AliyundriveOpen) RefreshAliToken(force bool) error {
 
 	t := time.Now()
 	url := "https://auth.alipan.com/v2/account/token"
-	log.Println("refreshToken", accountId, url)
+	log.Infof("[%v] refresh ali token: %v", d.ID, url)
 	var resp base.TokenResp
 	var e ErrorResp
 	_, err := base.RestyClient.R().
@@ -79,7 +79,7 @@ func (d *AliyundriveOpen) SaveToken(t time.Time) {
 
 	err := token.SaveToken(item)
 	if err != nil {
-		log.Printf("save AccessToken failed: %v", err)
+		log.Warnf("[%v] save AccessToken failed: %v", d.ID, err)
 	}
 
 	if d.RefreshToken2 == "" {
@@ -95,7 +95,7 @@ func (d *AliyundriveOpen) SaveToken(t time.Time) {
 
 	err = token.SaveToken(item)
 	if err != nil {
-		log.Printf("save RefreshToken failed: %v", err)
+		log.Warnf("[%v] save RefreshToken failed: %v", d.ID, err)
 	}
 }
 
@@ -110,7 +110,7 @@ func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
 
 	err := token.SaveToken(item)
 	if err != nil {
-		log.Warnf("save AccessTokenOpen failed: %v", err)
+		log.Warnf("[%v] save AccessTokenOpen failed: %v", d.ID, err)
 	}
 
 	item = &model.Token{
@@ -122,7 +122,7 @@ func (d *AliyundriveOpen) SaveOpenToken(t time.Time) {
 
 	err = token.SaveToken(item)
 	if err != nil {
-		log.Warnf("save RefreshTokenOpen failed: %v", err)
+		log.Warnf("[%v] save RefreshTokenOpen failed: %v", d.ID, err)
 	}
 }
 
@@ -135,7 +135,7 @@ func (d *AliyundriveOpen) createTempDir(ctx context.Context) {
 	res, err := d.MakeDir(ctx, dir, conf.TempDirName)
 
 	if err != nil {
-		log.Warnf("[%v] 创建阿里缓存文件夹失败: %v", d.AccountId, err)
+		log.Warnf("[%v] 创建阿里缓存文件夹失败: %v", d.ID, err)
 	} else {
 		d.TempDirId = res.GetID()
 	}
@@ -143,7 +143,7 @@ func (d *AliyundriveOpen) createTempDir(ctx context.Context) {
 	if d.TempDirId == "" {
 		d.TempDirId = "root"
 	}
-	log.Printf("[%v] 阿里缓存文件夹ID： %v", d.AccountId, d.TempDirId)
+	log.Infof("[%v] 阿里缓存文件夹ID： %v", d.ID, d.TempDirId)
 
 	d.cleanTempFolder(ctx)
 }
@@ -160,12 +160,12 @@ func (d *AliyundriveOpen) cleanTempFolder(ctx context.Context) {
 
 	files, err := d.List(ctx, dir, model.ListArgs{})
 	if err != nil {
-		log.Errorf("获取文件列表失败 %v", err)
+		log.Errorf("[%v] 获取文件列表失败 %v", d.ID, err)
 		return
 	}
 
 	for _, file := range files {
-		log.Infof("删除文件 %v %v", file.GetName(), file.GetID())
+		log.Infof("[%v] 删除文件 %v %v", d.ID, file.GetName(), file.GetID())
 		f := &model.Object{
 			ID: file.GetID(),
 		}
@@ -181,21 +181,21 @@ func (d *AliyundriveOpen) checkUserId() error {
 
 	res, err := d.request("/adrive/v1.0/user/getDriveInfo", http.MethodPost, nil)
 	if err != nil {
-		log.Warnf("getDriveInfo error: %v", err)
+		log.Warnf("[%v] getDriveInfo error: %v", d.ID, err)
 		return err
 	}
 	uid := utils.Json.Get(res, "user_id").ToString()
 	name := utils.Json.Get(res, "name").ToString()
-	log.Printf("[%v] 开放token 账号(%v) 昵称： %v", d.AccountId, uid, name)
+	log.Infof("[%v] 开放token 账号(%v) 昵称： %v", d.ID, uid, name)
 	if uid != userid {
 		return errors.New("阿里Token与开放Token账号不匹配！")
 	}
 	d.DriveId = utils.Json.Get(res, d.DriveType+"_drive_id").ToString()
 	if d.DriveId == "" {
 		d.DriveId = utils.Json.Get(res, "default_drive_id").ToString()
-		log.Infof("[%v] use default drive: %v", d.AccountId, d.DriveId)
+		log.Infof("[%v] use default drive: %v", d.ID, d.DriveId)
 	} else {
-		log.Infof("[%v] use %v drive: %v", d.AccountId, d.DriveType, d.DriveId)
+		log.Infof("[%v] use %v drive: %v", d.ID, d.DriveType, d.DriveId)
 	}
 	return nil
 }
@@ -207,20 +207,20 @@ func (d *AliyundriveOpen) getUser() (string, error) {
 	}
 	userid := utils.Json.Get(res, "user_id").ToString()
 	nickname := utils.Json.Get(res, "nick_name").ToString()
-	log.Printf("[%v] 阿里token 账号(%v) 昵称： %v", d.AccountId, userid, nickname)
+	log.Printf("[%v] 阿里token 账号(%v) 昵称： %v", d.ID, userid, nickname)
 	return userid, nil
 }
 
 func (d *AliyundriveOpen) getVipInfo() {
 	res, err := d.request2("https://api.aliyundrive.com/business/v1.0/users/vip/info", http.MethodPost, nil)
 	if err != nil {
-		log.Warnf("get vip info failed: %v", err)
+		log.Warnf("[%v] get vip info failed: %v", d.ID, err)
 		return
 	}
 	identity := utils.Json.Get(res, "identity").ToString()
 	status := utils.Json.Get(res, "status").ToString()
 	d.IsVip = strings.Contains(identity, "vip")
-	log.Printf("[%v] 阿里账号会员类型: %v  状态: %v", d.AccountId, identity, status)
+	log.Infof("[%v] 阿里账号会员类型: %v  状态: %v", d.ID, identity, status)
 }
 
 func (d *AliyundriveOpen) request2(url, method string, callback base.ReqCallback) ([]byte, error) {
@@ -239,11 +239,11 @@ func (d *AliyundriveOpen) request2(url, method string, callback base.ReqCallback
 	}
 	resp, err := req.Execute(method, url)
 	if err != nil {
-		log.Warnf("请求失败: %v", err)
+		log.Warnf("[%v] 请求失败: %v", d.ID, err)
 		return nil, err
 	}
 	if e.Code != "" {
-		log.Warnf("请求失败: %v %v", e.Code, e.Message)
+		log.Warnf("[%v] 请求失败: %v %v", d.ID, e.Code, e.Message)
 		if e.Code == "AccessTokenInvalid" {
 			err = d.RefreshAliToken(true)
 			if err != nil {

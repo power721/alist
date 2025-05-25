@@ -50,6 +50,7 @@ func (d *AliyundriveOpen) Init(ctx context.Context) error {
 	if d.DriveType == "" {
 		d.DriveType = "default"
 	}
+	d.TempDirId = "root"
 
 	d.ClientID = setting.GetStr("open_api_client_id")
 	d.ClientSecret = setting.GetStr("open_api_client_secret")
