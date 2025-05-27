@@ -348,7 +348,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 		go d.delayDelete115(pan115, fullHash)
 		log.Infof("[%v] 使用115链接: %v", pan115.ID, link115.URL)
 		return &model.Link{
-			URL:        link115.URL + fmt.Sprintf("#id=%d", pan115.ID),
+			URL:        link115.URL + fmt.Sprintf("#storageId=%d", pan115.ID),
 			Header:     link115.Header,
 			Expiration: link115.Expiration,
 		}, nil
