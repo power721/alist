@@ -3,6 +3,7 @@ package aliyundrive_share2_open
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/SheltonZhu/115driver/pkg/driver"
 	_115 "github.com/alist-org/alist/v3/drivers/115"
 	"github.com/alist-org/alist/v3/drivers/aliyundrive_open"
@@ -346,11 +347,10 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 		}
 		go d.delayDelete115(pan115, fullHash)
 		log.Infof("[%v] 使用115链接: %v", pan115.ID, link115.URL)
-		exp := 4 * time.Hour
 		return &model.Link{
-			URL:        link115.URL,
+			URL:        link115.URL + fmt.Sprintf("#id=%d", pan115.ID),
 			Header:     link115.Header,
-			Expiration: &exp,
+			Expiration: link115.Expiration,
 		}, nil
 	}
 	return link, nil

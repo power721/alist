@@ -3,6 +3,7 @@ package _115_share
 import (
 	"context"
 	"errors"
+	"fmt"
 	_115 "github.com/alist-org/alist/v3/drivers/115"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/op"
@@ -112,8 +113,8 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	}
 
 	go delayDelete115(pan115, sha1)
-	exp := 15 * time.Minute
-	return &model.Link{URL: downloadInfo.URL.URL, Expiration: &exp}, nil
+	exp := 4 * time.Hour
+	return &model.Link{URL: downloadInfo.URL.URL + fmt.Sprintf("#id=%d", pan115.ID), Expiration: &exp}, nil
 }
 
 func delayDelete115(pan115 *_115.Pan115, sha1 string) {

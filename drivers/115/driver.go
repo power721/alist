@@ -87,7 +87,7 @@ func (d *Pan115) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 	if err != nil {
 		return nil, err
 	}
-	exp := 15 * time.Minute
+	exp := 4 * time.Hour
 	link := &model.Link{
 		Expiration: &exp,
 		URL:        downloadInfo.Url.Url,
