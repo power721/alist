@@ -108,7 +108,7 @@ func (d *Open115) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 	if !ok {
 		return nil, fmt.Errorf("can't get link")
 	}
-	exp := 15 * time.Minute
+	exp := 4 * time.Hour
 	return &model.Link{
 		Expiration: &exp,
 		URL:        u.URL.URL,
