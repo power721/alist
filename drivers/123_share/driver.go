@@ -43,7 +43,7 @@ func (d *Pan123Share) Init(ctx context.Context) error {
 	if pan123 != nil {
 		return d.InitReference(pan123)
 	}
-	return fmt.Errorf("cannot find 123Pan")
+	return fmt.Errorf("找不到123云盘帐号")
 }
 
 func (d *Pan123Share) InitReference(storage driver.Driver) error {

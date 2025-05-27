@@ -59,7 +59,7 @@ func (d *Pan115Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 
 	pan115 := op.Get115Driver(idx)
 	if pan115 == nil {
-		return []model.Obj{}, errors.New("no 115 driver found")
+		return []model.Obj{}, errors.New("找不到115云盘帐号")
 	}
 	client := pan115.(*_115.Pan115).GetClient()
 
