@@ -100,7 +100,7 @@ func (d *ThunderShare) deleteFile(ctx context.Context, thunder *thunder_browser.
 func (t *ThunderShare) listShareFiles(ctx context.Context, dir model.Obj) ([]model.Obj, error) {
 	storage := op.GetFirstDriver("ThunderBrowser", idx)
 	if storage == nil {
-		return nil, errors.New("ThunderBrowser not found")
+		return nil, errors.New("找不到迅雷云盘帐号")
 	}
 	thunder := storage.(*thunder_browser.ThunderBrowser)
 	files := make([]model.Obj, 0)
