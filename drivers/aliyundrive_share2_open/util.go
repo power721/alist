@@ -353,6 +353,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 			Expiration: link115.Expiration,
 		}, nil
 	}
+	log.Warnf("[%v] 获取115链接超时，使用阿里链接", d.ID)
 	return link, nil
 }
 

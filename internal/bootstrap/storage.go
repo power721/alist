@@ -23,7 +23,6 @@ func LoadStorages() {
 		for i := range storages {
 			err := op.LoadStorage(context.Background(), storages[i])
 			if err != nil {
-
 				log.Errorf("[%d] failed get enabled storages [%s], %+v",
 					i+1, storages[i].MountPath, err)
 			} else {
