@@ -308,7 +308,7 @@ func (d *AliyundriveShare2Open) getFiles(fileId string) ([]File, error) {
 
 func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan115, file model.Obj, link *model.Link, args model.LinkArgs) (*model.Link, error) {
 	if ok, err := pan115.UploadAvailable(); err != nil || !ok {
-		return nil, err
+		return link, err
 	}
 	log.Debugf("save file to 115 cloud: file=%v dir=%v", file.GetID(), pan115.TempDirId)
 	fs := stream.FileStream{
@@ -328,7 +328,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 	res, err := pan115.RapidUpload(fs.GetSize(), fs.GetName(), pan115.TempDirId, preHash, fullHash, ss)
 	if err != nil {
 		log.Warnf("[%v] 115 upload failed: %v", pan115.ID, err)
-		return link, nil
+		return link, err
 	}
 	log.Debugf("115.RapidUpload: %v", res)
 	for i := 0; i < 5; i++ {
