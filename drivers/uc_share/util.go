@@ -25,7 +25,6 @@ const Referer = "https://fast.uc.cn/"
 
 var Cookie = ""
 var idx = 0
-var lastId = ""
 
 func (d *UcShare) request(pathname string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
 	driver := op.GetFirstDriver("UC", idx)

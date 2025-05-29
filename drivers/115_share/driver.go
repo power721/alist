@@ -104,10 +104,7 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	fid := parts[0]
 	sha1 := parts[1]
 	downloadInfo, err := client.DownloadByShareCode(d.ShareCode, d.ReceiveCode, fid)
-	if lastId != file.GetID() {
-		lastId = file.GetID()
-		idx++
-	}
+	idx++
 	if err != nil {
 		return nil, err
 	}

@@ -101,10 +101,7 @@ func (d *Pan123Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		resp, err := pan123.Request(DownloadInfo, http.MethodPost, func(req *resty.Request) {
 			req.SetBody(data).SetHeaders(headers)
 		}, nil)
-		if lastId != file.GetID() {
-			lastId = file.GetID()
-			idx++
-		}
+		idx++
 		if err != nil {
 			return nil, err
 		}

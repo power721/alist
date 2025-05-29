@@ -21,7 +21,6 @@ var (
 	secretKey = []byte("PVGDwmcvfs1uV3d1")
 )
 var idx = 0
-var lastId = ""
 
 func (y *Yun139Share) httpPost(pathname string, data string, auth bool) ([]byte, error) {
 	u := "https://share-kd-njs.yun.139.com/yun-share/richlifeApp/devapp/IOutLink/" + pathname

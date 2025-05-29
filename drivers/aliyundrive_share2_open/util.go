@@ -29,7 +29,6 @@ const (
 )
 
 var idx = 0
-var lastId = ""
 
 var idx2 = 0
 var lastId2 = ""
