@@ -351,7 +351,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 		}, nil
 	}
 	log.Warnf("[%v] 获取115链接超时，使用阿里链接", d.ID)
-	return link, nil
+	return link, err
 }
 
 func (d *AliyundriveShare2Open) delayDelete115(pan115 *_115.Pan115, fileId string) {
