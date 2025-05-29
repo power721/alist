@@ -29,7 +29,6 @@ const (
 )
 
 var idx = 0
-
 var idx2 = 0
 
 func getAliOpenDriver(idx int) (*aliyundrive_open.AliyundriveOpen, error) {
