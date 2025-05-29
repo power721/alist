@@ -63,10 +63,7 @@ func (d *QuarkShare) Link(ctx context.Context, file model.Obj, args model.LinkAr
 	uc := storage.(*quark.QuarkOrUC)
 	log.Infof("[%v] 获取夸克文件直链 %v %v %v", uc.ID, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(uc, file.GetID())
-	if lastId != file.GetID() {
-		lastId = file.GetID()
-		idx++
-	}
+	idx++
 	if err != nil {
 		return nil, err
 	}

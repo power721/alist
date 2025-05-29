@@ -23,7 +23,6 @@ const (
 )
 
 var idx = 0
-var lastId = ""
 
 func (d *ThunderShare) saveFile(ctx context.Context, thunder *thunder_browser.ThunderBrowser, file model.Obj) (string, error) {
 	data := base.Json{

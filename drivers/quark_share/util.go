@@ -26,7 +26,6 @@ const Accept = "application/json, text/plain, */*"
 
 var Cookie = ""
 var idx = 0
-var lastId = ""
 
 func (d *QuarkShare) request(pathname string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
 	driver := op.GetFirstDriver("Quark", idx)

@@ -32,7 +32,6 @@ const (
 )
 
 var idx = 0
-var lastId = ""
 
 func signPath(path string, os string, version string) (k string, v string) {
 	table := []byte{'a', 'd', 'e', 'f', 'g', 'h', 'l', 'm', 'y', 'i', 'j', 'n', 'o', 'p', 'k', 'q', 'r', 's', 't', 'u', 'b', 'c', 'v', 'w', 's', 'z'}

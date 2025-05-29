@@ -86,10 +86,7 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 	}
 	log.Infof("[%v] 获取阿里云盘文件直链 %v %v %v %v", ali.ID, ali.DriveId, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(ali, file.GetID())
-	if lastId != file.GetID() {
-		lastId = file.GetID()
-		idx++
-	}
+	idx++
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +148,7 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 
 	log.Infof("[%v] 获取文件链接 %v %v %v %v", ali.ID, ali.DriveId, args.Obj.GetID(), args.Obj.GetName(), args.Obj.GetSize())
 	fileId, err := d.saveFile(ali, args.Obj.GetID())
+	idx++
 	if err != nil {
 		return nil, err
 	}
@@ -172,10 +170,6 @@ func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs)
 	_, err = ali.Request(uri, http.MethodPost, func(req *resty.Request) {
 		req.SetBody(data).SetResult(&resp)
 	})
-	if lastId != args.Obj.GetID() {
-		lastId = args.Obj.GetID()
-		idx++
-	}
 
 	go d.deleteDelay(ali, fileId)
 

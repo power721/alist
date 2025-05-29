@@ -52,10 +52,7 @@ func (d *Yun139Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	yun139 := storage.(*_139.Yun139)
 	log.Infof("[%v] 获取移动云盘文件直链 %v %v %v", yun139.ID, file.GetName(), file.GetID(), file.GetSize())
 	url, err := d.link(yun139, file.GetID())
-	if lastId != file.GetID() {
-		lastId = file.GetID()
-		idx++
-	}
+	idx++
 	if err != nil {
 		return nil, err
 	}
