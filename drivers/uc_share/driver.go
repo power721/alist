@@ -63,15 +63,15 @@ func (d *UcShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 	uc := storage.(*quark.QuarkOrUC)
 	log.Infof("[%v] 获取UC文件直链 %v %v %v", uc.ID, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(uc, file.GetID())
+	if lastId != file.GetID() {
+		lastId = file.GetID()
+		idx++
+	}
 	if err != nil {
 		return nil, err
 	}
 
 	link, err := d.getDownloadUrl(ctx, uc, MyFile{FileId: fileId}, args)
-	if lastId != file.GetID() {
-		lastId = file.GetID()
-		idx++
-	}
 	return link, err
 }
 

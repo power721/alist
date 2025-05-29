@@ -86,6 +86,10 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 	}
 	log.Infof("[%v] 获取阿里云盘文件直链 %v %v %v %v", ali.ID, ali.DriveId, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(ali, file.GetID())
+	if lastId != file.GetID() {
+		lastId = file.GetID()
+		idx++
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -96,10 +100,6 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 	}
 
 	link, hash, err := d.getOpenLink(ali, newFile)
-	if lastId != file.GetID() {
-		lastId = file.GetID()
-		idx++
-	}
 	if err != nil {
 		return nil, err
 	}

@@ -48,16 +48,16 @@ func (d *ThunderShare) Link(ctx context.Context, file model.Obj, args model.Link
 	thunder := storage.(*thunder_browser.ThunderBrowser)
 	log.Infof("[%v] 获取迅雷云盘文件直链 %v %v %v", thunder.ID, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(ctx, thunder, file)
+	if lastId != file.GetID() {
+		lastId = file.GetID()
+		idx++
+	}
 	if err != nil {
 		log.Warnf("[%v] 保存迅雷文件失败: %v", thunder.ID, err)
 		return nil, err
 	}
 
 	link, err := d.getDownloadUrl(ctx, thunder, fileId)
-	if lastId != file.GetID() {
-		lastId = file.GetID()
-		idx++
-	}
 	return link, err
 }
 
