@@ -31,7 +31,6 @@ const (
 var idx = 0
 
 var idx2 = 0
-var lastId2 = ""
 
 func getAliOpenDriver(idx int) (*aliyundrive_open.AliyundriveOpen, error) {
 	if setting.GetBool(conf.DriverRoundRobin) {
