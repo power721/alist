@@ -331,6 +331,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 		return link, err
 	}
 	log.Debugf("115.RapidUpload: %v", res)
+	go d.delayDelete115(pan115, fullHash)
 	for i := 0; i < 5; i++ {
 		var f = &_115.FileObj{
 			File: driver.File{
@@ -342,7 +343,6 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 			time.Sleep(200 * time.Millisecond)
 			continue
 		}
-		go d.delayDelete115(pan115, fullHash)
 		log.Infof("[%v] 使用115链接: %v", pan115.ID, link115.URL)
 		return &model.Link{
 			URL:        link115.URL + fmt.Sprintf("#storageId=%d", pan115.ID),
@@ -350,7 +350,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 			Expiration: link115.Expiration,
 		}, nil
 	}
-	log.Warnf("[%v] 获取115链接超时，使用阿里链接", d.ID)
+	log.Warnf("获取115链接超时，使用阿里链接")
 	return link, err
 }
 
@@ -358,6 +358,10 @@ func (d *AliyundriveShare2Open) delayDelete115(pan115 *_115.Pan115, fileId strin
 	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
 	if delayTime == 0 {
 		return
+	}
+
+	if delayTime < 5 {
+		delayTime = 5
 	}
 
 	log.Infof("[%v] Delete 115 temp file %v after %v seconds.", pan115.ID, fileId, delayTime)
