@@ -18,6 +18,10 @@ var limiter = rate.NewLimiter(rate.Every(3000*time.Millisecond), 1)
 
 var idx = 0
 
+func (d *Cloud189Share) GetShareInfo() (ShareInfo, error) {
+	return d.getShareInfo()
+}
+
 func (d *Cloud189Share) getShareInfo() (ShareInfo, error) {
 	tempShareInfo, exist := shareTokenCache.Get(d.ShareId)
 	if exist {

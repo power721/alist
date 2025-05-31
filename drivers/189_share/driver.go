@@ -12,7 +12,6 @@ import (
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
 	"path/filepath"
-	"time"
 )
 
 type Cloud189Share struct {
@@ -59,8 +58,8 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 		return nil, err
 	}
 
-	fileObject, exist := file.(*FileObj)
-	if !exist {
+	fileObject, ok := file.(*FileObj)
+	if !ok {
 		return nil, errors.New("文件格式错误")
 	}
 
@@ -76,13 +75,9 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 		return nil, err
 	}
 
-	transfer, err := cloud189PC.Transfer(ctx, shareInfo.ShareId, fileObject.ID, fileObject.oldName)
+	link, err := cloud189PC.Transfer(ctx, shareInfo.ShareId, fileObject.ID, fileObject.oldName)
 	idx++
-	hour := time.Hour
-	if transfer != nil && transfer.URL != "" {
-		transfer.Expiration = &hour
-	}
-	return transfer, err
+	return link, err
 }
 
 var _ driver.Driver = (*Cloud189Share)(nil)
