@@ -2,8 +2,10 @@ package bootstrap
 
 import (
 	"context"
+	"github.com/alist-org/alist/v3/drivers/aliyundrive_share2_open"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/setting"
+	"time"
 
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/db"
@@ -21,17 +23,19 @@ func LoadStorages() {
 
 	go func(storages []model.Storage) {
 		for i := range storages {
-			err := op.LoadStorage(context.Background(), storages[i])
+			storage := storages[i]
+			err := op.LoadStorage(context.Background(), storage)
 			if err != nil {
 				log.Errorf("[%d] failed get enabled storages [%s], %+v",
-					i+1, storages[i].MountPath, err)
+					i+1, storage.MountPath, err)
 			} else {
 				log.Infof("[%d] success load storage: [%s], driver: [%s]",
-					i+1, storages[i].MountPath, storages[i].Driver)
+					i+1, storage.MountPath, storage.Driver)
 			}
 		}
 		log.Infof("=== load storages completed ===")
 		syncStatus()
+		go validate()
 		conf.StoragesLoaded = true
 	}(storages)
 }
@@ -43,5 +47,23 @@ func syncStatus() {
 		Post(url)
 	if err != nil {
 		log.Warnf("sync status failed: %v", err)
+	}
+}
+
+func validate() {
+	storages := op.GetStorages("AliyundriveShare2Open")
+	log.Infof("validate ali shares")
+	for _, storage := range storages {
+		ali := storage.(*aliyundrive_share2_open.AliyundriveShare2Open)
+		if ali.ID < 20000 {
+			continue
+		}
+		err := ali.GetShareToken()
+		if err != nil {
+			log.Warnf("[%v] failed get share token: %v", ali.ID, err)
+			ali.GetStorage().SetStatus(err.Error())
+			op.MustSaveDriverStorage(ali)
+		}
+		time.Sleep(1500 * time.Millisecond)
 	}
 }

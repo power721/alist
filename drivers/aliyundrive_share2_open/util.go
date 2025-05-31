@@ -59,6 +59,10 @@ func getAliOpenDriver(idx int) (*aliyundrive_open.AliyundriveOpen, error) {
 	return ali, nil
 }
 
+func (d *AliyundriveShare2Open) GetShareToken() error {
+	return d.getShareToken()
+}
+
 func (d *AliyundriveShare2Open) getShareToken() error {
 	data := base.Json{
 		"share_id": d.ShareId,
