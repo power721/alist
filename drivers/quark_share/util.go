@@ -97,6 +97,10 @@ func (d *QuarkShare) GetFiles(parent string) ([]File, error) {
 	return files, nil
 }
 
+func (d *QuarkShare) GetShareToken() error {
+	return d.getShareToken()
+}
+
 func (d *QuarkShare) getShareToken() error {
 	data := base.Json{
 		"pwd_id":   d.ShareId,

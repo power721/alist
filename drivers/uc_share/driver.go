@@ -8,6 +8,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
+	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	log "github.com/sirupsen/logrus"
@@ -29,6 +30,10 @@ func (d *UcShare) GetAddition() driver.Additional {
 func (d *UcShare) Init(ctx context.Context) error {
 	if Cookie == "" {
 		Cookie = token.GetAccountToken(conf.UC)
+	}
+
+	if setting.GetBool(conf.LazyLoad) {
+		return nil
 	}
 
 	err := d.getShareToken()

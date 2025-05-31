@@ -43,7 +43,12 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 		Limit:  4,
 		Bucket: 1,
 	})
-	return nil
+
+	if setting.GetBool(conf.LazyLoad) {
+		return nil
+	}
+
+	return d.getShareToken()
 }
 
 func (d *AliyundriveShare2Open) Drop(ctx context.Context) error {
