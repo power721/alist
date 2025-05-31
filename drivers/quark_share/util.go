@@ -97,7 +97,7 @@ func (d *QuarkShare) GetFiles(parent string) ([]File, error) {
 	return files, nil
 }
 
-func (d *QuarkShare) GetShareToken() error {
+func (d *QuarkShare) Validate() error {
 	return d.getShareToken()
 }
 

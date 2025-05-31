@@ -9,7 +9,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
-	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
@@ -36,7 +35,7 @@ func (d *Cloud189Share) Init(ctx context.Context) error {
 		"Referer": "https://cloud.189.cn",
 	})
 
-	if setting.GetBool(conf.LazyLoad) {
+	if conf.LazyLoad && !conf.StoragesLoaded {
 		return nil
 	}
 

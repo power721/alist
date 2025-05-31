@@ -85,7 +85,6 @@ const (
 	AliAccountId     = "ali_account_id"
 	TempDirName      = "alist-tvbox-temp"
 	DriverRoundRobin = "driver_round_robin"
-	LazyLoad         = "ali_lazy_load"
 
 	// SSO
 	SSOClientId          = "sso_client_id"

@@ -8,7 +8,6 @@ import (
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
-	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	log "github.com/sirupsen/logrus"
@@ -32,7 +31,7 @@ func (d *QuarkShare) Init(ctx context.Context) error {
 		Cookie = token.GetAccountToken(conf.QUARK)
 	}
 
-	if setting.GetBool(conf.LazyLoad) {
+	if conf.LazyLoad && !conf.StoragesLoaded {
 		return nil
 	}
 

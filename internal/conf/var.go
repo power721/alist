@@ -31,3 +31,5 @@ var (
 	ManageHtml   string
 	IndexHtml    string
 )
+
+var LazyLoad = false

@@ -97,7 +97,7 @@ func (d *UcShare) GetFiles(parent string) ([]File, error) {
 	return files, nil
 }
 
-func (d *UcShare) GetShareToken() error {
+func (d *UcShare) Validate() error {
 	return d.getShareToken()
 }
 
