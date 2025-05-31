@@ -75,7 +75,7 @@ func validateAliShares() {
 		}
 		err := ali.Validate()
 		if err != nil {
-			log.Warnf("[%v] failed get share info: %v", ali.ID, err)
+			log.Warnf("[%v] 阿里分享错误: %v", ali.ID, err)
 			ali.GetStorage().SetStatus(err.Error())
 			op.MustSaveDriverStorage(ali)
 		}
@@ -93,7 +93,7 @@ func validate189Shares() {
 		}
 		err := driver.Validate()
 		if err != nil {
-			log.Warnf("[%v] failed get share info: %v", driver.ID, err)
+			log.Warnf("[%v] 天翼分享错误: %v", driver.ID, err)
 			driver.GetStorage().SetStatus(err.Error())
 			op.MustSaveDriverStorage(driver)
 		}
@@ -111,7 +111,7 @@ func validateQuarkShares() {
 		}
 		err := driver.Validate()
 		if err != nil {
-			log.Warnf("[%v] failed get share info: %v", driver.ID, err)
+			log.Warnf("[%v] 夸克分享错误: %v", driver.ID, err)
 			driver.GetStorage().SetStatus(err.Error())
 			op.MustSaveDriverStorage(driver)
 		}
@@ -129,7 +129,7 @@ func validateUcShares() {
 		}
 		err := driver.Validate()
 		if err != nil {
-			log.Warnf("[%v] failed get share info: %v", driver.ID, err)
+			log.Warnf("[%v] UC分享错误: %v", driver.ID, err)
 			driver.GetStorage().SetStatus(err.Error())
 			op.MustSaveDriverStorage(driver)
 		}
