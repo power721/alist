@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	_189_share "github.com/alist-org/alist/v3/drivers/189_share"
 	"github.com/alist-org/alist/v3/drivers/aliyundrive_share2_open"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/setting"
@@ -35,7 +36,7 @@ func LoadStorages() {
 		}
 		log.Infof("=== load storages completed ===")
 		syncStatus()
-		go validate()
+		validate()
 		conf.StoragesLoaded = true
 	}(storages)
 }
@@ -51,6 +52,11 @@ func syncStatus() {
 }
 
 func validate() {
+	go validateAliShares()
+	go validate189Shares()
+}
+
+func validateAliShares() {
 	storages := op.GetStorages("AliyundriveShare2Open")
 	log.Infof("validate ali shares")
 	for _, storage := range storages {
@@ -65,5 +71,23 @@ func validate() {
 			op.MustSaveDriverStorage(ali)
 		}
 		time.Sleep(1500 * time.Millisecond)
+	}
+}
+
+func validate189Shares() {
+	storages := op.GetStorages("189Share")
+	log.Infof("validate 189 shares")
+	for _, storage := range storages {
+		driver := storage.(*_189_share.Cloud189Share)
+		if driver.ID < 20000 {
+			continue
+		}
+		_, err := driver.GetShareInfo()
+		if err != nil {
+			log.Warnf("[%v] failed get share info: %v", driver.ID, err)
+			driver.GetStorage().SetStatus(err.Error())
+			op.MustSaveDriverStorage(driver)
+		}
+		time.Sleep(500 * time.Millisecond)
 	}
 }
