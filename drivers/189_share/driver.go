@@ -5,6 +5,7 @@ import (
 	"errors"
 	_189pc "github.com/alist-org/alist/v3/drivers/189pc"
 	"github.com/alist-org/alist/v3/drivers/base"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
@@ -34,7 +35,12 @@ func (d *Cloud189Share) Init(ctx context.Context) error {
 		"Referer": "https://cloud.189.cn",
 	})
 
-	return nil
+	if conf.LazyLoad && !conf.StoragesLoaded {
+		return nil
+	}
+
+	_, err := d.getShareInfo()
+	return err
 }
 
 func (d *Cloud189Share) Drop(ctx context.Context) error {

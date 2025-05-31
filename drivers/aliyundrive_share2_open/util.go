@@ -59,7 +59,7 @@ func getAliOpenDriver(idx int) (*aliyundrive_open.AliyundriveOpen, error) {
 	return ali, nil
 }
 
-func (d *AliyundriveShare2Open) GetShareToken() error {
+func (d *AliyundriveShare2Open) Validate() error {
 	return d.getShareToken()
 }
 

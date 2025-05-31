@@ -5,6 +5,8 @@ import (
 	_189_share "github.com/alist-org/alist/v3/drivers/189_share"
 	"github.com/alist-org/alist/v3/drivers/aliyundrive_share2_open"
 	"github.com/alist-org/alist/v3/drivers/base"
+	"github.com/alist-org/alist/v3/drivers/quark_share"
+	"github.com/alist-org/alist/v3/drivers/uc_share"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"time"
 
@@ -15,12 +17,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const baseId = 20000
+
 func LoadStorages() {
 	storages, err := db.GetEnabledStorages()
 	if err != nil {
 		log.Fatalf("failed get enabled storages: %+v", err)
 	}
 	log.Infof("total %v enabled storages", len(storages))
+	conf.LazyLoad = setting.GetBool("ali_lazy_load")
 
 	go func(storages []model.Storage) {
 		for i := range storages {
@@ -52,8 +57,12 @@ func syncStatus() {
 }
 
 func validate() {
-	go validateAliShares()
-	go validate189Shares()
+	if conf.LazyLoad {
+		go validateAliShares()
+		go validate189Shares()
+		go validateQuarkShares()
+		go validateUcShares()
+	}
 }
 
 func validateAliShares() {
@@ -61,12 +70,12 @@ func validateAliShares() {
 	log.Infof("validate ali shares")
 	for _, storage := range storages {
 		ali := storage.(*aliyundrive_share2_open.AliyundriveShare2Open)
-		if ali.ID < 20000 {
+		if ali.ID < baseId {
 			continue
 		}
-		err := ali.GetShareToken()
+		err := ali.Validate()
 		if err != nil {
-			log.Warnf("[%v] failed get share token: %v", ali.ID, err)
+			log.Warnf("[%v] failed get share info: %v", ali.ID, err)
 			ali.GetStorage().SetStatus(err.Error())
 			op.MustSaveDriverStorage(ali)
 		}
@@ -79,15 +88,51 @@ func validate189Shares() {
 	log.Infof("validate 189 shares")
 	for _, storage := range storages {
 		driver := storage.(*_189_share.Cloud189Share)
-		if driver.ID < 20000 {
+		if driver.ID < baseId {
 			continue
 		}
-		_, err := driver.GetShareInfo()
+		err := driver.Validate()
 		if err != nil {
 			log.Warnf("[%v] failed get share info: %v", driver.ID, err)
 			driver.GetStorage().SetStatus(err.Error())
 			op.MustSaveDriverStorage(driver)
 		}
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func validateQuarkShares() {
+	storages := op.GetStorages("QuarkShare")
+	log.Infof("validate Quark shares")
+	for _, storage := range storages {
+		driver := storage.(*quark_share.QuarkShare)
+		if driver.ID < baseId {
+			continue
+		}
+		err := driver.Validate()
+		if err != nil {
+			log.Warnf("[%v] failed get share info: %v", driver.ID, err)
+			driver.GetStorage().SetStatus(err.Error())
+			op.MustSaveDriverStorage(driver)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func validateUcShares() {
+	storages := op.GetStorages("UCShare")
+	log.Infof("validate UC shares")
+	for _, storage := range storages {
+		driver := storage.(*uc_share.UcShare)
+		if driver.ID < baseId {
+			continue
+		}
+		err := driver.Validate()
+		if err != nil {
+			log.Warnf("[%v] failed get share info: %v", driver.ID, err)
+			driver.GetStorage().SetStatus(err.Error())
+			op.MustSaveDriverStorage(driver)
+		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }

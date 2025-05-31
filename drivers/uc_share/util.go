@@ -97,6 +97,10 @@ func (d *UcShare) GetFiles(parent string) ([]File, error) {
 	return files, nil
 }
 
+func (d *UcShare) Validate() error {
+	return d.getShareToken()
+}
+
 func (d *UcShare) getShareToken() error {
 	data := base.Json{
 		"pwd_id":             d.ShareId,

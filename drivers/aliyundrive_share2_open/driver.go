@@ -18,6 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type AliyundriveShare2Open struct {
@@ -43,7 +44,14 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 		Limit:  4,
 		Bucket: 1,
 	})
-	return nil
+
+	if conf.LazyLoad && !conf.StoragesLoaded {
+		return nil
+	}
+
+	err := d.getShareToken()
+	time.Sleep(1500 * time.Millisecond)
+	return err
 }
 
 func (d *AliyundriveShare2Open) Drop(ctx context.Context) error {

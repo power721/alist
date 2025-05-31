@@ -31,6 +31,10 @@ func (d *UcShare) Init(ctx context.Context) error {
 		Cookie = token.GetAccountToken(conf.UC)
 	}
 
+	if conf.LazyLoad && !conf.StoragesLoaded {
+		return nil
+	}
+
 	err := d.getShareToken()
 	if err != nil {
 		log.Errorf("getShareToken error: %v", err)
