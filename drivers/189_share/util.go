@@ -32,7 +32,7 @@ func (d *Cloud189Share) getShareInfo() (ShareInfo, error) {
 	_, err := d.client.R().SetQueryParam("shareCode", d.ShareId).SetResult(&shareInfo).Get("https://cloud.189.cn/api/open/share/getShareInfoByCodeV2.action")
 
 	if err != nil {
-		log.Info("获取天翼网盘分享信息失败", err)
+		log.Debugf("[%v] 获取天翼网盘分享信息失败: %v", d.ID, err)
 		return shareInfo, err
 	}
 
@@ -43,7 +43,7 @@ func (d *Cloud189Share) getShareInfo() (ShareInfo, error) {
 			"accessCode": d.SharePwd,
 		}).SetResult(&checkShareInfo).Get("https://cloud.189.cn/api/open/share/checkAccessCode.action")
 		if err != nil {
-			log.Info("获取天翼网盘分享ID失败", err)
+			log.Debugf("[%v] 获取天翼网盘分享ID失败: %v", d.ID, err)
 			return shareInfo, err
 		}
 		shareInfo.ShareId = checkShareInfo.ShareId
@@ -53,7 +53,7 @@ func (d *Cloud189Share) getShareInfo() (ShareInfo, error) {
 		shareTokenCache.Set(d.ShareId, shareInfo, cache.WithEx[ShareInfo](time.Minute*time.Duration(d.CacheExpiration)))
 		return shareInfo, nil
 	} else {
-		log.Infof("获取天翼网盘分享信息为空:%v", shareInfo)
+		log.Debugf("[%v] 获取天翼网盘分享信息为空: %v", d.ID, shareInfo)
 		return shareInfo, errors.New("获取天翼网盘分享信息为空")
 	}
 }
