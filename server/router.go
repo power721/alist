@@ -129,6 +129,7 @@ func admin(g *gin.RouterGroup) {
 	storage := g.Group("/storage")
 	storage.GET("/list", handles.ListStorages)
 	storage.GET("/failed", handles.GetFailedStorages)
+	storage.POST("/failed", handles.ValidateStorages)
 	storage.GET("/get", handles.GetStorage)
 	storage.POST("/create", handles.CreateStorage)
 	storage.POST("/update", handles.UpdateStorage)

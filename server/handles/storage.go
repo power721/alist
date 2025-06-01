@@ -2,6 +2,7 @@ package handles
 
 import (
 	"context"
+	"github.com/alist-org/alist/v3/internal/bootstrap"
 	"strconv"
 
 	"github.com/alist-org/alist/v3/internal/conf"
@@ -49,6 +50,11 @@ func GetFailedStorages(c *gin.Context) {
 		Content: storages,
 		Total:   total,
 	})
+}
+
+func ValidateStorages(c *gin.Context) {
+	bootstrap.Validate()
+	common.SuccessResp(c)
 }
 
 func CreateStorage(c *gin.Context) {
