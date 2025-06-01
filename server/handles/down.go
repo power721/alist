@@ -51,13 +51,12 @@ func Down(c *gin.Context) {
 
 func Proxy(c *gin.Context) {
 	rawPath := c.MustGet("path").(string)
-	filename := stdpath.Base(rawPath)
 	storage, err := fs.GetStorage(rawPath, &fs.GetStoragesArgs{})
 	if err != nil {
 		common.ErrorResp(c, err, 500)
 		return
 	}
-	if canProxy(storage, filename) {
+	if true {
 		downProxyUrl := storage.GetStorage().DownProxyUrl
 		if downProxyUrl != "" {
 			_, ok := c.GetQuery("d")

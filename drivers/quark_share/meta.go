@@ -16,7 +16,7 @@ type Addition struct {
 
 var config = driver.Config{
 	Name:              "QuarkShare",
-	OnlyLocal:         true,
+	OnlyLocal:         false,
 	DefaultRoot:       "0",
 	NoOverwriteUpload: true,
 }
