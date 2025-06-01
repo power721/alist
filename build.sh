@@ -49,7 +49,7 @@ FetchWebRelease() {
   done
   for file in $(grep -l 'AliyundriveShare' public/dist/assets/*); do
     echo "update $file"
-    sed -i 's/AliyundriveShare/AliyundriveShare2Open/g' "$file"
+    sed -i 's/AliyundriveShare/AliyunShare/g' "$file"
   done
 }
 
