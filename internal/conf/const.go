@@ -164,7 +164,7 @@ const (
 	ThunderChunkSize = 1024
 	Pan115Threads    = 2
 	Pan115ChunkSize  = 1024
-	AliThreads       = 10
+	AliThreads       = 4
 	AliChunkSize     = 512
 	UcThreads        = 8
 	UcChunkSize      = 1024

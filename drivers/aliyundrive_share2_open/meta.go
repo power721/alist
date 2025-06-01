@@ -15,7 +15,7 @@ type Addition struct {
 }
 
 var config = driver.Config{
-	Name:        "AliyundriveShare2Open",
+	Name:        "AliyunShare",
 	LocalSort:   false,
 	OnlyProxy:   false,
 	NoUpload:    true,
