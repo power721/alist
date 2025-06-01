@@ -49,7 +49,7 @@ func (d *AliyundriveShare2Open) Init(ctx context.Context) error {
 		return nil
 	}
 
-	err := d.getShareToken()
+	err := d.Validate()
 	time.Sleep(1500 * time.Millisecond)
 	return err
 }

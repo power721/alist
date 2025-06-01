@@ -2,9 +2,9 @@ package _115
 
 import (
 	"errors"
-	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/pkg/utils"
+	driver115 "github.com/power721/115driver/pkg/driver"
 	log "github.com/sirupsen/logrus"
 )
 

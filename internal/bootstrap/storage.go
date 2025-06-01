@@ -2,10 +2,13 @@ package bootstrap
 
 import (
 	"context"
+	_115_share "github.com/alist-org/alist/v3/drivers/115_share"
+	_123Share "github.com/alist-org/alist/v3/drivers/123_share"
 	_189_share "github.com/alist-org/alist/v3/drivers/189_share"
 	"github.com/alist-org/alist/v3/drivers/aliyundrive_share2_open"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/drivers/quark_share"
+	"github.com/alist-org/alist/v3/drivers/thunder_share"
 	"github.com/alist-org/alist/v3/drivers/uc_share"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"time"
@@ -60,14 +63,17 @@ func validate() {
 	if conf.LazyLoad {
 		go validateAliShares()
 		go validate189Shares()
+		go validate123Shares()
+		go validate115Shares()
 		go validateQuarkShares()
 		go validateUcShares()
+		go validateThunderShares()
 	}
 }
 
 func validateAliShares() {
 	storages := op.GetStorages("AliyundriveShare2Open")
-	log.Infof("validate ali shares")
+	log.Infof("validate %v ali shares", len(storages))
 	for _, storage := range storages {
 		ali := storage.(*aliyundrive_share2_open.AliyundriveShare2Open)
 		if ali.ID < baseId {
@@ -85,7 +91,7 @@ func validateAliShares() {
 
 func validate189Shares() {
 	storages := op.GetStorages("189Share")
-	log.Infof("validate 189 shares")
+	log.Infof("validate %v 189 shares", len(storages))
 	for _, storage := range storages {
 		driver := storage.(*_189_share.Cloud189Share)
 		if driver.ID < baseId {
@@ -101,9 +107,45 @@ func validate189Shares() {
 	}
 }
 
+func validate123Shares() {
+	storages := op.GetStorages("123PanShare")
+	log.Infof("validate %v 123 shares", len(storages))
+	for _, storage := range storages {
+		driver := storage.(*_123Share.Pan123Share)
+		if driver.ID < baseId {
+			continue
+		}
+		err := driver.Validate()
+		if err != nil {
+			log.Warnf("[%v] 123分享错误: %v", driver.ID, err)
+			driver.GetStorage().SetStatus(err.Error())
+			op.MustSaveDriverStorage(driver)
+		}
+		time.Sleep(800 * time.Millisecond)
+	}
+}
+
+func validate115Shares() {
+	storages := op.GetStorages("115 Share")
+	log.Infof("validate %v 115 shares", len(storages))
+	for _, storage := range storages {
+		driver := storage.(*_115_share.Pan115Share)
+		if driver.ID < baseId {
+			continue
+		}
+		err := driver.Validate()
+		if err != nil {
+			log.Warnf("[%v] 115分享错误: %v", driver.ID, err)
+			driver.GetStorage().SetStatus(err.Error())
+			op.MustSaveDriverStorage(driver)
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
 func validateQuarkShares() {
 	storages := op.GetStorages("QuarkShare")
-	log.Infof("validate Quark shares")
+	log.Infof("validate %v Quark shares", len(storages))
 	for _, storage := range storages {
 		driver := storage.(*quark_share.QuarkShare)
 		if driver.ID < baseId {
@@ -121,7 +163,7 @@ func validateQuarkShares() {
 
 func validateUcShares() {
 	storages := op.GetStorages("UCShare")
-	log.Infof("validate UC shares")
+	log.Infof("validate %v UC shares", len(storages))
 	for _, storage := range storages {
 		driver := storage.(*uc_share.UcShare)
 		if driver.ID < baseId {
@@ -130,6 +172,24 @@ func validateUcShares() {
 		err := driver.Validate()
 		if err != nil {
 			log.Warnf("[%v] UC分享错误: %v", driver.ID, err)
+			driver.GetStorage().SetStatus(err.Error())
+			op.MustSaveDriverStorage(driver)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func validateThunderShares() {
+	storages := op.GetStorages("ThunderShare")
+	log.Infof("validate %v Thunder shares", len(storages))
+	for _, storage := range storages {
+		driver := storage.(*thunder_share.ThunderShare)
+		if driver.ID < baseId {
+			continue
+		}
+		err := driver.Validate()
+		if err != nil {
+			log.Warnf("[%v] 迅雷分享错误: %v", driver.ID, err)
 			driver.GetStorage().SetStatus(err.Error())
 			op.MustSaveDriverStorage(driver)
 		}

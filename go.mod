@@ -6,7 +6,6 @@ require (
 	github.com/KirCute/ftpserverlib-pasvportmap v1.25.0
 	github.com/KirCute/sftpd-alist v0.0.12
 	github.com/ProtonMail/go-crypto v1.0.0
-	github.com/SheltonZhu/115driver v1.0.34
 	github.com/Xhofe/go-cache v0.0.0-20240804043513-b1a71927bc21
 	github.com/Xhofe/rateg v0.0.0-20230728072201-251a4e1adad4
 	github.com/alist-org/gofakes3 v0.0.7
@@ -50,6 +49,7 @@ require (
 	github.com/ncw/swift/v2 v2.0.3
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.6
+	github.com/power721/115driver v0.2.2
 	github.com/pquerna/otp v1.4.0
 	github.com/rclone/rclone v1.67.0
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d

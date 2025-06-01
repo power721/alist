@@ -39,8 +39,7 @@ func (d *Cloud189Share) Init(ctx context.Context) error {
 		return nil
 	}
 
-	_, err := d.getShareInfo()
-	return err
+	return d.Validate()
 }
 
 func (d *Cloud189Share) Drop(ctx context.Context) error {

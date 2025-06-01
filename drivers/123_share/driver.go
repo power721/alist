@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/op"
 	"net/http"
 	"net/url"
@@ -39,11 +40,10 @@ func (d *Pan123Share) GetAddition() driver.Additional {
 }
 
 func (d *Pan123Share) Init(ctx context.Context) error {
-	pan123 := op.GetFirstDriver("123Pan", idx)
-	if pan123 != nil {
-		return d.InitReference(pan123)
+	if conf.LazyLoad && !conf.StoragesLoaded {
+		return nil
 	}
-	return fmt.Errorf("找不到123云盘帐号")
+	return d.Validate()
 }
 
 func (d *Pan123Share) InitReference(storage driver.Driver) error {
