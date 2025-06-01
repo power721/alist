@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/alist-org/alist/v3/drivers/thunder_browser"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
@@ -24,7 +25,11 @@ func (d *ThunderShare) GetAddition() driver.Additional {
 }
 
 func (d *ThunderShare) Init(ctx context.Context) error {
-	return nil
+	if conf.LazyLoad && !conf.StoragesLoaded {
+		return nil
+	}
+
+	return d.Validate()
 }
 
 func (d *ThunderShare) Drop(ctx context.Context) error {

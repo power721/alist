@@ -8,6 +8,7 @@ import (
 	"github.com/alist-org/alist/v3/drivers/aliyundrive_share2_open"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/drivers/quark_share"
+	"github.com/alist-org/alist/v3/drivers/thunder_share"
 	"github.com/alist-org/alist/v3/drivers/uc_share"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"time"
@@ -66,6 +67,7 @@ func validate() {
 		go validate115Shares()
 		go validateQuarkShares()
 		go validateUcShares()
+		go validateThunderShares()
 	}
 }
 
@@ -170,6 +172,24 @@ func validateUcShares() {
 		err := driver.Validate()
 		if err != nil {
 			log.Warnf("[%v] UC分享错误: %v", driver.ID, err)
+			driver.GetStorage().SetStatus(err.Error())
+			op.MustSaveDriverStorage(driver)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func validateThunderShares() {
+	storages := op.GetStorages("ThunderShare")
+	log.Infof("validate %v Thunder shares", len(storages))
+	for _, storage := range storages {
+		driver := storage.(*thunder_share.ThunderShare)
+		if driver.ID < baseId {
+			continue
+		}
+		err := driver.Validate()
+		if err != nil {
+			log.Warnf("[%v] 迅雷分享错误: %v", driver.ID, err)
 			driver.GetStorage().SetStatus(err.Error())
 			op.MustSaveDriverStorage(driver)
 		}

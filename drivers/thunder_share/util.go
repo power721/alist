@@ -162,7 +162,7 @@ func (t *ThunderShare) getShareInfo(ctx context.Context, thunder *thunder_browse
 	params := map[string]string{
 		"share_id":        t.ShareId,
 		"pass_code":       t.SharePwd,
-		"limit":           "100",
+		"limit":           "1",
 		"pass_code_token": "",
 		"page_token":      "",
 		"thumbnail_size":  "SIZE_LARGE",
@@ -179,4 +179,14 @@ func (t *ThunderShare) getShareInfo(ctx context.Context, thunder *thunder_browse
 	log.Debugf("[%v] get Thunder share token: %v", thunder.ID, share.Token)
 	t.ShareToken = share.Token
 	return share, nil
+}
+
+func (t *ThunderShare) Validate() error {
+	storage := op.GetFirstDriver("ThunderBrowser", idx)
+	if storage == nil {
+		return errors.New("找不到迅雷云盘帐号")
+	}
+	thunder := storage.(*thunder_browser.ThunderBrowser)
+	_, err := t.getShareInfo(context.Background(), thunder)
+	return err
 }
