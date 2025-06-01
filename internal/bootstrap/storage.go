@@ -44,7 +44,7 @@ func LoadStorages() {
 		}
 		log.Infof("=== load storages completed ===")
 		syncStatus()
-		validate()
+		Validate()
 		conf.StoragesLoaded = true
 	}(storages)
 }
@@ -59,7 +59,7 @@ func syncStatus() {
 	}
 }
 
-func validate() {
+func Validate() {
 	if conf.LazyLoad {
 		go validateAliShares()
 		go validate189Shares()
