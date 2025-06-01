@@ -349,9 +349,11 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 		}
 		log.Infof("[%v] 使用115链接: %v", pan115.ID, link115.URL)
 		return &model.Link{
-			URL:        link115.URL + fmt.Sprintf("#storageId=%d", pan115.ID),
-			Header:     link115.Header,
-			Expiration: link115.Expiration,
+			URL:         link115.URL + fmt.Sprintf("#storageId=%d", pan115.ID),
+			Header:      link115.Header,
+			Expiration:  link115.Expiration,
+			Concurrency: conf.Pan115Threads,
+			PartSize:    conf.Pan115ChunkSize * utils.KB,
 		}, nil
 	}
 	log.Warnf("获取115链接超时，使用阿里链接")

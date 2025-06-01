@@ -89,9 +89,11 @@ func (d *Pan115) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 	}
 	exp := 4 * time.Hour
 	link := &model.Link{
-		Expiration: &exp,
-		URL:        downloadInfo.Url.Url,
-		Header:     downloadInfo.Header,
+		Expiration:  &exp,
+		URL:         downloadInfo.Url.Url,
+		Header:      downloadInfo.Header,
+		Concurrency: conf.Pan115Threads,
+		PartSize:    conf.Pan115ChunkSize * utils.KB,
 	}
 	log.Debugf("Link: %v", link)
 	return link, nil
