@@ -2,10 +2,10 @@ package _115
 
 import (
 	"context"
-	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/setting"
+	driver115 "github.com/power721/115driver/pkg/driver"
 	log "github.com/sirupsen/logrus"
 )
 

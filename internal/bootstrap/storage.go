@@ -2,6 +2,8 @@ package bootstrap
 
 import (
 	"context"
+	_115_share "github.com/alist-org/alist/v3/drivers/115_share"
+	_123Share "github.com/alist-org/alist/v3/drivers/123_share"
 	_189_share "github.com/alist-org/alist/v3/drivers/189_share"
 	"github.com/alist-org/alist/v3/drivers/aliyundrive_share2_open"
 	"github.com/alist-org/alist/v3/drivers/base"
@@ -60,6 +62,8 @@ func validate() {
 	if conf.LazyLoad {
 		go validateAliShares()
 		go validate189Shares()
+		go validate123Shares()
+		go validate115Shares()
 		go validateQuarkShares()
 		go validateUcShares()
 	}
@@ -98,6 +102,42 @@ func validate189Shares() {
 			op.MustSaveDriverStorage(driver)
 		}
 		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func validate123Shares() {
+	storages := op.GetStorages("123PanShare")
+	log.Infof("validate 123 shares")
+	for _, storage := range storages {
+		driver := storage.(*_123Share.Pan123Share)
+		if driver.ID < baseId {
+			continue
+		}
+		err := driver.Validate()
+		if err != nil {
+			log.Warnf("[%v] 123分享错误: %v", driver.ID, err)
+			driver.GetStorage().SetStatus(err.Error())
+			op.MustSaveDriverStorage(driver)
+		}
+		time.Sleep(800 * time.Millisecond)
+	}
+}
+
+func validate115Shares() {
+	storages := op.GetStorages("115 Share")
+	log.Infof("validate 115 shares")
+	for _, storage := range storages {
+		driver := storage.(*_115_share.Pan115Share)
+		if driver.ID < baseId {
+			continue
+		}
+		err := driver.Validate()
+		if err != nil {
+			log.Warnf("[%v] 115分享错误: %v", driver.ID, err)
+			driver.GetStorage().SetStatus(err.Error())
+			op.MustSaveDriverStorage(driver)
+		}
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 

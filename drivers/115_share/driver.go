@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	driver115 "github.com/SheltonZhu/115driver/pkg/driver"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/pkg/utils"
+	driver115 "github.com/power721/115driver/pkg/driver"
 	"golang.org/x/time/rate"
 )
 
@@ -39,7 +39,11 @@ func (d *Pan115Share) Init(ctx context.Context) error {
 		d.limiter = rate.NewLimiter(rate.Limit(d.LimitRate), 1)
 	}
 
-	return nil
+	if conf.LazyLoad && !conf.StoragesLoaded {
+		return nil
+	}
+
+	return d.Validate()
 }
 
 func (d *Pan115Share) WaitLimit(ctx context.Context) error {
@@ -51,6 +55,16 @@ func (d *Pan115Share) WaitLimit(ctx context.Context) error {
 
 func (d *Pan115Share) Drop(ctx context.Context) error {
 	return nil
+}
+
+func (d *Pan115Share) Validate() error {
+	pan115 := op.Get115Driver(idx)
+	if pan115 == nil {
+		return errors.New("找不到115云盘帐号")
+	}
+	client := pan115.(*_115.Pan115).GetClient()
+	_, err := client.GetShareSnap(d.ShareCode, d.ReceiveCode, "0", driver115.QueryLimit(1))
+	return err
 }
 
 func (d *Pan115Share) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {

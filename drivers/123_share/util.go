@@ -129,3 +129,20 @@ func (d *Pan123Share) getFiles(ctx context.Context, parentId string) ([]File, er
 }
 
 // do others that not defined in Driver interface
+
+func (d *Pan123Share) Validate() error {
+	query := map[string]string{
+		"limit":          "1",
+		"next":           "0",
+		"orderBy":        "file_id",
+		"orderDirection": "desc",
+		"parentFileId":   "0",
+		"Page":           "1",
+		"shareKey":       d.ShareKey,
+		"SharePwd":       d.SharePwd,
+	}
+	_, err := d.request(FileList, http.MethodGet, func(req *resty.Request) {
+		req.SetQueryParams(query)
+	}, nil)
+	return err
+}

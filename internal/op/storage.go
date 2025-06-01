@@ -107,7 +107,7 @@ func GetMasterDriver(name, prefix string, id int) driver.Driver {
 
 	if len(drivers) > 1 {
 		storage := drivers[id%len(drivers)]
-		log.Infof("Use storage %v %v %v %v", id, len(drivers), storage.Config().Name, storage.GetStorage().ID)
+		log.Debugf("Use storage %v %v %v %v", id, len(drivers), storage.Config().Name, storage.GetStorage().ID)
 		return storage
 	}
 	return nil
