@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"fmt"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"hash"
 	"io"
@@ -86,7 +87,7 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 	exp := 15 * time.Minute
 	return &model.Link{
 		Expiration: &exp,
-		URL:        resp.Data[0].DownloadUrl,
+		URL:        resp.Data[0].DownloadUrl + fmt.Sprintf("#storageId=%d", d.ID),
 		Header: http.Header{
 			"Cookie":     []string{d.Cookie},
 			"Referer":    []string{d.conf.referer},
