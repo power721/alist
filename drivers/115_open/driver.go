@@ -115,6 +115,8 @@ func (d *Open115) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 		Header: http.Header{
 			"User-Agent": []string{ua},
 		},
+		Concurrency: conf.Pan115Threads,
+		PartSize:    conf.Pan115ChunkSize * utils.KB,
 	}, nil
 }
 
