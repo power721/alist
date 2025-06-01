@@ -35,13 +35,7 @@ func (d *UcShare) Init(ctx context.Context) error {
 		return nil
 	}
 
-	err := d.getShareToken()
-	if err != nil {
-		log.Errorf("getShareToken error: %v", err)
-		return err
-	}
-
-	return nil
+	return d.Validate()
 }
 
 func (d *UcShare) Drop(ctx context.Context) error {
