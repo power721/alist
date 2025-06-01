@@ -72,7 +72,7 @@ func Validate() {
 }
 
 func validateAliShares() {
-	storages := op.GetStorages("AliyundriveShare2Open")
+	storages := op.GetStorages("AliyunShare")
 	log.Infof("validate %v ali shares", len(storages))
 	for _, storage := range storages {
 		ali := storage.(*aliyundrive_share2_open.AliyundriveShare2Open)
