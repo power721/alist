@@ -11,6 +11,8 @@ import (
 	"github.com/alist-org/alist/v3/drivers/thunder_share"
 	"github.com/alist-org/alist/v3/drivers/uc_share"
 	"github.com/alist-org/alist/v3/internal/setting"
+	"strconv"
+	"sync"
 	"time"
 
 	"github.com/alist-org/alist/v3/internal/conf"
@@ -43,14 +45,14 @@ func LoadStorages() {
 			}
 		}
 		log.Infof("=== load storages completed ===")
-		syncStatus()
-		Validate()
+		syncStatus(2)
+		go Validate()
 		conf.StoragesLoaded = true
 	}(storages)
 }
 
-func syncStatus() {
-	url := "http://127.0.0.1:4567/api/alist/status?code=2"
+func syncStatus(code int) {
+	url := "http://127.0.0.1:4567/api/alist/status?code=" + strconv.Itoa(code)
 	_, err := base.RestyClient.R().
 		SetHeader("X-API-KEY", setting.GetStr("atv_api_key")).
 		Post(url)
@@ -61,17 +63,29 @@ func syncStatus() {
 
 func Validate() {
 	if conf.LazyLoad {
-		go validateAliShares()
-		go validate189Shares()
-		go validate123Shares()
-		go validate115Shares()
-		go validateQuarkShares()
-		go validateUcShares()
-		go validateThunderShares()
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go validateAliShares(&wg)
+		wg.Add(1)
+		go validate189Shares(&wg)
+		wg.Add(1)
+		go validate123Shares(&wg)
+		wg.Add(1)
+		go validate115Shares(&wg)
+		wg.Add(1)
+		go validateQuarkShares(&wg)
+		wg.Add(1)
+		go validateUcShares(&wg)
+		wg.Add(1)
+		go validateThunderShares(&wg)
+		wg.Wait()
+		log.Infof("all validation done")
+		syncStatus(3)
 	}
 }
 
-func validateAliShares() {
+func validateAliShares(wg *sync.WaitGroup) {
+	defer wg.Done()
 	storages := op.GetStorages("AliyunShare")
 	log.Infof("validate %v ali shares", len(storages))
 	for _, storage := range storages {
@@ -89,7 +103,8 @@ func validateAliShares() {
 	}
 }
 
-func validate189Shares() {
+func validate189Shares(wg *sync.WaitGroup) {
+	defer wg.Done()
 	storages := op.GetStorages("189Share")
 	log.Infof("validate %v 189 shares", len(storages))
 	for _, storage := range storages {
@@ -107,7 +122,8 @@ func validate189Shares() {
 	}
 }
 
-func validate123Shares() {
+func validate123Shares(wg *sync.WaitGroup) {
+	defer wg.Done()
 	storages := op.GetStorages("123PanShare")
 	log.Infof("validate %v 123 shares", len(storages))
 	for _, storage := range storages {
@@ -125,7 +141,8 @@ func validate123Shares() {
 	}
 }
 
-func validate115Shares() {
+func validate115Shares(wg *sync.WaitGroup) {
+	defer wg.Done()
 	storages := op.GetStorages("115 Share")
 	log.Infof("validate %v 115 shares", len(storages))
 	for _, storage := range storages {
@@ -143,7 +160,8 @@ func validate115Shares() {
 	}
 }
 
-func validateQuarkShares() {
+func validateQuarkShares(wg *sync.WaitGroup) {
+	defer wg.Done()
 	storages := op.GetStorages("QuarkShare")
 	log.Infof("validate %v Quark shares", len(storages))
 	for _, storage := range storages {
@@ -161,7 +179,8 @@ func validateQuarkShares() {
 	}
 }
 
-func validateUcShares() {
+func validateUcShares(wg *sync.WaitGroup) {
+	defer wg.Done()
 	storages := op.GetStorages("UCShare")
 	log.Infof("validate %v UC shares", len(storages))
 	for _, storage := range storages {
@@ -179,7 +198,8 @@ func validateUcShares() {
 	}
 }
 
-func validateThunderShares() {
+func validateThunderShares(wg *sync.WaitGroup) {
+	defer wg.Done()
 	storages := op.GetStorages("ThunderShare")
 	log.Infof("validate %v Thunder shares", len(storages))
 	for _, storage := range storages {
