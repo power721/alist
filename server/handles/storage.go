@@ -53,7 +53,7 @@ func GetFailedStorages(c *gin.Context) {
 }
 
 func ValidateStorages(c *gin.Context) {
-	bootstrap.Validate()
+	go bootstrap.Validate()
 	common.SuccessResp(c)
 }
 

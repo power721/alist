@@ -47,7 +47,9 @@ func LoadStorages() {
 		conf.StoragesLoaded = true
 		log.Infof("=== load storages completed ===")
 		syncStatus(2)
-		go Validate()
+		if conf.LazyLoad {
+			go Validate()
+		}
 	}(storages)
 }
 
@@ -62,26 +64,24 @@ func syncStatus(code int) {
 }
 
 func Validate() {
-	if conf.LazyLoad {
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go validateAliShares(&wg)
-		wg.Add(1)
-		go validate189Shares(&wg)
-		wg.Add(1)
-		go validate123Shares(&wg)
-		wg.Add(1)
-		go validate115Shares(&wg)
-		wg.Add(1)
-		go validateQuarkShares(&wg)
-		wg.Add(1)
-		go validateUcShares(&wg)
-		wg.Add(1)
-		go validateThunderShares(&wg)
-		wg.Wait()
-		log.Infof("=== validate storages completed ===")
-		syncStatus(3)
-	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go validateAliShares(&wg)
+	wg.Add(1)
+	go validate189Shares(&wg)
+	wg.Add(1)
+	go validate123Shares(&wg)
+	wg.Add(1)
+	go validate115Shares(&wg)
+	wg.Add(1)
+	go validateQuarkShares(&wg)
+	wg.Add(1)
+	go validateUcShares(&wg)
+	wg.Add(1)
+	go validateThunderShares(&wg)
+	wg.Wait()
+	log.Infof("=== validate storages completed ===")
+	syncStatus(3)
 }
 
 func validateAliShares(wg *sync.WaitGroup) {
