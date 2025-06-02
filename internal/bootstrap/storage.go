@@ -46,9 +46,11 @@ func LoadStorages() {
 		}
 		conf.StoragesLoaded = true
 		log.Infof("=== load storages completed ===")
-		syncStatus(2)
 		if conf.LazyLoad {
+			syncStatus(2)
 			go Validate()
+		} else {
+			syncStatus(3)
 		}
 	}(storages)
 }
