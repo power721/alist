@@ -44,10 +44,10 @@ func LoadStorages() {
 					i+1, storage.MountPath, storage.Driver)
 			}
 		}
+		conf.StoragesLoaded = true
 		log.Infof("=== load storages completed ===")
 		syncStatus(2)
 		go Validate()
-		conf.StoragesLoaded = true
 	}(storages)
 }
 
@@ -79,7 +79,7 @@ func Validate() {
 		wg.Add(1)
 		go validateThunderShares(&wg)
 		wg.Wait()
-		log.Infof("all validation done")
+		log.Infof("=== validate storages completed ===")
 		syncStatus(3)
 	}
 }
