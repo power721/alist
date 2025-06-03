@@ -40,6 +40,11 @@ func (d *QuarkOrUC) request(pathname string, method string, callback base.ReqCal
 	})
 	req.SetQueryParam("pr", d.conf.pr)
 	req.SetQueryParam("fr", "pc")
+	if d.config.Name == "UC" {
+		req.SetQueryParam("sys", "darwin")
+		req.SetQueryParam("ve", "1.8.6")
+		req.SetQueryParam("ut", d.Token)
+	}
 	if callback != nil {
 		callback(req)
 	}
