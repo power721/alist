@@ -31,6 +31,8 @@ type BaiduNetdisk struct {
 
 	uploadThread int
 	vipType      int // 会员类型，0普通用户(4G/4M)、1普通会员(10G/16M)、2超级会员(20G/32M)
+
+	TempDirId int64
 }
 
 func (d *BaiduNetdisk) Config() driver.Config {
@@ -59,7 +61,7 @@ func (d *BaiduNetdisk) Init(ctx context.Context) error {
 		return err
 	}
 	d.vipType = utils.Json.Get(res, "vip_type").ToInt()
-	return nil
+	return d.createTempDir()
 }
 
 func (d *BaiduNetdisk) Drop(ctx context.Context) error {
