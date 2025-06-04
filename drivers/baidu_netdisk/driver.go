@@ -32,7 +32,9 @@ type BaiduNetdisk struct {
 	uploadThread int
 	vipType      int // 会员类型，0普通用户(4G/4M)、1普通会员(10G/16M)、2超级会员(20G/32M)
 
+	UK        int64
 	TempDirId int64
+	SToken    string
 }
 
 func (d *BaiduNetdisk) Config() driver.Config {
@@ -56,10 +58,11 @@ func (d *BaiduNetdisk) Init(ctx context.Context) error {
 	res, err := d.get("/xpan/nas", map[string]string{
 		"method": "uinfo",
 	}, nil)
-	log.Debugf("[baidu] get uinfo: %s", string(res))
+	log.Infof("[baidu] get uinfo: %s", string(res))
 	if err != nil {
 		return err
 	}
+	d.UK = utils.Json.Get(res, "uk").ToInt64()
 	d.vipType = utils.Json.Get(res, "vip_type").ToInt()
 	return d.createTempDir()
 }
