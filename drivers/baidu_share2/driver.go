@@ -58,7 +58,19 @@ func (d *BaiduShare2) Drop(ctx context.Context) error {
 }
 
 func (d *BaiduShare2) Validate() error {
-	if d.SharePwd != "" {
+	if d.SharePwd == "" {
+		api := "/s/" + d.ShareId
+		res, err := d.client.R().
+			Get(api)
+		if err != nil {
+			log.Warnf("error: %v", err)
+			return err
+		}
+		BDCLND := cookie.GetCookie(res.Cookies(), "BDCLND")
+		if BDCLND != nil {
+			d.Token = BDCLND.Value
+		}
+	} else {
 		api := "/share/verify?channel=chunlei&clienttype=0&web=1&app_id=250528&surl=" + d.ShareId[1:]
 		data := map[string]string{
 			"pwd": d.SharePwd,
@@ -83,18 +95,6 @@ func (d *BaiduShare2) Validate() error {
 			return errors.New(respJson.Message)
 		}
 		d.Token = respJson.Token
-	} else {
-		api := "/s/" + d.ShareId
-		res, err := d.client.R().
-			Get(api)
-		if err != nil {
-			log.Warnf("error: %v", err)
-			return err
-		}
-		BDCLND := cookie.GetCookie(res.Cookies(), "BDCLND")
-		if BDCLND != nil {
-			d.Token = BDCLND.Value
-		}
 	}
 	log.Infof("Share Token: %v", d.Token)
 	return nil
