@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/alist-org/alist/v3/drivers/baidu_netdisk"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
-	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/pkg/cookie"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
+	"net/http"
+	"path"
+	"time"
 )
 
 var idx = 0
@@ -89,22 +90,15 @@ func (d *BaiduShare2) Validate() error {
 }
 
 func (d *BaiduShare2) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
-	storage := op.GetFirstDriver("BaiduNetdisk", idx)
-	if storage == nil {
-		return nil, errors.New("找不到百度网盘帐号")
-	}
-	bd := storage.(*baidu_netdisk.BaiduNetdisk)
-	Cookie := bd.Cookie + "; " + "BDCLND=" + d.Token
-
-	// TODO return the files list, required
 	reqDir := dir.GetPath()
-	isRoot := "1"
-	//if reqDir == d.RootFolderPath {
-	//	reqDir = path.Join("/", reqDir)
-	//}
-	//if reqDir == "/" {
-	//	isRoot = "1"
-	//}
+	isRoot := "0"
+	if reqDir == d.RootFolderPath {
+		reqDir = path.Join("/", reqDir)
+	}
+	if reqDir == "/" {
+		isRoot = "1"
+		reqDir = ""
+	}
 	objs := []model.Obj{}
 	var err error
 	var page = 1
@@ -128,22 +122,41 @@ func (d *BaiduShare2) List(ctx context.Context, dir model.Obj, args model.ListAr
 			"desc":       "0",
 			"showempty":  "0",
 			"web":        "1",
+			"view_mode":  "1",
 			"num":        "100",
 			"order":      "name",
 			"root":       isRoot,
-			"dir":        "",
-			"shareid":    d.ShareId,
-			"uk":         fmt.Sprint(bd.UK),
+			"dir":        reqDir,
+			"shorturl":   d.ShareId[1:],
 			"page":       fmt.Sprint(page),
 		}
 		res, e := d.client.R().
-			SetHeader("Cookie", Cookie).
+			SetCookie(&http.Cookie{Name: "BDCLND", Value: d.Token}).
 			SetResult(&respJson).
 			SetQueryParams(query).
 			Get("/share/list")
 		err = e
 		log.Infof("%v result: %v", reqDir, res.String())
 		more = false
+		if err == nil {
+			if res.IsSuccess() && respJson.Errno == 0 {
+				page++
+				for _, v := range respJson.List {
+					size, _ := v.Size.Int64()
+					mtime, _ := v.Mtime.Int64()
+					objs = append(objs, &model.Object{
+						ID:       v.Fsid.String(),
+						Path:     v.Path,
+						Name:     v.Name,
+						Size:     size,
+						Modified: time.Unix(mtime, 0),
+						IsFolder: v.Isdir.String() == "1",
+					})
+				}
+			} else {
+				err = fmt.Errorf("%s", res.Body())
+			}
+		}
 	}
 	return objs, err
 }
