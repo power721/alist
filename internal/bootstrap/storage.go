@@ -24,6 +24,8 @@ import (
 
 const baseId = 20000
 
+var validating = false
+
 func LoadStorages() {
 	storages, err := db.GetEnabledStorages()
 	if err != nil {
@@ -66,6 +68,10 @@ func syncStatus(code int) {
 }
 
 func Validate() {
+	if validating {
+		return
+	}
+	validating = true
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go validateAliShares(&wg)
@@ -84,6 +90,7 @@ func Validate() {
 	wg.Wait()
 	log.Infof("=== validate storages completed ===")
 	syncStatus(3)
+	validating = false
 }
 
 func validateAliShares(wg *sync.WaitGroup) {
