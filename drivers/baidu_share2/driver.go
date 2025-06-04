@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/alist-org/alist/v3/drivers/baidu_netdisk"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/errs"
 	"github.com/alist-org/alist/v3/internal/model"
+	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/pkg/cookie"
 	"github.com/go-resty/resty/v2"
 	log "github.com/sirupsen/logrus"
@@ -71,8 +74,8 @@ func (d *BaiduShare2) Validate() error {
 		}{}
 		_, err := d.client.R().
 			SetFormData(data).
-			SetResult(&respJson).
 			SetHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8").
+			SetResult(&respJson).
 			Post(api)
 		if err != nil {
 			log.Warnf("error: %v", err)
@@ -162,80 +165,54 @@ func (d *BaiduShare2) List(ctx context.Context, dir model.Obj, args model.ListAr
 }
 
 func (d *BaiduShare2) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	//storage := op.GetFirstDriver("BaiduNetdisk", idx)
-	//if storage == nil {
-	//	return nil, errors.New("找不到百度网盘帐号")
-	//}
-	//bd := storage.(*baidu_netdisk.BaiduNetdisk)
-	//Cookie := bd.Cookie + "; " + "BDCLND=" + d.Token
-	//
-	//// TODO return link of file, required
-	//link := model.Link{Header: d.client.Header}
-	//sign := ""
-	//stamp := ""
-	//signJson := struct {
-	//	Errno int64 `json:"errno"`
-	//	Data  struct {
-	//		Stamp json.Number `json:"timestamp"`
-	//		Sign  string      `json:"sign"`
-	//	} `json:"data"`
-	//}{}
-	//resp, err := d.client.R().
-	//	SetQueryParam("surl", d.ShareId).
-	//	SetResult(&signJson).
-	//	Get("share/tplconfig?fields=sign,timestamp&channel=chunlei&web=1&app_id=250528&clienttype=0")
-	//if err == nil {
-	//	if resp.IsSuccess() && signJson.Errno == 0 {
-	//		stamp = signJson.Data.Stamp.String()
-	//		sign = signJson.Data.Sign
-	//	} else {
-	//		err = fmt.Errorf(" %s; %s; ", resp.Status(), resp.Body())
-	//	}
-	//}
-	//if err == nil {
-	//	respJson := struct {
-	//		Errno int64 `json:"errno"`
-	//		List  [1]struct {
-	//			Dlink string `json:"dlink"`
-	//		} `json:"list"`
-	//	}{}
-	//	resp, err = d.client.R().
-	//		SetQueryParam("sign", sign).
-	//		SetQueryParam("timestamp", stamp).
-	//		SetBody(url.Values{
-	//			"encrypt":   {"0"},
-	//			"extra":     {fmt.Sprintf(`{"sekey":"%s"}`, d.info.Seckey)},
-	//			"fid_list":  {fmt.Sprintf("[%s]", file.GetID())},
-	//			"primaryid": {d.info.Shareid},
-	//			"product":   {"share"},
-	//			"type":      {"nolimit"},
-	//			"uk":        {d.info.Uk},
-	//		}.Encode()).
-	//		SetHeader("Cookie", Cookie).
-	//		SetResult(&respJson).
-	//		Post("api/sharedownload?app_id=250528&channel=chunlei&clienttype=12&web=1")
-	//	if err == nil {
-	//		if resp.IsSuccess() && respJson.Errno == 0 && respJson.List[0].Dlink != "" {
-	//			link.URL = respJson.List[0].Dlink
-	//		} else {
-	//			err = fmt.Errorf(" %s; %s; ", resp.Status(), resp.Body())
-	//		}
-	//	}
-	//	if err == nil {
-	//		resp, err = d.client.R().
-	//			SetDoNotParseResponse(true).
-	//			Get(link.URL)
-	//		if err == nil {
-	//			defer resp.RawBody().Close()
-	//			if resp.IsError() {
-	//				byt, _ := io.ReadAll(resp.RawBody())
-	//				err = fmt.Errorf(" %s; %s; ", resp.Status(), byt)
-	//			}
-	//		}
-	//	}
-	//}
-	//return &link, err
-	return nil, nil
+	storage := op.GetFirstDriver("BaiduNetdisk", idx)
+	if storage == nil {
+		return nil, errors.New("找不到百度网盘帐号")
+	}
+	bd := storage.(*baidu_netdisk.BaiduNetdisk)
+	Cookie := bd.Cookie + "; " + "BDCLND=" + d.Token
+
+	link := model.Link{Header: d.client.Header}
+
+	respJson := struct {
+		Errno int64 `json:"errno"`
+		List  []struct {
+			Fsid  json.Number `json:"fs_id"`
+			Isdir json.Number `json:"isdir"`
+			Path  string      `json:"path"`
+			Name  string      `json:"server_filename"`
+			Mtime json.Number `json:"server_mtime"`
+			Size  json.Number `json:"size"`
+		} `json:"list"`
+	}{}
+	data := map[string]string{
+		"fsidlist": fmt.Sprintf("[%v]", file.GetID()),
+		"path":     "/" + conf.TempDirName,
+	}
+	query := map[string]string{
+		"app_id":     "250528",
+		"channel":    "chunlei",
+		"clienttype": "0",
+		"web":        "1",
+		"async":      "1",
+		"ondup":      "newcopy",
+		"shareid":    "?",
+		"from":       fmt.Sprint(bd.UK),
+		"sekey":      d.Token,
+	}
+	res, err := d.client.R().
+		SetFormData(data).
+		SetHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8").
+		SetHeader("Cookie", Cookie).
+		SetResult(&respJson).
+		SetQueryParams(query).
+		Get("/share/transfer")
+
+	if res.IsSuccess() {
+
+	}
+
+	return &link, err
 }
 
 func (d *BaiduShare2) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) error {
