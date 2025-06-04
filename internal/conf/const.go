@@ -81,6 +81,7 @@ const (
 	PAN115           = "PAN115"
 	OPEN115          = "OPEN115"
 	PAN139           = "PAN139"
+	BAIDU            = "BAIDU"
 	AliTo115         = "ali_to_115"
 	AliAccountId     = "ali_account_id"
 	TempDirName      = "alist-tvbox-temp"
