@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/alist-org/alist/v3/drivers/base"
+	"github.com/alist-org/alist/v3/drivers/baidu_netdisk"
+	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/pkg/cookie"
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -18,6 +19,8 @@ import (
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/go-resty/resty/v2"
 )
+
+var idx = 0
 
 type BaiduShare2 struct {
 	model.Storage
@@ -57,7 +60,7 @@ func (d *BaiduShare2) Drop(ctx context.Context) error {
 func (d *BaiduShare2) Validate() error {
 	if d.SharePwd != "" {
 		api := "/share/verify?channel=chunlei&clienttype=0&web=1&app_id=250528&surl=" + d.ShareId[1:]
-		data := base.Json{
+		data := map[string]string{
 			"pwd": d.SharePwd,
 		}
 		respJson := struct {
@@ -66,7 +69,7 @@ func (d *BaiduShare2) Validate() error {
 			Token   string `json:"randsk"`
 		}{}
 		_, err := d.client.R().
-			SetBody(data).
+			SetFormData(data).
 			SetResult(&respJson).
 			SetHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8").
 			Post(api)
@@ -98,6 +101,13 @@ func (d *BaiduShare2) Validate() error {
 }
 
 func (d *BaiduShare2) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
+	storage := op.GetFirstDriver("BaiduNetdisk", idx)
+	if storage == nil {
+		return nil, errors.New("找不到百度网盘帐号")
+	}
+	bd := storage.(*baidu_netdisk.BaiduNetdisk)
+	Cookie := bd.Cookie + "; " + "BDCLND=" + d.Token
+
 	// TODO return the files list, required
 	reqDir := dir.GetPath()
 	isRoot := "0"
@@ -136,6 +146,7 @@ func (d *BaiduShare2) List(ctx context.Context, dir model.Obj, args model.ListAr
 				"root":     {isRoot},
 				"shorturl": {d.ShareId},
 			}.Encode()).
+			SetHeader("Cookie", Cookie).
 			SetResult(&respJson).
 			Post("share/wxlist?channel=weixin&version=2.2.2&clienttype=25&web=1")
 		err = e
@@ -164,6 +175,13 @@ func (d *BaiduShare2) List(ctx context.Context, dir model.Obj, args model.ListAr
 }
 
 func (d *BaiduShare2) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	storage := op.GetFirstDriver("BaiduNetdisk", idx)
+	if storage == nil {
+		return nil, errors.New("找不到百度网盘帐号")
+	}
+	bd := storage.(*baidu_netdisk.BaiduNetdisk)
+	Cookie := bd.Cookie + "; " + "BDCLND=" + d.Token
+
 	// TODO return link of file, required
 	link := model.Link{Header: d.client.Header}
 	sign := ""
@@ -206,6 +224,7 @@ func (d *BaiduShare2) Link(ctx context.Context, file model.Obj, args model.LinkA
 				"type":      {"nolimit"},
 				"uk":        {d.info.Uk},
 			}.Encode()).
+			SetHeader("Cookie", Cookie).
 			SetResult(&respJson).
 			Post("api/sharedownload?app_id=250528&channel=chunlei&clienttype=12&web=1")
 		if err == nil {
