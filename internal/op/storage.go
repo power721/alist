@@ -69,6 +69,8 @@ func GetFirstDriver(name string, id int) driver.Driver {
 		prefix = conf.PAN139
 	} else if name == "115 Open" {
 		prefix = conf.OPEN115
+	} else if name == "BaiduNetdisk" {
+		prefix = conf.BAIDU
 	} else if name == "123Pan" {
 		prefix = "PAN123"
 	} else if name == "AliyundriveOpen" {

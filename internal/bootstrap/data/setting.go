@@ -243,6 +243,7 @@ func InitialSettings() []model.SettingItem {
 		{Key: "CLOUD189_id", Value: "0", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "THUNDER_id", Value: "0", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "OPEN115_id", Value: "0", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
+		{Key: "BAIDU_id", Value: "0", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
 	}
 	initialSettingItems = append(initialSettingItems, tool.Tools.Items()...)
 	if flags.Dev {

@@ -4,6 +4,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/conf"
+	"github.com/alist-org/alist/v3/internal/token"
 	"net/http"
 	"strconv"
 	"strings"
@@ -50,6 +52,7 @@ func (d *BaiduNetdisk) _refreshToken() error {
 		return errs.EmptyToken
 	}
 	d.AccessToken, d.RefreshToken = resp.AccessToken, resp.RefreshToken
+	token.SaveAccountToken(conf.BAIDU, d.RefreshToken, int(d.ID))
 	op.MustSaveDriverStorage(d)
 	return nil
 }
