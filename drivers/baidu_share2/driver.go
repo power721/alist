@@ -258,7 +258,7 @@ func (d *BaiduShare2) saveFile(fid string, bd *baidu_netdisk.BaiduNetdisk) (mode
 	}
 
 	if res.IsSuccess() {
-		log.Infof("response: %v", res.String())
+		log.Debugf("response: %v", res.String())
 	}
 
 	if utils.Json.Get(res.Body(), "errno").ToInt() != 0 {
