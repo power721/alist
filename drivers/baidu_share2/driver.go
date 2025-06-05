@@ -32,7 +32,6 @@ type BaiduShare2 struct {
 
 	ShareId string
 	ShareUk string
-	SToken  string
 	Token   string
 }
 
@@ -125,20 +124,14 @@ func (d *BaiduShare2) getInfo(ck string) error {
 		log.Warn("Share UK not found")
 	}
 
-	re = regexp.MustCompile(`bdstoken:\s*'(\d+)'`)
-	matches = re.FindStringSubmatch(res.String())
-	if len(matches) >= 2 {
-		d.SToken = matches[1]
-		log.Debugf("bdstoken: %v", d.SToken)
-	} else {
-		log.Warn("bdstoken not found")
-	}
-
 	log.Debugf("Share Token: %v", d.Token)
 	return nil
 }
 
 func (d *BaiduShare2) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
+	if d.Token == "" {
+		d.Validate()
+	}
 	reqDir := dir.GetPath()
 	isRoot := "0"
 	if reqDir == d.RootFolderPath {
@@ -218,6 +211,9 @@ func (d *BaiduShare2) Link(ctx context.Context, file model.Obj, args model.LinkA
 	bd := storage.(*baidu_netdisk.BaiduNetdisk)
 	log.Infof("[%v] 获取百度文件直链 %v %v %v", bd.ID, file.GetName(), file.GetID(), file.GetSize())
 
+	if d.Token == "" {
+		d.Validate()
+	}
 	f, err := d.saveFile(file.GetID(), bd)
 	if err != nil {
 		return nil, err
