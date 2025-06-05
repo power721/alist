@@ -225,8 +225,10 @@ func (d *BaiduNetdisk) linkCrackVideo(file model.Obj, _ model.LinkArgs) (*model.
 		return nil, err
 	}
 
+	exp := 1 * time.Hour
 	return &model.Link{
-		URL: utils.Json.Get(resp, "info", "dlink").ToString(),
+		Expiration: &exp,
+		URL:        utils.Json.Get(resp, "info", "dlink").ToString(),
 		Header: http.Header{
 			"User-Agent": []string{d.CustomCrackUA},
 		},

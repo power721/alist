@@ -7,8 +7,8 @@ import (
 
 type Addition struct {
 	driver.RootPath
-	ShareId  string `json:"share_id"`
-	SharePwd string `json:"share_pwd"`
+	Surl string `json:"surl"`
+	Pwd  string `json:"pwd"`
 }
 
 var config = driver.Config{
