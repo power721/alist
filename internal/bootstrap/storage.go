@@ -6,6 +6,7 @@ import (
 	_123Share "github.com/alist-org/alist/v3/drivers/123_share"
 	_189_share "github.com/alist-org/alist/v3/drivers/189_share"
 	"github.com/alist-org/alist/v3/drivers/aliyundrive_share2_open"
+	baidu_share "github.com/alist-org/alist/v3/drivers/baidu_share2"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/drivers/quark_share"
 	"github.com/alist-org/alist/v3/drivers/thunder_share"
@@ -226,7 +227,7 @@ func validateBaiduShares(wg *sync.WaitGroup) {
 	storages := op.GetStorages("BaiduShare2")
 	log.Infof("validate %v Baidu shares", len(storages))
 	for _, storage := range storages {
-		driver := storage.(*thunder_share.ThunderShare)
+		driver := storage.(*baidu_share.BaiduShare2)
 		if driver.ID < baseId {
 			continue
 		}
