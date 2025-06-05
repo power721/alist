@@ -77,12 +77,10 @@ func (d *BaiduShare2) Validate() error {
 			SetResult(&respJson).
 			Post(api)
 		if err != nil {
-			log.Warnf("Baidu share verify error: %v", err)
 			return err
 		}
 		log.Debugf("Baidu share verify response: %v", respJson)
 		if respJson.Errno != 0 {
-			log.Warnf("Baidu share verify error: %v", res.String())
 			msg := respJson.Message
 			if msg == "" {
 				msg = res.String()
@@ -101,7 +99,6 @@ func (d *BaiduShare2) getInfo() error {
 	res, err := d.client.R().
 		Get(api)
 	if err != nil {
-		log.Warnf("Baidu share info error: %v", err)
 		return err
 	}
 	BDCLND := cookie.GetCookie(res.Cookies(), "BDCLND")
@@ -226,7 +223,7 @@ func (d *BaiduShare2) Link(ctx context.Context, file model.Obj, args model.LinkA
 	go d.delete(ctx, f, bd)
 
 	link, err := bd.Link(ctx, f, args)
-	log.Debugf("Baidu link: %v", link)
+	log.Debugf("Baidu link: %v %v %v", f.GetID(), f.GetPath(), link)
 	return link, err
 }
 
