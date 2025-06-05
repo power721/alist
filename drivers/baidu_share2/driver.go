@@ -71,7 +71,7 @@ func (d *BaiduShare2) Validate() error {
 			Message string `json:"err_msg"`
 			Token   string `json:"randsk"`
 		}{}
-		_, err := d.client.R().
+		res, err := d.client.R().
 			SetFormData(data).
 			SetHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8").
 			SetResult(&respJson).
@@ -82,7 +82,7 @@ func (d *BaiduShare2) Validate() error {
 		}
 		log.Debugf("Baidu share verify response: %v", respJson)
 		if respJson.Errno != 0 {
-			log.Warnf("error: %v", respJson.Message)
+			log.Warnf("Baidu share verify error: %v", res.String())
 			return errors.New(respJson.Message)
 		}
 		d.Token = respJson.Token
