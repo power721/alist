@@ -49,6 +49,11 @@ func (d *BaiduShare2) Init(ctx context.Context) error {
 		SetBaseURL("https://pan.baidu.com").
 		SetHeader("User-Agent", "netdisk").
 		SetHeader("Referer", "https://pan.baidu.com")
+
+	if conf.LazyLoad && !conf.StoragesLoaded {
+		return nil
+	}
+
 	return d.Validate()
 }
 

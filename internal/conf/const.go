@@ -161,6 +161,8 @@ const (
 )
 
 const (
+	BaiduThreads     = 4
+	BaiduChunkSize   = 1024
 	ThunderThreads   = 2
 	ThunderChunkSize = 1024
 	Pan115Threads    = 2
