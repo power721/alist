@@ -1,6 +1,7 @@
 package baidu_netdisk
 
 import (
+	"context"
 	"errors"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/go-resty/resty/v2"
@@ -29,7 +30,25 @@ func (d *BaiduNetdisk) createTempDir() error {
 	}
 
 	log.Infof("Baidu temp dir: %v", d.TempDirId)
+
+	d.cleanTempFile()
 	return nil
+}
+
+func (d *BaiduNetdisk) cleanTempFile() {
+	if d.TempDirId == "/" {
+		return
+	}
+
+	files, err := d.getFiles(d.TempDirId)
+	if err != nil {
+		return
+	}
+
+	for _, file := range files {
+		log.Infof("Delete Baidu temp file: %v %v", file.FsId, file.Path)
+		d.Remove(context.Background(), fileToObj(file))
+	}
 }
 
 func (d *BaiduNetdisk) verifyCookie() error {
