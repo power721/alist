@@ -83,19 +83,22 @@ func (d *BaiduShare2) Validate() error {
 		log.Debugf("Baidu share verify response: %v", respJson)
 		if respJson.Errno != 0 {
 			log.Warnf("Baidu share verify error: %v", res.String())
-			return errors.New(respJson.Message)
+			msg := respJson.Message
+			if msg == "" {
+				msg = res.String()
+			}
+			return errors.New(msg)
 		}
 		d.Token = respJson.Token
 		log.Debugf("Baidu Share Token: %v", d.Token)
 	}
 
-	return d.getInfo("")
+	return d.getInfo()
 }
 
-func (d *BaiduShare2) getInfo(ck string) error {
+func (d *BaiduShare2) getInfo() error {
 	api := "/s/" + d.Surl
 	res, err := d.client.R().
-		SetHeader("Cookie", ck).
 		Get(api)
 	if err != nil {
 		log.Warnf("Baidu share info error: %v", err)
@@ -215,6 +218,7 @@ func (d *BaiduShare2) Link(ctx context.Context, file model.Obj, args model.LinkA
 		d.Validate()
 	}
 	f, err := d.saveFile(file.GetID(), bd)
+	idx++
 	if err != nil {
 		return nil, err
 	}
@@ -277,6 +281,10 @@ func (d *BaiduShare2) delete(ctx context.Context, file model.Obj, bd *baidu_netd
 	delayTime := setting.GetInt(conf.DeleteDelayTime, 900)
 	if delayTime == 0 {
 		return
+	}
+
+	if delayTime < 5 {
+		delayTime = 5
 	}
 
 	log.Infof("[%v] Delete Baidu temp file %v after %v seconds.", bd.ID, file.GetID(), delayTime)
