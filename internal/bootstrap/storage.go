@@ -81,6 +81,8 @@ func Validate() {
 	go validateUcShares(&wg)
 	wg.Add(1)
 	go validateThunderShares(&wg)
+	wg.Add(1)
+	go validateBaiduShares(&wg)
 	wg.Wait()
 	log.Infof("=== validate storages completed ===")
 	syncStatus(3)
@@ -216,5 +218,24 @@ func validateThunderShares(wg *sync.WaitGroup) {
 			op.MustSaveDriverStorage(driver)
 		}
 		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func validateBaiduShares(wg *sync.WaitGroup) {
+	defer wg.Done()
+	storages := op.GetStorages("BaiduShare2")
+	log.Infof("validate %v Baidu shares", len(storages))
+	for _, storage := range storages {
+		driver := storage.(*thunder_share.ThunderShare)
+		if driver.ID < baseId {
+			continue
+		}
+		err := driver.Validate()
+		if err != nil {
+			log.Warnf("[%v] 百度分享错误: %v", driver.ID, err)
+			driver.GetStorage().SetStatus(err.Error())
+			op.MustSaveDriverStorage(driver)
+		}
+		time.Sleep(200 * time.Millisecond)
 	}
 }
