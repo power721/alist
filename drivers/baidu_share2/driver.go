@@ -283,6 +283,10 @@ func (d *BaiduShare2) delete(ctx context.Context, file model.Obj, bd *baidu_netd
 		return
 	}
 
+	if delayTime < 5 {
+		delayTime = 5
+	}
+
 	log.Infof("[%v] Delete Baidu temp file %v after %v seconds.", bd.ID, file.GetID(), delayTime)
 	time.Sleep(time.Duration(delayTime) * time.Second)
 	bd.Remove(ctx, file)
