@@ -345,7 +345,7 @@ func (xc *XunLeiBrowserCommon) Link(ctx context.Context, file model.Obj, args mo
 			"User-Agent": {xc.DownloadUserAgent},
 		},
 		Concurrency: conf.ThunderThreads,
-		PartSize:    conf.ThunderChunkSize * utils.KB,
+		PartSize:    conf.DefaultChunkSize * utils.KB,
 	}
 
 	if xc.UseVideoUrl {

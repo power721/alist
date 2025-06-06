@@ -162,13 +162,13 @@ func (d *AliyundriveShare2Open) getOpenLink(ali *aliyundrive_open.AliyundriveOpe
 
 	exp := 895 * time.Second
 	return &model.Link{
-		URL:        url,
+		URL:        url + fmt.Sprintf("#storageId=%d", ali.ID),
 		Expiration: &exp,
 		Header: http.Header{
 			"Referer":    []string{"https://www.alipan.com/"},
 			"User-Agent": []string{conf.UserAgent},
 		},
-		Concurrency: conf.AliThreads,
+		Concurrency: ali.Concurrency,
 		PartSize:    conf.AliChunkSize * utils.KB,
 	}, hash, nil
 }
@@ -352,8 +352,8 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 			URL:         link115.URL + fmt.Sprintf("#storageId=%d", pan115.ID),
 			Header:      link115.Header,
 			Expiration:  link115.Expiration,
-			Concurrency: conf.Pan115Threads,
-			PartSize:    conf.Pan115ChunkSize * utils.KB,
+			Concurrency: pan115.Concurrency,
+			PartSize:    conf.DefaultChunkSize * utils.KB,
 		}, nil
 	}
 	log.Warnf("获取115链接超时，使用阿里链接")

@@ -153,13 +153,13 @@ func (d *AliyundriveOpen) link(ctx context.Context, file model.Obj) (*model.Link
 	}
 	exp := 895 * time.Second
 	return &model.Link{
-		URL:        url,
+		URL:        url + fmt.Sprintf("#storageId=%d", d.ID),
 		Expiration: &exp,
 		Header: http.Header{
 			"Referer":    []string{"https://www.alipan.com/"},
 			"User-Agent": []string{conf.UserAgent},
 		},
-		Concurrency: conf.AliThreads,
+		Concurrency: d.Concurrency,
 		PartSize:    conf.AliChunkSize * utils.KB,
 	}, nil
 }

@@ -14,6 +14,8 @@ type Addition struct {
 	DeviceID string `json:"device_id"  required:"false" default:""`
 	// 登陆所用的数据 无需手动填写
 	QueryToken string `json:"query_token" required:"false" default:"" help:"don't edit'"`
+
+	Concurrency int `json:"concurrency" type:"number" default:"4"`
 }
 
 type Conf struct {

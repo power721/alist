@@ -140,20 +140,12 @@ func (d *QuarkUCTV) Link(ctx context.Context, file model.Obj, args model.LinkArg
 		return nil, err
 	}
 
-	threads := conf.QuarkThreads
-	chunkSize := conf.QuarkChunkSize
-
-	if d.config.Name == "UCTV" {
-		threads = conf.UcThreads
-		chunkSize = conf.UcChunkSize
-	}
-
 	exp := 15 * time.Minute
 	return &model.Link{
 		Expiration:  &exp,
-		URL:         fileLink.Data.DownloadURL,
-		Concurrency: threads,
-		PartSize:    chunkSize * utils.KB,
+		URL:         fileLink.Data.DownloadURL + fmt.Sprintf("#storageId=%d", d.ID),
+		Concurrency: d.Concurrency,
+		PartSize:    conf.DefaultChunkSize * utils.KB,
 	}, nil
 }
 

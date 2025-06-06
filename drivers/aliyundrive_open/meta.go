@@ -23,6 +23,7 @@ type Addition struct {
 	AccountId     int    `json:"account_id" required:"true"`
 	RefreshToken2 string `json:"refresh_token2" required:"true"`
 	AccessToken2  string
+	Concurrency   int `json:"concurrency" type:"number" default:"4"`
 }
 
 var config = driver.Config{

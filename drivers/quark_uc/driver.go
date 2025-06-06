@@ -76,14 +76,6 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 	}
 	log.Debugf("Link: %v %v", file.GetID(), resp)
 
-	threads := conf.QuarkThreads
-	chunkSize := conf.QuarkChunkSize
-
-	if d.config.Name == "UC" {
-		threads = conf.UcThreads
-		chunkSize = conf.UcChunkSize
-	}
-
 	exp := 15 * time.Minute
 	return &model.Link{
 		Expiration: &exp,
@@ -93,8 +85,8 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 			"Referer":    []string{d.conf.referer},
 			"User-Agent": []string{d.conf.ua},
 		},
-		Concurrency: threads,
-		PartSize:    chunkSize * utils.KB,
+		Concurrency: d.Concurrency,
+		PartSize:    conf.DefaultChunkSize * utils.KB,
 	}, nil
 }
 

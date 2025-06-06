@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"io"
 	"net/http"
 	"path"
@@ -149,7 +150,12 @@ func (d *Yun139) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 		return nil, err
 	}
 	exp := 15 * time.Minute
-	return &model.Link{URL: url, Expiration: &exp}, nil
+	return &model.Link{
+		URL:         url + fmt.Sprintf("#storageId=%d", d.ID),
+		Expiration:  &exp,
+		Concurrency: d.Concurrency,
+		PartSize:    conf.DefaultChunkSize,
+	}, nil
 }
 
 func (d *Yun139) MakeDir(ctx context.Context, parentDir model.Obj, dirName string) error {
