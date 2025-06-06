@@ -38,6 +38,7 @@ FetchWebDev() {
 
 FetchWebRelease() {
   [ -d public/dist ] && return
+  echo "download web"
   curl -L https://github.com/alist-org/alist-web/releases/download/$webVersion/dist.tar.gz -o dist.tar.gz
   tar -zxvf dist.tar.gz
   rm -rf public/dist
