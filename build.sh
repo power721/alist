@@ -253,6 +253,7 @@ BuildReleaseFreeBSD() {
 
 MakeRelease() {
   cd build
+  rm -rf compress
   mkdir compress
   for i in $(find . -type f -name "$appName-linux-*"); do
     cp "$i" alist
