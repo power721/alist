@@ -2,6 +2,7 @@ package _115
 
 import (
 	"context"
+	"fmt"
 	"github.com/alist-org/alist/v3/internal/conf"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -90,10 +91,10 @@ func (d *Pan115) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 	exp := 4 * time.Hour
 	link := &model.Link{
 		Expiration:  &exp,
-		URL:         downloadInfo.Url.Url,
+		URL:         downloadInfo.Url.Url + fmt.Sprintf("#storageId=%d", d.ID),
 		Header:      downloadInfo.Header,
-		Concurrency: conf.Pan115Threads,
-		PartSize:    conf.Pan115ChunkSize * utils.KB,
+		Concurrency: d.Concurrency,
+		PartSize:    conf.DefaultChunkSize * utils.KB,
 	}
 	log.Debugf("Link: %v", link)
 	return link, nil

@@ -48,6 +48,8 @@ type ExpertAddition struct {
 	UseVideoUrl bool `json:"use_video_url"`
 	// 移除方式
 	RemoveWay string `json:"remove_way" required:"true" type:"select" options:"trash,delete"`
+
+	Concurrency int `json:"concurrency" type:"number" default:"2"`
 }
 
 // GetIdentity 登录特征,用于判断是否重新登录
@@ -81,6 +83,8 @@ type Addition struct {
 	CaptchaToken string `json:"captcha_token"`
 	UseVideoUrl  bool   `json:"use_video_url" default:"false"`
 	RemoveWay    string `json:"remove_way" required:"true" type:"select" options:"trash,delete"`
+
+	Concurrency int `json:"concurrency" type:"number" default:"2"`
 }
 
 // GetIdentity 登录特征,用于判断是否重新登录

@@ -3,7 +3,9 @@ package _139_share
 import (
 	"context"
 	"errors"
+	"fmt"
 	_139 "github.com/alist-org/alist/v3/drivers/139"
+	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/driver"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/op"
@@ -57,7 +59,12 @@ func (d *Yun139Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		return nil, err
 	}
 	exp := 15 * time.Minute
-	return &model.Link{URL: url, Expiration: &exp}, nil
+	return &model.Link{
+		URL:         url + fmt.Sprintf("#storageId=%d", yun139.ID),
+		Expiration:  &exp,
+		Concurrency: yun139.Concurrency,
+		PartSize:    conf.DefaultChunkSize,
+	}, nil
 }
 
 var _ driver.Driver = (*Yun139Share)(nil)

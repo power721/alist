@@ -111,12 +111,12 @@ func (d *Open115) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 	exp := 4 * time.Hour
 	return &model.Link{
 		Expiration: &exp,
-		URL:        u.URL.URL,
+		URL:        u.URL.URL + fmt.Sprintf("#storageId=%d", d.ID),
 		Header: http.Header{
 			"User-Agent": []string{ua},
 		},
-		Concurrency: conf.Pan115Threads,
-		PartSize:    conf.Pan115ChunkSize * utils.KB,
+		Concurrency: d.Concurrency,
+		PartSize:    conf.DefaultChunkSize * utils.KB,
 	}, nil
 }
 

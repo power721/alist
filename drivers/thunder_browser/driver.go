@@ -70,6 +70,8 @@ func (x *ThunderBrowser) Init(ctx context.Context) (err error) {
 				DownloadUserAgent: DownloadUserAgent,
 				UseVideoUrl:       x.UseVideoUrl,
 				RemoveWay:         x.Addition.RemoveWay,
+				Concurrency:       x.Addition.Concurrency,
+				ID:                x.ID,
 				refreshCTokenCk: func(token string) {
 					x.CaptchaToken = token
 					op.MustSaveDriverStorage(x)
@@ -193,6 +195,8 @@ func (x *ThunderBrowserExpert) Init(ctx context.Context) (err error) {
 				}(),
 				UseVideoUrl: x.UseVideoUrl,
 				RemoveWay:   x.ExpertAddition.RemoveWay,
+				Concurrency: x.ExpertAddition.Concurrency,
+				ID:          x.ID,
 				refreshCTokenCk: func(token string) {
 					x.CaptchaToken = token
 					op.MustSaveDriverStorage(x)
@@ -340,12 +344,12 @@ func (xc *XunLeiBrowserCommon) Link(ctx context.Context, file model.Obj, args mo
 	exp := 15 * time.Minute
 	link := &model.Link{
 		Expiration: &exp,
-		URL:        lFile.WebContentLink,
+		URL:        lFile.WebContentLink + fmt.Sprintf("#storageId=%d", xc.ID),
 		Header: http.Header{
 			"User-Agent": {xc.DownloadUserAgent},
 		},
-		Concurrency: conf.ThunderThreads,
-		PartSize:    conf.ThunderChunkSize * utils.KB,
+		Concurrency: xc.Concurrency,
+		PartSize:    conf.DefaultChunkSize * utils.KB,
 	}
 
 	if xc.UseVideoUrl {

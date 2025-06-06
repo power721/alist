@@ -13,6 +13,8 @@ type Addition struct {
 	OrderBy        string `json:"order_by" type:"select" options:"file_name,file_size,user_utime,file_type"`
 	OrderDirection string `json:"order_direction" type:"select" options:"asc,desc"`
 	AccessToken    string
+
+	Concurrency int `json:"concurrency" type:"number" default:"2"`
 }
 
 var config = driver.Config{

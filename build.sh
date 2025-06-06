@@ -37,6 +37,8 @@ FetchWebDev() {
 }
 
 FetchWebRelease() {
+  [ -d public/dist ] && return
+  echo "download web"
   curl -L https://github.com/alist-org/alist-web/releases/download/$webVersion/dist.tar.gz -o dist.tar.gz
   tar -zxvf dist.tar.gz
   rm -rf public/dist
@@ -154,10 +156,13 @@ BuildReleaseLinuxMusl() {
   BASE="https://musl.nn.ci/"
   FILES=(x86_64-linux-musl-cross aarch64-linux-musl-cross)
   for i in "${FILES[@]}"; do
-    url="${BASE}${i}.tgz"
-    curl -L -o "${i}.tgz" "${url}"
-    sudo tar xf "${i}.tgz" --strip-components 1 -C /usr/local
-    rm -f "${i}.tgz"
+    if [ ! -d "/usr/local/${i%-cross}" ]; then
+      url="${BASE}${i}.tgz"
+      echo "download $url"
+      curl -L -o "${i}.tgz" "${url}"
+      sudo tar xf "${i}.tgz" --strip-components 1 -C /usr/local
+      rm -f "${i}.tgz"
+    fi
   done
   OS_ARCHES=(linux-musl-amd64 linux-musl-arm64)
   CGO_ARGS=(x86_64-linux-musl-gcc aarch64-linux-musl-gcc)
@@ -249,6 +254,7 @@ BuildReleaseFreeBSD() {
 
 MakeRelease() {
   cd build
+  rm -rf compress
   mkdir compress
   for i in $(find . -type f -name "$appName-linux-*"); do
     cp "$i" alist
