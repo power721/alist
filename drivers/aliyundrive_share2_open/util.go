@@ -35,7 +35,7 @@ func getAliOpenDriver(idx int) (*aliyundrive_open.AliyundriveOpen, error) {
 	if setting.GetBool(conf.DriverRoundRobin) {
 		storages := op.GetStorages("AliyundriveOpen")
 		if len(storages) == 0 {
-			return nil, errors.New("找不到阿里云盘帐号")
+			return nil, errors.New("没有阿里云盘帐号")
 		}
 
 		var vips []*aliyundrive_open.AliyundriveOpen
