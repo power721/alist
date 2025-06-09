@@ -35,9 +35,9 @@ func (d *Pan115Share) GetAddition() driver.Additional {
 }
 
 func (d *Pan115Share) Init(ctx context.Context) error {
-	if d.LimitRate > 0 {
-		d.limiter = rate.NewLimiter(rate.Limit(d.LimitRate), 1)
-	}
+	//if d.LimitRate > 0 {
+	//	d.limiter = rate.NewLimiter(rate.Limit(d.LimitRate), 1)
+	//}
 
 	if conf.LazyLoad && !conf.StoragesLoaded {
 		return nil
@@ -68,18 +68,18 @@ func (d *Pan115Share) Validate() error {
 }
 
 func (d *Pan115Share) List(ctx context.Context, dir model.Obj, args model.ListArgs) ([]model.Obj, error) {
-	if err := d.WaitLimit(ctx); err != nil {
-		return nil, err
-	}
-
-	pan115 := op.Get115Driver(idx)
-	if pan115 == nil {
+	storage := op.Get115Driver(idx)
+	if storage == nil {
 		return []model.Obj{}, errors.New("找不到115云盘帐号")
 	}
-	client := pan115.(*_115.Pan115).GetClient()
+	pan115 := storage.(*_115.Pan115)
+	if err := pan115.WaitLimit(ctx); err != nil {
+		return nil, err
+	}
+	client := pan115.GetClient()
 
 	files := make([]driver115.ShareFile, 0)
-	fileResp, err := client.GetShareSnap(d.ShareCode, d.ReceiveCode, dir.GetID(), driver115.QueryLimit(int(d.PageSize)))
+	fileResp, err := client.GetShareSnap(d.ShareCode, d.ReceiveCode, dir.GetID(), driver115.QueryLimit(int(pan115.PageSize)))
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (d *Pan115Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 	for total > count {
 		fileResp, err := client.GetShareSnap(
 			d.ShareCode, d.ReceiveCode, dir.GetID(),
-			driver115.QueryLimit(int(d.PageSize)), driver115.QueryOffset(count),
+			driver115.QueryLimit(int(pan115.PageSize)), driver115.QueryOffset(count),
 		)
 		if err != nil {
 			return nil, err
@@ -102,15 +102,14 @@ func (d *Pan115Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 }
 
 func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
-	if err := d.WaitLimit(ctx); err != nil {
-		return nil, err
-	}
-
 	storage := op.Get115Driver(idx)
 	if storage == nil {
 		return nil, errors.New("找不到115云盘帐号")
 	}
 	pan115 := storage.(*_115.Pan115)
+	if err := pan115.WaitLimit(ctx); err != nil {
+		return nil, err
+	}
 	client := pan115.GetClient()
 	log.Infof("[%v] 获取115文件直链 %v %v %v", pan115.ID, file.GetName(), file.GetID(), file.GetSize())
 
