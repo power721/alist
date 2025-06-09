@@ -229,7 +229,7 @@ func (d *AliyundriveOpen) checkUserId() error {
 }
 
 func (d *AliyundriveOpen) getUser() (string, error) {
-	res, err := d.request2("https://user.aliyundrive.com/v2/user/get", http.MethodPost, nil)
+	res, err := d.request2("https://user.aliyundrive.com/v2/user/get", http.MethodPost, nil, true)
 	if err != nil {
 		return "", err
 	}
@@ -240,7 +240,7 @@ func (d *AliyundriveOpen) getUser() (string, error) {
 }
 
 func (d *AliyundriveOpen) getVipInfo() {
-	res, err := d.request2("https://api.aliyundrive.com/business/v1.0/users/vip/info", http.MethodPost, nil)
+	res, err := d.request2("https://api.aliyundrive.com/business/v1.0/users/vip/info", http.MethodPost, nil, true)
 	if err != nil {
 		log.Warnf("[%v] get vip info failed: %v", d.ID, err)
 		return
@@ -251,7 +251,7 @@ func (d *AliyundriveOpen) getVipInfo() {
 	log.Infof("[%v] 阿里账号会员类型: %v  状态: %v", d.ID, identity, status)
 }
 
-func (d *AliyundriveOpen) request2(url, method string, callback base.ReqCallback) ([]byte, error) {
+func (d *AliyundriveOpen) request2(url, method string, callback base.ReqCallback, retry bool) ([]byte, error) {
 	var e ErrorResp
 	req := base.RestyClient.R().
 		SetError(&e).
@@ -271,13 +271,13 @@ func (d *AliyundriveOpen) request2(url, method string, callback base.ReqCallback
 		return nil, err
 	}
 	if e.Code != "" {
-		log.Warnf("[%v] 请求失败: %v %v", d.ID, e.Code, e.Message)
-		if e.Code == "AccessTokenInvalid" {
+		log.Warnf("[%v] 请求失败: %v '%v'", d.ID, e.Code, e.Message)
+		if retry && e.Code == "AccessTokenInvalid" {
 			err = d.RefreshAliToken(true)
 			if err != nil {
 				return nil, err
 			}
-			return d.request2(url, method, callback)
+			return d.request2(url, method, callback, false)
 		} else {
 			return nil, errors.New(e.Code + ": " + e.Message)
 		}

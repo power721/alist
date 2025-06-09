@@ -6,10 +6,8 @@ import (
 )
 
 type Addition struct {
-	PageSize    int64   `json:"page_size" type:"number" default:"1000" help:"list api per page size of 115 driver"`
-	LimitRate   float64 `json:"limit_rate" type:"float" default:"2" help:"limit all api request rate (1r/[limit_rate]s)"`
-	ShareCode   string  `json:"share_code" type:"text" required:"true" help:"share code of 115 share link"`
-	ReceiveCode string  `json:"receive_code" type:"text" required:"true" help:"receive code of 115 share link"`
+	ShareCode   string `json:"share_code" type:"text" required:"true" help:"share code of 115 share link"`
+	ReceiveCode string `json:"receive_code" type:"text" required:"true" help:"receive code of 115 share link"`
 	driver.RootID
 }
 
