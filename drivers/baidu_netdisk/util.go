@@ -25,6 +25,9 @@ import (
 // do others that not defined in Driver interface
 
 func (d *BaiduNetdisk) refreshToken() error {
+	if d.RefreshToken == "" {
+		return nil
+	}
 	err := d._refreshToken()
 	if err != nil && errors.Is(err, errs.EmptyToken) {
 		err = d._refreshToken()
