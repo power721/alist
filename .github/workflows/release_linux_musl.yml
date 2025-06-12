@@ -7,6 +7,8 @@ on:
 
 jobs:
   release_linux_musl:
+    permissions:
+      contents: write
     name: Release
     runs-on: ubuntu-latest
     steps:
@@ -18,8 +20,6 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Build
         run: |
