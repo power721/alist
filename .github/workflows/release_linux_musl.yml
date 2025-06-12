@@ -38,6 +38,8 @@ jobs:
           files: build/compress/*
 
       - name: Send version file
-        if: ${{ secrets.VERSION_API != '' }}
+        env:
+          api: ${{ secrets.VERSION_API }}
+        if: ${{ env.api != '' }}
         run: |
-          curl -s "${{ secrets.VERSION_API }}?type=alist&version=${{ github.ref_name }}"
+          curl -s "${{ env.api }}?type=alist&version=${{ github.ref_name }}"
