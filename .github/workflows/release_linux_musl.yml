@@ -7,18 +7,14 @@ on:
 
 jobs:
   release_linux_musl:
-    strategy:
-      matrix:
-        platform: [ ubuntu-latest ]
-        go-version: [ '1.21' ]
     name: Release
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
     steps:
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: 1.21
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,8 +24,8 @@ jobs:
       - name: Build
         run: |
           bash build.sh release linux_musl
-          ls -l build/
-          ls -l build/compress/
+          ls -lh build/
+          ls -lh build/compress/
 
       - name: Upload assets
         uses: softprops/action-gh-release@v2
