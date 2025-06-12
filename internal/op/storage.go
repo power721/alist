@@ -87,6 +87,7 @@ func GetMasterDriver(name, prefix string, id int) driver.Driver {
 
 	if prefix != "" {
 		id := getMasterId(prefix)
+		log.Infof("Get master id %v for %v", id, prefix)
 		if id > 0 {
 			for _, storage := range storages {
 				if storage.Config().Name == name && storage.GetStorage().ID == id {
