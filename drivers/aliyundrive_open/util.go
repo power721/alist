@@ -38,17 +38,14 @@ func (d *AliyundriveOpen) _refreshToken(force, vip bool) (string, string, error)
 	if vip && d.IsVip {
 		url = "http://127.0.0.1:4567/ali/access_token"
 	}
-	if d.OauthTokenURL != "" && d.ClientID == "" {
-		url = d.OauthTokenURL
-	}
 	log.Infof("[%v] refreshOpenToken: %v", d.ID, url)
 	//var resp base.TokenResp
 	var e ErrResp
 	res, err := base.RestyClient.R().
 		//ForceContentType("application/json").
 		SetBody(base.Json{
-			"client_id":     d.ClientID,
-			"client_secret": d.ClientSecret,
+			"client_id":     setting.GetStr("open_api_client_id"),
+			"client_secret": setting.GetStr("open_api_client_secret"),
 			"grant_type":    "refresh_token",
 			"refresh_token": d.RefreshToken,
 		}).
