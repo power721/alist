@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/alist-org/alist/v3/internal/conf"
-	"github.com/alist-org/alist/v3/internal/setting"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -51,9 +50,6 @@ func (d *AliyundriveOpen) Init(ctx context.Context) error {
 		d.DriveType = "default"
 	}
 	d.TempDirId = "root"
-
-	d.ClientID = setting.GetStr("open_api_client_id")
-	d.ClientSecret = setting.GetStr("open_api_client_secret")
 
 	d.limitList = rateg.LimitFnCtx(d.list, rateg.LimitFnOption{
 		Limit:  4,
