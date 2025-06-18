@@ -43,3 +43,10 @@ jobs:
         if: ${{ env.api != '' }}
         run: |
           curl -s "${{ env.api }}?type=alist&version=${{ github.ref_name }}"
+
+      - name: Send notification
+        env:
+          api: ${{ secrets.NOTIFY_API }}
+        if: ${{ env.api != '' }}
+        run: |
+          curl -s "${{ env.api }}?type=alist&version=${{ github.ref_name }}"

@@ -3,6 +3,7 @@ package _189pc
 import (
 	"context"
 	"fmt"
+	"github.com/alist-org/alist/v3/pkg/cron"
 	"net/http"
 	"strconv"
 	"strings"
@@ -36,6 +37,7 @@ type Cloud189PC struct {
 	storageConfig driver.Config
 	ref           *Cloud189PC
 	TempDirId     string
+	cron          *cron.Cron
 }
 
 func (y *Cloud189PC) Config() driver.Config {
@@ -130,6 +132,9 @@ func (d *Cloud189PC) InitReference(storage driver.Driver) error {
 
 func (y *Cloud189PC) Drop(ctx context.Context) error {
 	y.ref = nil
+	if y.cron != nil {
+		y.cron.Stop()
+	}
 	return nil
 }
 
