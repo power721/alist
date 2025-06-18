@@ -6,6 +6,7 @@ import (
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/setting"
+	"github.com/alist-org/alist/v3/pkg/cron"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
@@ -35,6 +36,35 @@ func (y *Cloud189PC) createTempDir(ctx context.Context) error {
 
 	log.Info("189Cloud temp folder id: ", y.TempDirId)
 	return nil
+}
+
+func (y *Cloud189PC) Checkin() {
+	y.checkin()
+	y.cron = cron.NewCron(time.Hour * 24)
+	y.cron.Do(func() {
+		y.checkin()
+	})
+}
+
+func (y *Cloud189PC) checkin() {
+	url := API_URL + "/mkt/userSign.action"
+	res, err := y.get(url, nil, nil)
+	log.Infof("checkin result: %s", string(res))
+	if err != nil {
+		log.Warnf("checkin failed: %v", err)
+	}
+
+	res, err = y.get("https://m.cloud.189.cn/v2/drawPrizeMarketDetails.action?taskId=TASK_SIGNIN&activityId=ACT_SIGNIN", nil, nil)
+	log.Infof("TASK_SIGNIN result: %s", string(res))
+	if err != nil {
+		log.Warnf("TASK_SIGNIN failed: %v", err)
+	}
+
+	//res, err = y.get("https://m.cloud.189.cn/v2/drawPrizeMarketDetails.action?taskId=TASK_SIGNIN_PHOTOS&activityId=ACT_SIGNIN", nil, nil)
+	//log.Infof("TASK_SIGNIN_PHOTOS result: %s", string(res))
+	//if err != nil {
+	//	log.Warnf("TASK_SIGNIN_PHOTOS failed: %v", err)
+	//}
 }
 
 func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, fileName string) (*model.Link, error) {

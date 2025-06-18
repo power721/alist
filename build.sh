@@ -46,8 +46,8 @@ FetchWebRelease() {
   rm -rf dist.tar.gz
   for file in $(grep -l 'Aliyundrive(Open)' public/dist/assets/*); do
     echo "update $file"
-    sed -i 's/Aliyundrive(Open)?/(Aliyundrive.*)|(Alias)/g' "$file"
-    sed -i 's/Aliyundrive(Share)?/(Aliyundrive.*)|(Alias)/g' "$file"
+    sed -i 's/Aliyundrive(Open)?/(Aliyun.*)|(Alias)/g' "$file"
+    sed -i 's/Aliyundrive(Share)?/(Aliyun.*)|(Alias)/g' "$file"
   done
   for file in $(grep -l 'AliyundriveShare' public/dist/assets/*); do
     echo "update $file"
