@@ -39,7 +39,11 @@ func (y *Cloud189PC) createTempDir(ctx context.Context) error {
 }
 
 func (y *Cloud189PC) Checkin() {
-	y.checkin()
+	if !y.AutoCheckin {
+		return
+	}
+
+	go y.checkin()
 	y.cron = cron.NewCron(time.Hour * 24)
 	y.cron.Do(func() {
 		y.checkin()
@@ -49,15 +53,15 @@ func (y *Cloud189PC) Checkin() {
 func (y *Cloud189PC) checkin() {
 	url := API_URL + "/mkt/userSign.action"
 	res, err := y.get(url, nil, nil)
-	log.Infof("checkin result: %s", string(res))
+	log.Infof("[%v] checkin result: %s", y.ID, string(res))
 	if err != nil {
-		log.Warnf("checkin failed: %v", err)
+		log.Warnf("[%v] checkin failed: %v", y.ID, err)
 	}
 
 	res, err = y.get("https://m.cloud.189.cn/v2/drawPrizeMarketDetails.action?taskId=TASK_SIGNIN&activityId=ACT_SIGNIN", nil, nil)
-	log.Infof("TASK_SIGNIN result: %s", string(res))
+	log.Infof("[%v] TASK_SIGNIN result: %s", y.ID, string(res))
 	if err != nil {
-		log.Warnf("TASK_SIGNIN failed: %v", err)
+		log.Warnf("[%v] TASK_SIGNIN failed: %v", y.ID, err)
 	}
 
 	//res, err = y.get("https://m.cloud.189.cn/v2/drawPrizeMarketDetails.action?taskId=TASK_SIGNIN_PHOTOS&activityId=ACT_SIGNIN", nil, nil)
