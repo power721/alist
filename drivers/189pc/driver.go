@@ -118,6 +118,7 @@ func (y *Cloud189PC) Init(ctx context.Context) (err error) {
 		}
 	})
 
+	y.Checkin()
 	return y.createTempDir(ctx)
 }
 
