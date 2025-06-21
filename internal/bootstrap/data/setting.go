@@ -233,7 +233,6 @@ func InitialSettings() []model.SettingItem {
 		{Key: "open_api_client_id", Value: "", Type: conf.TypeString, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "open_api_client_secret", Value: "", Type: conf.TypeString, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "atv_api_key", Value: "", Type: conf.TypeString, Group: model.SINGLE, Flag: model.PRIVATE},
-		{Key: "delete_code_115", Value: "", Type: conf.TypeString, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: conf.AliAccountId, Value: "0", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "QUARK_id", Value: "0", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},
 		{Key: "UC_id", Value: "0", Type: conf.TypeNumber, Group: model.SINGLE, Flag: model.PRIVATE},

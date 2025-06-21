@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
-	"github.com/alist-org/alist/v3/internal/setting"
 	driver115 "github.com/power721/115driver/pkg/driver"
 	log "github.com/sirupsen/logrus"
 )
@@ -88,12 +87,11 @@ func (d *Pan115) DeleteReceivedFile(sha1 string) {
 }
 
 func (d *Pan115) DeleteFile(id string) error {
-	code := setting.GetStr("delete_code_115")
-	if code == "" {
+	if d.DeleteCode == "" {
 		return nil
 	}
 
-	return d.client.CleanRecycleBin(code, id)
+	return d.client.CleanRecycleBin(d.DeleteCode, id)
 }
 
 func (d *Pan115) RapidUpload(fileSize int64, fileName, dirID, preID, fileID string, stream model.FileStreamer) (*driver115.UploadInitResp, error) {

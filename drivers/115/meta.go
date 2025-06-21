@@ -13,7 +13,8 @@ type Addition struct {
 	LimitRate    float64 `json:"limit_rate" type:"float" default:"2" help:"limit all api request rate ([limit]r/1s)"`
 	driver.RootID
 
-	Concurrency int `json:"concurrency" type:"number" default:"2"`
+	Concurrency int    `json:"concurrency" type:"number" default:"2"`
+	DeleteCode  string `json:"delete_code" type:"text"`
 }
 
 var config = driver.Config{
