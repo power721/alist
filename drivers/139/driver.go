@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/conf"
 	"io"
 	"net/http"
 	"path"
@@ -154,7 +153,7 @@ func (d *Yun139) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 		URL:         url + fmt.Sprintf("#storageId=%d", d.ID),
 		Expiration:  &exp,
 		Concurrency: d.Concurrency,
-		PartSize:    conf.DefaultChunkSize,
+		PartSize:    d.ChunkSize,
 	}, nil
 }
 

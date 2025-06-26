@@ -50,6 +50,7 @@ type ExpertAddition struct {
 	RemoveWay string `json:"remove_way" required:"true" type:"select" options:"trash,delete"`
 
 	Concurrency int `json:"concurrency" type:"number" default:"2"`
+	ChunkSize   int `json:"chunk_size" type:"number" default:"1024"`
 }
 
 // GetIdentity 登录特征,用于判断是否重新登录
@@ -85,6 +86,7 @@ type Addition struct {
 	RemoveWay    string `json:"remove_way" required:"true" type:"select" options:"trash,delete"`
 
 	Concurrency int `json:"concurrency" type:"number" default:"2"`
+	ChunkSize   int `json:"chunk_size" type:"number" default:"1024"`
 }
 
 // GetIdentity 登录特征,用于判断是否重新登录

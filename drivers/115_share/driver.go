@@ -128,7 +128,7 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		URL:         downloadInfo.URL.URL + fmt.Sprintf("#storageId=%d", pan115.ID),
 		Expiration:  &exp,
 		Concurrency: pan115.Concurrency,
-		PartSize:    conf.DefaultChunkSize * utils.KB,
+		PartSize:    pan115.ChunkSize * utils.KB,
 	}, nil
 }
 

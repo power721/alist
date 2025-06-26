@@ -23,6 +23,7 @@ type Addition struct {
 	OnlyListVideoFile     bool   `json:"only_list_video_file" default:"false"`
 
 	Concurrency int `json:"concurrency" type:"number" default:"2"`
+	ChunkSize   int `json:"chunk_size" type:"number" default:"1024"`
 }
 
 var config = driver.Config{

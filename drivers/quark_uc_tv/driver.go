@@ -3,7 +3,6 @@ package quark_uc_tv
 import (
 	"context"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/op"
 	"github.com/alist-org/alist/v3/pkg/utils"
 	"github.com/go-resty/resty/v2"
@@ -145,7 +144,7 @@ func (d *QuarkUCTV) Link(ctx context.Context, file model.Obj, args model.LinkArg
 		Expiration:  &exp,
 		URL:         fileLink.Data.DownloadURL + fmt.Sprintf("#storageId=%d", d.ID),
 		Concurrency: d.Concurrency,
-		PartSize:    conf.DefaultChunkSize * utils.KB,
+		PartSize:    d.ChunkSize * utils.KB,
 	}, nil
 }
 

@@ -159,19 +159,3 @@ const (
 const (
 	NoTaskKey = "no_task"
 )
-
-const (
-	BaiduThreads     = 4
-	BaiduChunkSize   = 1024
-	DefaultChunkSize = 1024
-	ThunderThreads   = 2
-	ThunderChunkSize = 1024
-	Pan115Threads    = 2
-	Pan115ChunkSize  = 1024
-	AliThreads       = 4
-	AliChunkSize     = 1024
-	UcThreads        = 8
-	UcChunkSize      = 1024
-	QuarkThreads     = 10
-	QuarkChunkSize   = 1024
-)

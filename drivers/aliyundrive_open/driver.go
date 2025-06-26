@@ -156,7 +156,7 @@ func (d *AliyundriveOpen) link(ctx context.Context, file model.Obj) (*model.Link
 			"User-Agent": []string{conf.UserAgent},
 		},
 		Concurrency: d.Concurrency,
-		PartSize:    conf.AliChunkSize * utils.KB,
+		PartSize:    d.ChunkSize * utils.KB,
 	}, nil
 }
 
