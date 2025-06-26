@@ -95,6 +95,7 @@ type Common struct {
 
 	ID          uint
 	Concurrency int
+	ChunkSize   int
 }
 
 func (c *Common) SetDeviceID(deviceID string) {

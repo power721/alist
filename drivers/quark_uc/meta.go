@@ -12,7 +12,8 @@ type Addition struct {
 	OrderBy        string `json:"order_by" type:"select" options:"file_type,file_name,updated_at" default:"file_name"`
 	OrderDirection string `json:"order_direction" type:"select" options:"asc,desc" default:"asc"`
 
-	Concurrency int `json:"concurrency" type:"number" default:"8"`
+	Concurrency int `json:"concurrency" type:"number" default:"10"`
+	ChunkSize   int `json:"chunk_size" type:"number" default:"256"`
 }
 
 type Conf struct {

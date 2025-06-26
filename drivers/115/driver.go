@@ -94,7 +94,7 @@ func (d *Pan115) Link(ctx context.Context, file model.Obj, args model.LinkArgs) 
 		URL:         downloadInfo.Url.Url + fmt.Sprintf("#storageId=%d", d.ID),
 		Header:      downloadInfo.Header,
 		Concurrency: d.Concurrency,
-		PartSize:    conf.DefaultChunkSize * utils.KB,
+		PartSize:    d.ChunkSize * utils.KB,
 	}
 	log.Debugf("Link: %v", link)
 	return link, nil

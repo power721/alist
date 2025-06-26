@@ -16,6 +16,7 @@ type Addition struct {
 	QueryToken string `json:"query_token" required:"false" default:"" help:"don't edit'"`
 
 	Concurrency int `json:"concurrency" type:"number" default:"4"`
+	ChunkSize   int `json:"chunk_size" type:"number" default:"256"`
 }
 
 type Conf struct {

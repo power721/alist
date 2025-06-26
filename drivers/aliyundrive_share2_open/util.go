@@ -169,7 +169,7 @@ func (d *AliyundriveShare2Open) getOpenLink(ali *aliyundrive_open.AliyundriveOpe
 			"User-Agent": []string{conf.UserAgent},
 		},
 		Concurrency: ali.Concurrency,
-		PartSize:    conf.AliChunkSize * utils.KB,
+		PartSize:    ali.ChunkSize * utils.KB,
 	}, hash, nil
 }
 
@@ -353,7 +353,7 @@ func (d *AliyundriveShare2Open) saveTo115(ctx context.Context, pan115 *_115.Pan1
 			Header:      link115.Header,
 			Expiration:  link115.Expiration,
 			Concurrency: pan115.Concurrency,
-			PartSize:    conf.DefaultChunkSize * utils.KB,
+			PartSize:    pan115.ChunkSize * utils.KB,
 		}, nil
 	}
 	log.Warnf("获取115链接超时，使用阿里链接")

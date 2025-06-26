@@ -15,6 +15,7 @@ type Addition struct {
 	ReportRealSize       bool   `json:"report_real_size" type:"bool" default:"true" help:"Enable to report the real file size during upload"`
 
 	Concurrency int `json:"concurrency" type:"number" default:"4"`
+	ChunkSize   int `json:"chunk_size" type:"number" default:"512"`
 }
 
 var config = driver.Config{

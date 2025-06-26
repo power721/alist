@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/conf"
 	"hash"
 	"io"
 	"net/http"
@@ -86,7 +85,7 @@ func (d *QuarkOrUC) Link(ctx context.Context, file model.Obj, args model.LinkArg
 			"User-Agent": []string{d.conf.ua},
 		},
 		Concurrency: d.Concurrency,
-		PartSize:    conf.DefaultChunkSize * utils.KB,
+		PartSize:    d.ChunkSize * utils.KB,
 	}, nil
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/alist-org/alist/v3/internal/conf"
 	"io"
 	"net/http"
 	"strings"
@@ -349,7 +348,7 @@ func (xc *XunLeiBrowserCommon) Link(ctx context.Context, file model.Obj, args mo
 			"User-Agent": {xc.DownloadUserAgent},
 		},
 		Concurrency: xc.Concurrency,
-		PartSize:    conf.DefaultChunkSize * utils.KB,
+		PartSize:    xc.ChunkSize * utils.KB,
 	}
 
 	if xc.UseVideoUrl {

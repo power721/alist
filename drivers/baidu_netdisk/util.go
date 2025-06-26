@@ -236,7 +236,7 @@ func (d *BaiduNetdisk) linkCrackVideo(file model.Obj, _ model.LinkArgs) (*model.
 			"User-Agent": []string{d.CustomCrackUA},
 		},
 		Concurrency: d.Concurrency,
-		PartSize:    conf.DefaultChunkSize * utils.KB,
+		PartSize:    d.ChunkSize * utils.KB,
 	}, nil
 }
 

@@ -15,6 +15,7 @@ type Addition struct {
 	AccessToken    string `json:"access_token"`
 
 	Concurrency int `json:"concurrency" type:"number" default:"2"`
+	ChunkSize   int `json:"chunk_size" type:"number" default:"1024"`
 }
 
 var config = driver.Config{

@@ -116,7 +116,7 @@ func (d *Open115) Link(ctx context.Context, file model.Obj, args model.LinkArgs)
 			"User-Agent": []string{ua},
 		},
 		Concurrency: d.Concurrency,
-		PartSize:    conf.DefaultChunkSize * utils.KB,
+		PartSize:    d.ChunkSize * utils.KB,
 	}, nil
 }
 
