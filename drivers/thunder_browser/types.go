@@ -59,11 +59,17 @@ type TokenResp struct {
 }
 
 func (t *TokenResp) GetToken() string {
+	if t == nil {
+		return ""
+	}
 	return fmt.Sprint(t.TokenType, " ", t.AccessToken)
 }
 
 // GetSpaceToken 获取"超级保险箱" 访问Token
 func (t *TokenResp) GetSpaceToken() string {
+	if t == nil {
+		return ""
+	}
 	return t.Token
 }
 
