@@ -59,6 +59,9 @@ type TokenResp struct {
 }
 
 func (t *TokenResp) GetToken() string {
+	if t == nil {
+		return ""
+	}
 	return fmt.Sprint(t.TokenType, " ", t.AccessToken)
 }
 
