@@ -3,11 +3,14 @@ package _189pc
 import (
 	"context"
 	"errors"
+	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/conf"
 	"github.com/alist-org/alist/v3/internal/model"
 	"github.com/alist-org/alist/v3/internal/setting"
 	"github.com/alist-org/alist/v3/pkg/cron"
+	"github.com/alist-org/alist/v3/pkg/utils"
 	log "github.com/sirupsen/logrus"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -69,6 +72,47 @@ func (y *Cloud189PC) checkin() {
 	//if err != nil {
 	//	log.Warnf("TASK_SIGNIN_PHOTOS failed: %v", err)
 	//}
+}
+
+func (y *Cloud189PC) GetShareLink(shareId int, file model.Obj) (*model.Link, error) {
+	if y.Cookie == "" {
+		return nil, errors.New("no cookie found")
+	}
+
+	url := "https://cloud.189.cn/api/portal/getNewVlcVideoPlayUrl.action"
+	res, err := y.client.R().
+		SetQueryParams(map[string]string{
+			"shareId": strconv.Itoa(shareId),
+			"fileId":  file.GetID(),
+			"dt":      "1",
+			"type":    "4",
+		}).
+		SetHeader("accept", "application/json;charset=UTF-8").
+		SetHeader("cookie", y.Cookie).
+		SetHeader("sessionKey", y.getTokenInfo().SessionKey).
+		Get(url)
+
+	log.Debugf("[%v] getShareLink result: %s", y.ID, res.String())
+	if err != nil {
+		log.Warnf("[%v] getShareLink failed: %v", y.ID, err)
+	}
+
+	url = utils.Json.Get(res.Body(), "normal", "url").ToString()
+	if url != "" {
+		exp := time.Hour
+		link := &model.Link{
+			Expiration: &exp,
+			URL:        url,
+			Header: http.Header{
+				"User-Agent": []string{base.UserAgent},
+			},
+		}
+		log.Debugf("使用直链播放：%v", url)
+		return link, nil
+	}
+
+	msg := utils.Json.Get(res.Body(), "errorMsg").ToString()
+	return nil, errors.New(msg)
 }
 
 func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, fileName string) (*model.Link, error) {

@@ -80,8 +80,15 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 		return nil, err
 	}
 
-	link, err := cloud189PC.Transfer(ctx, shareInfo.ShareId, fileObject.ID, fileObject.oldName)
+	link, err := cloud189PC.GetShareLink(shareInfo.ShareId, file)
 	idx++
+	if link != nil {
+		return link, nil
+	} else {
+		log.Infof("Get share link error: %v", err)
+	}
+
+	link, err = cloud189PC.Transfer(ctx, shareInfo.ShareId, fileObject.ID, fileObject.oldName)
 	return link, err
 }
 

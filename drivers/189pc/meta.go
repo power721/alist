@@ -20,7 +20,8 @@ type Addition struct {
 	RapidUpload    bool   `json:"rapid_upload"`
 	NoUseOcr       bool   `json:"no_use_ocr"`
 
-	AutoCheckin bool `json:"auto_checkin"`
+	AutoCheckin bool   `json:"auto_checkin"`
+	Cookie      string `json:"cookie"`
 }
 
 var config = driver.Config{

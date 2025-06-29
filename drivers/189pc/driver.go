@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/alist-org/alist/v3/pkg/cron"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strconv"
 	"strings"
@@ -92,7 +93,8 @@ func (y *Cloud189PC) Init(ctx context.Context) (err error) {
 		if !y.isLogin() || y.identity != identity {
 			y.identity = identity
 			if err = y.login(); err != nil {
-				return
+				log.Warnf("[%v] login failed: %v", y.ID, err)
+				return nil
 			}
 		}
 	}
@@ -100,26 +102,32 @@ func (y *Cloud189PC) Init(ctx context.Context) (err error) {
 	// 处理家庭云ID
 	if y.FamilyID == "" {
 		if y.FamilyID, err = y.getFamilyID(); err != nil {
-			return err
+			log.Warnf("[%v] getFamilyID failed: %v", y.ID, err)
+			return nil
 		}
 	}
 
 	// 创建中转文件夹
 	if y.FamilyTransfer {
 		if err := y.createFamilyTransferFolder(); err != nil {
-			return err
+			log.Warnf("[%v] createFamilyTransferFolder failed: %v", y.ID, err)
+			return nil
 		}
 	}
 
 	// 清理转存文件节流
 	y.cleanFamilyTransferFile = utils.NewThrottle2(time.Minute, func() {
 		if err := y.cleanFamilyTransfer(context.TODO()); err != nil {
-			utils.Log.Errorf("cleanFamilyTransferFolderError:%s", err)
+			utils.Log.Warnf("cleanFamilyTransferFolderError: %v", err)
 		}
 	})
 
 	y.Checkin()
-	return y.createTempDir(ctx)
+	err = y.createTempDir(ctx)
+	if err != nil {
+		log.Warnf("[%v] createTempDir failed: %v", y.ID, err)
+	}
+	return nil
 }
 
 func (d *Cloud189PC) InitReference(storage driver.Driver) error {
