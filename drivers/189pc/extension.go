@@ -89,7 +89,6 @@ func (y *Cloud189PC) GetShareLink(shareId int, file model.Obj) (*model.Link, err
 		}).
 		SetHeader("accept", "application/json;charset=UTF-8").
 		SetHeader("cookie", y.Cookie).
-		SetHeader("sessionKey", y.getTokenInfo().SessionKey).
 		Get(url)
 
 	log.Debugf("[%v] getShareLink result: %s", y.ID, res.String())
@@ -99,6 +98,20 @@ func (y *Cloud189PC) GetShareLink(shareId int, file model.Obj) (*model.Link, err
 
 	url = utils.Json.Get(res.Body(), "normal", "url").ToString()
 	if url != "" {
+		res, err = y.client2.R().
+			SetQueryParams(map[string]string{
+				"shareId": strconv.Itoa(shareId),
+				"fileId":  file.GetID(),
+				"dt":      "1",
+				"type":    "4",
+			}).
+			SetHeader("accept", "application/json;charset=UTF-8").
+			SetHeader("cookie", y.Cookie).
+			Get(url)
+		newUrl := res.Header().Get("Location")
+		if newUrl != "" {
+			url = newUrl
+		}
 		exp := time.Hour
 		link := &model.Link{
 			Expiration: &exp,
