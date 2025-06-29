@@ -39,6 +39,7 @@ type Cloud189PC struct {
 	ref           *Cloud189PC
 	TempDirId     string
 	cron          *cron.Cron
+	client2       *resty.Client
 }
 
 func (y *Cloud189PC) Config() driver.Config {
@@ -86,6 +87,18 @@ func (y *Cloud189PC) Init(ctx context.Context) (err error) {
 				"Accept":  "application/json;charset=UTF-8",
 				"Referer": WEB_URL,
 			})
+		}
+
+		if y.client2 == nil {
+			y.client2 = base.NewRestyClient().SetHeaders(map[string]string{
+				"Accept":  "application/json;charset=UTF-8",
+				"Referer": WEB_URL,
+			})
+			// Disable redirect following
+			y.client2.SetRedirectPolicy(resty.RedirectPolicyFunc(func(req *http.Request, via []*http.Request) error {
+				// Returning an error here prevents following redirects
+				return http.ErrUseLastResponse
+			}))
 		}
 
 		// 避免重复登陆
