@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
+	"github.com/alist-org/alist/v3/pkg/cookie"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -321,13 +323,19 @@ func (y *Cloud189PC) login() (err error) {
 	// 获取Session
 	var erron RespErr
 	var tokenInfo AppSessionResp
-	_, err = y.client.R().
+	res, err := y.client.R().
 		SetResult(&tokenInfo).SetError(&erron).
 		SetQueryParams(clientSuffix()).
 		SetQueryParam("redirectURL", loginresp.ToUrl).
 		Post(API_URL + "/getSessionForPC.action")
 	if err != nil {
-		return
+		return err
+	}
+
+	mycookie := cookie.ToString(res.Cookies())
+	if strings.Contains(mycookie, "JSESSIONID") && strings.Contains(mycookie, "COOKIE_LOGIN_USER") {
+		log.Info("use new cookie")
+		y.Cookie = mycookie
 	}
 
 	if erron.HasError() {
@@ -335,7 +343,7 @@ func (y *Cloud189PC) login() (err error) {
 	}
 	if tokenInfo.ResCode != 0 {
 		err = fmt.Errorf(tokenInfo.ResMessage)
-		return
+		return err
 	}
 	y.tokenInfo = &tokenInfo
 	return
