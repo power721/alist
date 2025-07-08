@@ -2,6 +2,11 @@ package _189pc
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/pem"
 	"errors"
 	"github.com/alist-org/alist/v3/drivers/base"
 	"github.com/alist-org/alist/v3/internal/conf"
@@ -201,4 +206,62 @@ func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, f
 	}()
 
 	return link, err
+}
+
+func RsaEncode(origData []byte, j_rsakey string, hex bool) string {
+	publicKey := []byte("-----BEGIN PUBLIC KEY-----\n" + j_rsakey + "\n-----END PUBLIC KEY-----")
+	block, _ := pem.Decode(publicKey)
+	pubInterface, _ := x509.ParsePKIXPublicKey(block.Bytes)
+	pub := pubInterface.(*rsa.PublicKey)
+	b, err := rsa.EncryptPKCS1v15(rand.Reader, pub, origData)
+	if err != nil {
+		log.Errorf("err: %s", err.Error())
+	}
+	res := base64.StdEncoding.EncodeToString(b)
+	if hex {
+		return b64tohex(res)
+	}
+	return res
+}
+
+var b64map = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+var BI_RM = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+func int2char(a int) string {
+	return strings.Split(BI_RM, "")[a]
+}
+
+func b64tohex(a string) string {
+	d := ""
+	e := 0
+	c := 0
+	for i := 0; i < len(a); i++ {
+		m := strings.Split(a, "")[i]
+		if m != "=" {
+			v := strings.Index(b64map, m)
+			if 0 == e {
+				e = 1
+				d += int2char(v >> 2)
+				c = 3 & v
+			} else if 1 == e {
+				e = 2
+				d += int2char(c<<2 | v>>4)
+				c = 15 & v
+			} else if 2 == e {
+				e = 3
+				d += int2char(c)
+				d += int2char(v >> 2)
+				c = 3 & v
+			} else {
+				e = 0
+				d += int2char(c<<2 | v>>4)
+				d += int2char(15 & v)
+			}
+		}
+	}
+	if e == 1 {
+		d += int2char(c << 2)
+	}
+	return d
 }
