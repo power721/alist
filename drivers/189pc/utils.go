@@ -7,8 +7,6 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
-	"github.com/alist-org/alist/v3/pkg/cookie"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -340,20 +338,6 @@ func (y *Cloud189PC) login() (err error) {
 		return
 	}
 	y.tokenInfo = &tokenInfo
-
-	res, err := y.client2.R().
-		SetQueryParams(clientSuffix()).
-		SetQueryParam("redirectUrl", "main.action").
-		SetQueryParam("sessionKey", tokenInfo.SessionKey).
-		Get("https://cloud.189.cn/api/portal/ssoLogin.action")
-	if err != nil {
-		log.Warnf("[%v] login failed: %v", y.ID, err)
-	}
-	sCookie := cookie.ToString(res.Cookies())
-	if strings.Contains(sCookie, "JSESSIONID") && strings.Contains(sCookie, "COOKIE_LOGIN_USER") {
-		log.Infof("ssoLogin Cookie: %v", sCookie)
-		y.Cookie = sCookie
-	}
 	return
 }
 

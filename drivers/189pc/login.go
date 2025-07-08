@@ -137,7 +137,7 @@ func (d *Cloud189PC) newLogin() error {
 	}
 	sCookie := cookie.ToString(res.Cookies())
 	if strings.Contains(sCookie, "JSESSIONID") && strings.Contains(sCookie, "COOKIE_LOGIN_USER") {
-		log.Debugf("callbackUnify Cookie: %v", sCookie)
+		log.Infof("Got 189 cookie")
 		d.Cookie = sCookie
 	}
 
