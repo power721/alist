@@ -70,7 +70,7 @@ BuildWinArm64() {
 BuildDev() {
   mkdir -p "dist"
   muslflags="--extldflags '-static -fpic' $ldflags"
-  BASE="https://musl.nn.ci/"
+  BASE="https://github.com/OpenListTeam/musl-compilers/releases/latest/download/"
   FILES=(x86_64-linux-musl-cross aarch64-linux-musl-cross)
   for i in "${FILES[@]}"; do
     url="${BASE}${i}.tgz"
@@ -153,7 +153,7 @@ BuildRelease() {
 BuildReleaseLinuxMusl() {
   mkdir -p "build"
   muslflags="--extldflags '-static -fpic' $ldflags"
-  BASE="https://musl.nn.ci/"
+  BASE="https://github.com/OpenListTeam/musl-compilers/releases/latest/download/"
   FILES=(x86_64-linux-musl-cross aarch64-linux-musl-cross)
   for i in "${FILES[@]}"; do
     if [ ! -d "/usr/local/${i%-cross}" ]; then
@@ -181,7 +181,7 @@ BuildReleaseLinuxMusl() {
 BuildReleaseLinuxMuslArm() {
   mkdir -p "build"
   muslflags="--extldflags '-static -fpic' $ldflags"
-  BASE="https://musl.nn.ci/"
+  BASE="https://github.com/OpenListTeam/musl-compilers/releases/latest/download/"
 #  FILES=(arm-linux-musleabi-cross arm-linux-musleabihf-cross armeb-linux-musleabi-cross armeb-linux-musleabihf-cross armel-linux-musleabi-cross armel-linux-musleabihf-cross armv5l-linux-musleabi-cross armv5l-linux-musleabihf-cross armv6-linux-musleabi-cross armv6-linux-musleabihf-cross armv7l-linux-musleabihf-cross armv7m-linux-musleabi-cross armv7r-linux-musleabihf-cross)
   FILES=(arm-linux-musleabi-cross arm-linux-musleabihf-cross armel-linux-musleabi-cross armel-linux-musleabihf-cross armv5l-linux-musleabi-cross armv5l-linux-musleabihf-cross armv6-linux-musleabi-cross armv6-linux-musleabihf-cross armv7l-linux-musleabihf-cross armv7m-linux-musleabi-cross armv7r-linux-musleabihf-cross)
   for i in "${FILES[@]}"; do
