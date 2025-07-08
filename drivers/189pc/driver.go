@@ -105,6 +105,10 @@ func (y *Cloud189PC) Init(ctx context.Context) (err error) {
 		identity := utils.GetMD5EncodeStr(y.Username + y.Password)
 		if !y.isLogin() || y.identity != identity {
 			y.identity = identity
+			err = y.newLogin()
+			if err != nil {
+				log.Warnf("Failed to new login: %v", err)
+			}
 			if err = y.login(); err != nil {
 				log.Warnf("[%v] login failed: %v", y.ID, err)
 				return nil
