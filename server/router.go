@@ -13,6 +13,8 @@ import (
 	"github.com/alist-org/alist/v3/server/static"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 func Init(e *gin.Engine) {
@@ -39,6 +41,24 @@ func Init(e *gin.Engine) {
 	}
 	WebDav(g.Group("/dav"))
 	S3(g.Group("/s3"))
+
+	tgs := g.Group("/tgs")
+	tgs.GET("/search", handles.SearchHandler)
+	tgs.GET("/validate", handles.ValidateHandler)
+	tgs.GET("/resolve", handles.ResolveHandler)
+	tgs.POST("/phone", handles.SendCodeHandler)
+	tgs.POST("/code", handles.VerifyCodeHandler)
+	tgs.POST("/password", handles.PasswordHandler)
+	tgs.GET("/status", handles.AuthStatusHandler)
+
+	path := "data/session.json"
+	if os.Getenv("DOCKER") != "" {
+		path = "/data/session.json"
+	}
+	if fileExists(path) {
+		log.Println("Using existing session file:", path)
+		handles.InitTelegramClient()
+	}
 
 	downloadLimiter := middlewares.DownloadRateLimiter(stream.ClientDownloadLimit)
 	signCheck := middlewares.Down(sign.Verify)
@@ -99,6 +119,14 @@ func Init(e *gin.Engine) {
 	static.Static(g, func(handlers ...gin.HandlerFunc) {
 		e.NoRoute(handlers...)
 	})
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
 
 func admin(g *gin.RouterGroup) {

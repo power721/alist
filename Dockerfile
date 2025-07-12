@@ -9,6 +9,8 @@ RUN bash build.sh release docker
 
 FROM xiaoyaliu/alist:latest
 
+ENV TZ=Asia/Shanghai DOCKER=true
+
 LABEL MAINTAINER="Har01d"
 
 RUN apk update && \

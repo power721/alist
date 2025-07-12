@@ -5,6 +5,8 @@ ARG INSTALL_FFMPEG=false
 ARG INSTALL_ARIA2=false
 LABEL MAINTAINER="Har01d"
 
+ENV TZ=Asia/Shanghai DOCKER=true
+
 WORKDIR /opt/alist/
 
 RUN apk update && \
