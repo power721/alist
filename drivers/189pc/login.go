@@ -2,6 +2,8 @@ package _189pc
 
 import (
 	"errors"
+	"github.com/alist-org/alist/v3/internal/conf"
+	"github.com/alist-org/alist/v3/internal/token"
 	"github.com/alist-org/alist/v3/pkg/cookie"
 	"strconv"
 	"strings"
@@ -139,6 +141,7 @@ func (d *Cloud189PC) newLogin() error {
 	if strings.Contains(sCookie, "JSESSIONID") && strings.Contains(sCookie, "COOKIE_LOGIN_USER") {
 		log.Infof("Got 189 cookie")
 		d.Cookie = sCookie
+		token.SaveAccountToken(conf.CLOUD189, d.Cookie, int(d.ID))
 	}
 
 	return nil
