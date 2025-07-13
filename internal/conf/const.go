@@ -81,6 +81,7 @@ const (
 	PAN115           = "PAN115"
 	OPEN115          = "OPEN115"
 	PAN139           = "PAN139"
+	CLOUD189         = "CLOUD189"
 	BAIDU            = "BAIDU"
 	AliTo115         = "ali_to_115"
 	AliAccountId     = "ali_account_id"
