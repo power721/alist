@@ -63,6 +63,11 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 		return nil, err
 	}
 
+	_, ok := file.(*FileObj)
+	if !ok {
+		return nil, errors.New("文件格式错误")
+	}
+
 	count := op.GetDriverCount("189CloudPC")
 	for i := 0; i < count; i++ {
 		link, err := d.link(ctx, file)
@@ -74,10 +79,7 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 }
 
 func (d *Cloud189Share) link(ctx context.Context, file model.Obj) (*model.Link, error) {
-	fileObject, ok := file.(*FileObj)
-	if !ok {
-		return nil, errors.New("文件格式错误")
-	}
+	fileObject, _ := file.(*FileObj)
 
 	storage := op.GetFirstDriver("189CloudPC", idx)
 	idx++
