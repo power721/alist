@@ -134,6 +134,9 @@ func (y *Cloud189PC) GetShareLink(shareId int, file model.Obj) (*model.Link, err
 }
 
 func (y *Cloud189PC) Transfer(ctx context.Context, shareId int, fileId string, fileName string) (*model.Link, error) {
+	if y.getTokenInfo() == nil {
+		return nil, errors.New("no token found")
+	}
 
 	isFamily := y.isFamily()
 	other := map[string]string{"shareId": strconv.Itoa(shareId)}

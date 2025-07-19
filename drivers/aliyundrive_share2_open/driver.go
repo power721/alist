@@ -88,15 +88,31 @@ func (d *AliyundriveShare2Open) list(ctx context.Context, dir model.Obj) ([]mode
 }
 
 func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	count := op.GetDriverCount("AliyundriveOpen")
+	var err error
+	for i := 0; i < count; i++ {
+		link, myFile, err := d.aliLink(file)
+		if err == nil {
+			if strings.HasSuffix(file.GetName(), ".md") || !setting.GetBool(conf.AliTo115) {
+				return link, nil
+			}
+
+			return d.p115Link(ctx, link, myFile, args)
+		}
+	}
+	return nil, err
+}
+
+func (d *AliyundriveShare2Open) aliLink(file model.Obj) (*model.Link, *MyFile, error) {
 	ali, err := getAliOpenDriver(idx)
+	idx++
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	log.Infof("[%v] 获取阿里云盘文件直链 %v %v %v %v", ali.ID, ali.DriveId, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(ali, file.GetID())
-	idx++
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	newFile := MyFile{
@@ -106,28 +122,34 @@ func (d *AliyundriveShare2Open) Link(ctx context.Context, file model.Obj, args m
 
 	link, hash, err := d.getOpenLink(ali, newFile)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	if strings.HasSuffix(file.GetName(), ".md") || !setting.GetBool(conf.AliTo115) {
-		return link, err
+	myFile := MyFile{
+		FileId:   fileId,
+		Name:     file.GetName(),
+		Size:     file.GetSize(),
+		HashInfo: utils.NewHashInfo(utils.SHA1, hash),
 	}
 
-	driver115 := op.Get115Driver(idx2)
-	if driver115 != nil {
-		myFile := MyFile{
-			FileId:   fileId,
-			Name:     file.GetName(),
-			Size:     file.GetSize(),
-			HashInfo: utils.NewHashInfo(utils.SHA1, hash),
-		}
-		link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), myFile, link, args)
+	return link, &myFile, nil
+}
+
+func (d *AliyundriveShare2Open) p115Link(ctx context.Context, link *model.Link, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	count := op.GetDriverCount("115 Cloud")
+	for i := 0; i < count; i++ {
+		driver115 := op.Get115Driver(idx2)
 		idx2++
-		if err2 == nil {
-			link = link115
+		if driver115 != nil {
+			link115, err2 := d.saveTo115(ctx, driver115.(*_115.Pan115), file, link, args)
+			if err2 == nil {
+				return link115, nil
+			}
+		} else {
+			break
 		}
 	}
-	return link, err
+	return link, nil
 }
 
 func (d *AliyundriveShare2Open) Other(ctx context.Context, args model.OtherArgs) (interface{}, error) {

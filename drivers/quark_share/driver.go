@@ -54,14 +54,26 @@ func (d *QuarkShare) List(ctx context.Context, dir model.Obj, args model.ListArg
 }
 
 func (d *QuarkShare) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	count := op.GetDriverCount("Quark")
+	var err error
+	for i := 0; i < count; i++ {
+		link, err := d.link(ctx, file, args)
+		if err == nil {
+			return link, nil
+		}
+	}
+	return nil, err
+}
+
+func (d *QuarkShare) link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	storage := op.GetFirstDriver("Quark", idx)
+	idx++
 	if storage == nil {
 		return nil, errors.New("找不到夸克网盘帐号")
 	}
 	uc := storage.(*quark.QuarkOrUC)
 	log.Infof("[%v] 获取夸克文件直链 %v %v %v", uc.ID, file.GetName(), file.GetID(), file.GetSize())
 	fileId, err := d.saveFile(uc, file.GetID())
-	idx++
 	if err != nil {
 		return nil, err
 	}

@@ -102,7 +102,20 @@ func (d *Pan115Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 }
 
 func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	count := op.GetDriverCount("115 Cloud")
+	var err error
+	for i := 0; i < count; i++ {
+		link, err := d.link(ctx, file, args)
+		if err == nil {
+			return link, nil
+		}
+	}
+	return nil, err
+}
+
+func (d *Pan115Share) link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	storage := op.Get115Driver(idx)
+	idx++
 	if storage == nil {
 		return nil, errors.New("找不到115云盘帐号")
 	}
@@ -117,7 +130,6 @@ func (d *Pan115Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 	fid := parts[0]
 	sha1 := parts[1]
 	downloadInfo, err := client.DownloadByShareCode(d.ShareCode, d.ReceiveCode, fid)
-	idx++
 	if err != nil {
 		return nil, err
 	}
