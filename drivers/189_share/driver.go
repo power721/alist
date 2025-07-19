@@ -63,12 +63,24 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 		return nil, err
 	}
 
+	count := op.GetDriverCount("189CloudPC")
+	for i := 0; i < count; i++ {
+		link, err := d.link(ctx, file)
+		if err == nil {
+			return link, nil
+		}
+	}
+	return nil, err
+}
+
+func (d *Cloud189Share) link(ctx context.Context, file model.Obj) (*model.Link, error) {
 	fileObject, ok := file.(*FileObj)
 	if !ok {
 		return nil, errors.New("文件格式错误")
 	}
 
 	storage := op.GetFirstDriver("189CloudPC", idx)
+	idx++
 	if storage == nil {
 		return nil, errors.New("找不到天翼云盘帐号")
 	}
@@ -81,11 +93,10 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 	}
 
 	link, err := cloud189PC.GetShareLink(shareInfo.ShareId, file)
-	idx++
 	if link != nil {
 		return link, nil
 	} else {
-		log.Infof("Get share link error: %v", err)
+		log.Warnf("[%v] Get share link error: %v", cloud189PC.ID, err)
 	}
 
 	link, err = cloud189PC.Transfer(ctx, shareInfo.ShareId, fileObject.ID, fileObject.oldName)

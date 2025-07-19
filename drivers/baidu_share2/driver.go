@@ -204,7 +204,20 @@ func (d *BaiduShare2) List(ctx context.Context, dir model.Obj, args model.ListAr
 }
 
 func (d *BaiduShare2) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	count := op.GetDriverCount("BaiduNetdisk")
+	var err error
+	for i := 0; i < count; i++ {
+		link, err := d.link(ctx, file, args)
+		if err == nil {
+			return link, nil
+		}
+	}
+	return nil, err
+}
+
+func (d *BaiduShare2) link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	storage := op.GetFirstDriver("BaiduNetdisk", idx)
+	idx++
 	if storage == nil {
 		return nil, errors.New("找不到百度网盘帐号")
 	}
@@ -215,7 +228,6 @@ func (d *BaiduShare2) Link(ctx context.Context, file model.Obj, args model.LinkA
 		d.Validate()
 	}
 	f, err := d.saveFile(file.GetID(), bd)
-	idx++
 	if err != nil {
 		return nil, err
 	}

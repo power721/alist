@@ -72,7 +72,20 @@ func (d *Pan123Share) List(ctx context.Context, dir model.Obj, args model.ListAr
 }
 
 func (d *Pan123Share) Link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
+	count := op.GetDriverCount("123Pan")
+	var err error
+	for i := 0; i < count; i++ {
+		link, err := d.link(ctx, file, args)
+		if err == nil {
+			return link, nil
+		}
+	}
+	return nil, err
+}
+
+func (d *Pan123Share) link(ctx context.Context, file model.Obj, args model.LinkArgs) (*model.Link, error) {
 	storage := op.GetFirstDriver("123Pan", idx)
+	idx++
 	if storage == nil {
 		return nil, errors.New("找不到123云盘帐号")
 	}
@@ -101,7 +114,6 @@ func (d *Pan123Share) Link(ctx context.Context, file model.Obj, args model.LinkA
 		resp, err := pan123.Request(DownloadInfo, http.MethodPost, func(req *resty.Request) {
 			req.SetBody(data).SetHeaders(headers)
 		}, nil)
-		idx++
 		if err != nil {
 			return nil, err
 		}

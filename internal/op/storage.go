@@ -45,6 +45,17 @@ func Get115Driver(id int) driver.Driver {
 	return GetFirstDriver("115 Cloud", id)
 }
 
+func GetDriverCount(name string) int {
+	count := 0
+	storages := storagesMap.Values()
+	for _, storage := range storages {
+		if storage.Config().Name == name {
+			count++
+		}
+	}
+	return count
+}
+
 func GetFirstDriver(name string, id int) driver.Driver {
 	prefix := ""
 	if GetBool(conf.DriverRoundRobin) {
