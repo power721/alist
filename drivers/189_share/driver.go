@@ -79,8 +79,6 @@ func (d *Cloud189Share) Link(ctx context.Context, file model.Obj, args model.Lin
 }
 
 func (d *Cloud189Share) link(ctx context.Context, file model.Obj) (*model.Link, error) {
-	fileObject, _ := file.(*FileObj)
-
 	storage := op.GetFirstDriver("189CloudPC", idx)
 	idx++
 	if storage == nil {
@@ -101,6 +99,7 @@ func (d *Cloud189Share) link(ctx context.Context, file model.Obj) (*model.Link, 
 		log.Warnf("[%v] Get share link error: %v", cloud189PC.ID, err)
 	}
 
+	fileObject, _ := file.(*FileObj)
 	link, err = cloud189PC.Transfer(ctx, shareInfo.ShareId, fileObject.ID, fileObject.oldName)
 	return link, err
 }
