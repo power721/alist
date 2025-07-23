@@ -27,7 +27,7 @@ func (d *Pan115) createTempDir(ctx context.Context) {
 	_, _ = d.MakeDir(ctx, dir, name)
 	files, _ := d.getFiles(root)
 	for _, file := range files {
-		if file.Name == "我的接收" {
+		if file.Name == "最近接收" {
 			d.ReceiveDirId = file.FileID
 		}
 		if file.Name == name {
@@ -65,7 +65,7 @@ func (d *Pan115) DeleteTempFile(fullHash string) {
 func (d *Pan115) getReceiveDirId() {
 	files, _ := d.getFiles("0")
 	for _, file := range files {
-		if file.Name == "我的接收" {
+		if file.Name == "最近接收" {
 			d.ReceiveDirId = file.FileID
 		}
 	}
