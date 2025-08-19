@@ -49,7 +49,7 @@ require (
 	github.com/ncw/swift/v2 v2.0.3
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.6
-	github.com/power721/115driver v0.2.2
+	github.com/power721/115driver v0.2.5
 	github.com/pquerna/otp v1.4.0
 	github.com/rclone/rclone v1.67.0
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d
